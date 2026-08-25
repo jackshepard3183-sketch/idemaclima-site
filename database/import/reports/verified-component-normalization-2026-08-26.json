@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-08-26",
+  "mode": "verified-component-normalization",
+  "database_write_performed": false,
+  "input": {
+    "scoped_combinations": 128,
+    "distinct_combination_labels": 69,
+    "combination_occurrences": 243,
+    "items_total": 256,
+    "pending_item_occurrences_before_external_verification": 96,
+    "pending_distinct_codes_before_external_verification": 46
+  },
+  "verification": {
+    "confirmed_distinct_codes": 46,
+    "confirmed_codes_mapped_to_existing_series": 39,
+    "confirmed_codes_requiring_missing_series": 7,
+    "new_series_from_original_idema_sources": [
+      "ITX-R32",
+      "IFFN-R32"
+    ],
+    "fuzzy_matches_used": 0,
+    "aliases_invented": 0,
+    "still_pending_distinct_codes": 0
+  },
+  "final_expected_manifest": {
+    "combinations_resolved": 128,
+    "combinations_partial": 0,
+    "combinations_pending": 0,
+    "combinations_review": 0,
+    "items_resolved_product": 128,
+    "items_resolved_model": 128,
+    "items_pending": 0,
+    "items_review": 0
+  },
+  "source_urls": [
+    "https://www.idemaclima.it/schede-tecniche/linea-commerciale-r32/linea-commerciale-r32-unita-interne/",
+    "https://www.idemaclima.it/schede-tecniche/linea-commerciale-r32/linea-commerciale-r32-unita-esterne/",
+    "https://www.idemaclima.it/wp-content/uploads/D-DIMENSIONALI-RAC-LCAC-2026.pdf",
+    "https://www.idemaclima.it/wp-content/uploads/LISTINO_PREZZI_IDEMA_2026.pdf"
+  ],
+  "workflow": [
+    "import_datasheets.php",
+    "import_verified_component_models.php",
+    "normalize_combinations.php",
+    "apply_verified_models_to_combinations.php",
+    "import_combinations.php"
+  ],
+  "notes": [
+    "ITX-R32 e IFFN-R32 risultano nell'offerta IDEMA 2026 ma non come prodotti serie autonomi nel dataset Lovable; vengono quindi integrati dal registro verificato.",
+    "I 46 codici verificati vengono creati come product_models sotto la serie corretta prima dell'import delle combinazioni.",
+    "Nessun matching fuzzy viene usato: ogni mapping deriva da una serie già presente nel dataset oppure da fonti originali IDEMA esplicite.",
+    "Il report descrive l'esito atteso del manifest dopo l'applicazione del registry; non è stato eseguito alcun import MySQL reale."
+  ]
+}
