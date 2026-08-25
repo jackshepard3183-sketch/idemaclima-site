@@ -1,0 +1,46 @@
+{
+  "generated_at": "2026-08-26",
+  "mode": "normalization-dry-run-read-only",
+  "source": "jackshepard3183-sketch/idemaclima:src/data/datasheets.ts",
+  "matching_policy": {
+    "case_insensitive_exact": true,
+    "fuzzy_matching": false,
+    "product_aliases": [
+      "original product name",
+      "full alternatives separated by ' / '",
+      "compact alternatives such as 105M/T -> 105M and 105T",
+      "deterministic numeric capacity lists"
+    ],
+    "unresolved_policy": "preserve raw_code and mark pending"
+  },
+  "summary": {
+    "scoped_combinations": 128,
+    "distinct_combination_labels": 69,
+    "occurrences": 243,
+    "resolved": 32,
+    "partial": 96,
+    "pending": 0,
+    "review": 0,
+    "items_total": 256,
+    "items_resolved_as_product": 128,
+    "items_resolved_as_model": 32,
+    "items_pending": 96,
+    "items_review": 0
+  },
+  "interpretation": [
+    "The 69 global labels appear in 128 distinct source contexts (subcategory + source product).",
+    "All 128 outdoor-side components resolve deterministically to a product/product alias.",
+    "32 additional components resolve exactly to an existing model.",
+    "96 internal-unit component codes appear only inside combination labels and therefore remain pending.",
+    "No ambiguous matches were found with the deterministic rules.",
+    "Pending components must not generate synthetic products or models automatically."
+  ],
+  "examples_pending": [
+    {"combination":"ITX-70-R32 + IOX-70M-R32","pending_code":"ITX-70-R32"},
+    {"combination":"ITX-140-R32 + IOX-140T-R32","pending_code":"ITX-140-R32"},
+    {"combination":"IFFN-140-R32 + IOX-140T-R32","pending_code":"IFFN-140-R32"},
+    {"combination":"ITXI-35-R32 + IOZ-35M-R32","pending_code":"ITXI-35-R32"},
+    {"combination":"ICZ-70-R32 + IOZ-70M-R32","pending_code":"ICZ-70-R32"},
+    {"combination":"IUZ-105-R32 + IOZ-105T-R32","pending_code":"IUZ-105-R32"}
+  ]
+}
