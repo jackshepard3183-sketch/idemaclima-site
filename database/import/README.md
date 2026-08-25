@@ -40,14 +40,19 @@ Per i nomi prodotto sono ammessi solo alias ricavabili senza interpretazione:
 
 Ogni componente di una combinazione conserva sempre `raw_code`.
 
-Stati possibili:
+Stati item:
 
 - `resolved_product`: collegamento certo a un prodotto;
 - `resolved_model`: collegamento certo a un modello;
 - `pending`: nessun collegamento certo, codice originale preservato;
 - `review`: più candidati possibili.
 
-La combinazione complessiva viene classificata come `resolved`, `partial`, `pending` o `review`.
+Stati combinazione:
+
+- `resolved`;
+- `partial`;
+- `pending`;
+- `review`.
 
 **Regola di sicurezza:** un componente `pending` non genera automaticamente un nuovo prodotto o modello.
 
@@ -62,7 +67,7 @@ La migration `006_combination_normalization.sql` aggiunge:
 - `raw_code` per i componenti non risolti;
 - relazione dedicata tra combinazioni e documenti PDF.
 
-## 4. Import reale
+## 4. Import archivio tecnico
 
 Solo dopo aver applicato le migration, configurato `.env` e verificato i report:
 
@@ -77,5 +82,24 @@ php database/import/import_datasheets.php \
   --source=/path/to/datasheets.ts \
   --report=/tmp/idemaclima-import-report.json
 ```
+
+## 5. Import combinazioni
+
+Dopo l'import dell'archivio tecnico, validare prima il manifest senza scritture:
+
+```bash
+php database/import/import_combinations.php \
+  --manifest=/tmp/idemaclima-combinations.json
+```
+
+Solo dopo il controllo del report:
+
+```bash
+php database/import/import_combinations.php \
+  --manifest=/tmp/idemaclima-combinations.json \
+  --execute
+```
+
+L'importatore delle combinazioni è separato perché deve poter collegare prodotti, modelli e PDF già presenti nel database. Se un target indicato nel manifest non viene trovato, l'item viene degradato a `pending` e il problema viene registrato nel report invece di creare automaticamente entità mancanti.
 
 L'import reale del database non va eseguito finché i report di dry-run e normalizzazione non sono stati controllati.
