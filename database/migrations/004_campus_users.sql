@@ -1,0 +1,54 @@
+CREATE TABLE cat_accounts (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  company_name VARCHAR(190) NOT NULL,
+  contact_first_name VARCHAR(120) NOT NULL,
+  contact_last_name VARCHAR(120) NOT NULL,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  phone VARCHAR(50) NULL,
+  username VARCHAR(120) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  verified_at DATETIME NULL,
+  last_login_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE events (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(220) NOT NULL,
+  slug VARCHAR(240) NOT NULL UNIQUE,
+  audience ENUM('public','cat') NOT NULL DEFAULT 'public',
+  location VARCHAR(190) NULL,
+  address VARCHAR(255) NULL,
+  starts_at DATETIME NOT NULL,
+  ends_at DATETIME NULL,
+  short_description TEXT NULL,
+  description MEDIUMTEXT NULL,
+  cover_image VARCHAR(500) NULL,
+  max_seats INT UNSIGNED NULL,
+  registration_open TINYINT(1) NOT NULL DEFAULT 1,
+  published TINYINT(1) NOT NULL DEFAULT 0,
+  cancelled TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE event_registrations (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  event_id BIGINT UNSIGNED NOT NULL,
+  cat_account_id BIGINT UNSIGNED NULL,
+  first_name VARCHAR(120) NOT NULL,
+  last_name VARCHAR(120) NOT NULL,
+  email VARCHAR(190) NOT NULL,
+  phone VARCHAR(50) NULL,
+  company VARCHAR(190) NULL,
+  role VARCHAR(120) NULL,
+  notes TEXT NULL,
+  status ENUM('registered','confirmed','cancelled','waitlist') NOT NULL DEFAULT 'registered',
+  attended TINYINT(1) NULL,
+  privacy_accepted_at DATETIME NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_event_registration_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+  CONSTRAINT fk_event_registration_cat FOREIGN KEY (cat_account_id) REFERENCES cat_accounts(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
