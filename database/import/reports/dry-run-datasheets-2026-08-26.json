@@ -18,13 +18,42 @@
     "external_absolute_document_urls": 0,
     "combination_occurrences": 243,
     "combination_labels_distinct": 69,
-    "strict_real_model_candidates_distinct": 207,
-    "current_importer_model_candidate_occurrences_before_refinement": 374,
-    "current_importer_model_candidates_distinct_before_refinement": 206,
-    "current_importer_unique_product_model_pairs_before_refinement": 208,
+    "model_candidate_occurrences": 276,
+    "unique_product_model_pairs": 209,
+    "distinct_model_labels_case_insensitive": 198,
     "duplicate_product_names_distinct": 28,
     "products_without_groups_or_files": 0,
     "empty_subcategories": 1
+  },
+  "historical_before_model_rule_refinement": {
+    "model_candidate_occurrences": 374,
+    "distinct_model_candidates": 206,
+    "unique_product_model_pairs": 208,
+    "note": "Valori provvisori ottenuti con il precedente shouldCreateModel, troppo permissivo perché considerava etichette numeriche anche fuori dai gruppi tecnici. Non usare questi valori per l'import corrente."
+  },
+  "current_model_rule": {
+    "technical_groups_only": [
+      "SCHEDE TECNICHE",
+      "SCHEDA TECNICA",
+      "TABELLE RESE",
+      "TABELLA RESE"
+    ],
+    "excluded_generic_prefixes": [
+      "INSTALLAZIONE",
+      "INSTALLATION",
+      "USO",
+      "USER",
+      "TELECOMANDO",
+      "COMANDO REMOTO",
+      "MODULO WI-FI",
+      "MODULO WIFI",
+      "WI-FI",
+      "WIFI",
+      "MANUALE",
+      "CONFIG"
+    ],
+    "combination_separator": "+",
+    "case_insensitive_label_dedup": true
   },
   "category_keys": [
     "linea-residenziale-r32",
@@ -71,20 +100,22 @@
   ],
   "known_non_model_labels": {
     "occurrences": 403,
-    "ambiguous_distinct": [
+    "previously_ambiguous_but_now_classified_as_generic": [
       "CONFIG",
       "INSTALLATION",
-      "MODULO WIFI (WIFI-LION)",
       "USER"
-    ]
+    ],
+    "manual_wifi_variant": "MODULO WIFI (WIFI-LION)"
   },
   "normalization_notes": [
+    "Le 1217 righe documento rappresentano collegamenti; i file PDF fisici unici sono 757.",
     "Le combinazioni con '+' non devono generare product_models: vanno normalizzate in product_combinations/product_combination_items.",
     "Le etichette manuale/installazione/uso/telecomando/Wi-Fi non devono generare modelli.",
-    "Il vecchio criterio shouldCreateModel era troppo permissivo: accettava anche etichette numeriche fuori dai gruppi tecnici.",
-    "Esistono varianti case-sensitive IVI/IVi che devono essere trattate come duplicati logici durante la revisione.",
+    "La regola corrente genera 276 occorrenze modello, corrispondenti a 209 coppie prodotto+modello uniche e 198 etichette modello distinte case-insensitive.",
+    "Esistono varianti case-sensitive IVI/IVi che vanno considerate equivalenti nella revisione dei label, senza fondere automaticamente prodotti diversi.",
     "Le coppie modello sistema e unità interna, ad esempio -25-R32 e -25UI-R32, restano modelli distinti finché non viene definita una relazione strutturale specifica.",
-    "I documenti devono essere deduplicati per URL/file_path e collegati a più prodotti/modelli tramite document_links."
+    "I documenti devono essere deduplicati per URL/file_path e collegati a più prodotti/modelli tramite document_links.",
+    "I nomi prodotto duplicati sono 28 e devono restare scoped per sottocategoria, perché lo stesso nome può rappresentare oggetti distinti in famiglie diverse."
   ],
   "top_reused_documents": [
     {"filename":"UM_VRF_MI2-UI.pdf","count":18},
