@@ -1,0 +1,111 @@
+{
+  "generated_at": "2026-08-26",
+  "mode": "dry-run-read-only",
+  "source": "jackshepard3183-sketch/idemaclima:src/data/datasheets.ts",
+  "source_size_bytes": 418681,
+  "summary": {
+    "root_categories": 5,
+    "subcategories": 18,
+    "products": 270,
+    "products_unavailable": 102,
+    "document_entries": 1217,
+    "unique_document_urls": 757,
+    "duplicate_url_occurrences": 460,
+    "urls_used_once": 481,
+    "urls_reused": 276,
+    "entries_pointing_to_reused_urls": 736,
+    "lovable_asset_urls": 1217,
+    "external_absolute_document_urls": 0,
+    "combination_occurrences": 243,
+    "combination_labels_distinct": 69,
+    "strict_real_model_candidates_distinct": 207,
+    "current_importer_model_candidate_occurrences_before_refinement": 374,
+    "current_importer_model_candidates_distinct_before_refinement": 206,
+    "current_importer_unique_product_model_pairs_before_refinement": 208,
+    "duplicate_product_names_distinct": 28,
+    "products_without_groups_or_files": 0,
+    "empty_subcategories": 1
+  },
+  "category_keys": [
+    "linea-residenziale-r32",
+    "linea-commerciale-r32",
+    "linea-vrf",
+    "linea-idronica",
+    "altri-prodotti"
+  ],
+  "group_label_counts": {
+    "MANUALI": 342,
+    "SCHEDE TECNICHE": 307,
+    "TABELLE RESE": 217,
+    "DETRAZIONI FISCALI": 96,
+    "CONTO TERMICO": 95,
+    "Documenti": 92,
+    "SCHEDA TECNICA": 44,
+    "MANUALE": 14,
+    "CONTRIBUTO GSE": 6,
+    "TABELLA RESE": 2,
+    "SISTEMI TWIN": 2
+  },
+  "subcategories": [
+    {"category":"linea-residenziale-r32","name":"Mono Split","products":13,"unavailable":7,"document_entries":140},
+    {"category":"linea-residenziale-r32","name":"Multi Split","products":35,"unavailable":16,"document_entries":235},
+    {"category":"linea-residenziale-r32","name":"Multi Pro","products":3,"unavailable":0,"document_entries":8},
+    {"category":"linea-residenziale-r32","name":"Accessori","products":31,"unavailable":10,"document_entries":34},
+    {"category":"linea-commerciale-r32","name":"Unità esterne","products":19,"unavailable":6,"document_entries":149},
+    {"category":"linea-commerciale-r32","name":"Unità interne","products":17,"unavailable":7,"document_entries":221},
+    {"category":"linea-commerciale-r32","name":"Accessori","products":13,"unavailable":2,"document_entries":16},
+    {"category":"linea-vrf","name":"Atomix R32","products":2,"unavailable":0,"document_entries":11},
+    {"category":"linea-vrf","name":"Mini VRF Monoventola","products":6,"unavailable":3,"document_entries":34},
+    {"category":"linea-vrf","name":"VRF Side Discharge","products":6,"unavailable":0,"document_entries":40},
+    {"category":"linea-vrf","name":"VRF Top Discharge","products":8,"unavailable":5,"document_entries":43},
+    {"category":"linea-vrf","name":"Unità interne","products":29,"unavailable":4,"document_entries":71},
+    {"category":"linea-vrf","name":"Accessori","products":38,"unavailable":18,"document_entries":39},
+    {"category":"linea-idronica","name":"Terminali idronici","products":0,"unavailable":0,"document_entries":0},
+    {"category":"linea-idronica","name":"PdC Monoblocco","products":22,"unavailable":10,"document_entries":96},
+    {"category":"linea-idronica","name":"PdC All-in-One","products":3,"unavailable":0,"document_entries":10},
+    {"category":"linea-idronica","name":"Scaldacqua","products":20,"unavailable":11,"document_entries":63},
+    {"category":"altri-prodotti","name":"Recuperatori di calore","products":5,"unavailable":3,"document_entries":7}
+  ],
+  "empty_subcategories": [
+    "linea-idronica/linea-idronica-terminali-idronici"
+  ],
+  "known_non_model_labels": {
+    "occurrences": 403,
+    "ambiguous_distinct": [
+      "CONFIG",
+      "INSTALLATION",
+      "MODULO WIFI (WIFI-LION)",
+      "USER"
+    ]
+  },
+  "normalization_notes": [
+    "Le combinazioni con '+' non devono generare product_models: vanno normalizzate in product_combinations/product_combination_items.",
+    "Le etichette manuale/installazione/uso/telecomando/Wi-Fi non devono generare modelli.",
+    "Il vecchio criterio shouldCreateModel era troppo permissivo: accettava anche etichette numeriche fuori dai gruppi tecnici.",
+    "Esistono varianti case-sensitive IVI/IVi che devono essere trattate come duplicati logici durante la revisione.",
+    "Le coppie modello sistema e unità interna, ad esempio -25-R32 e -25UI-R32, restano modelli distinti finché non viene definita una relazione strutturale specifica.",
+    "I documenti devono essere deduplicati per URL/file_path e collegati a più prodotti/modelli tramite document_links."
+  ],
+  "top_reused_documents": [
+    {"filename":"UM_VRF_MI2-UI.pdf","count":18},
+    {"filename":"SMART_KIT_WIFI_2022.pdf","count":17},
+    {"filename":"WF-60A1-C_2022.pdf","count":17},
+    {"filename":"UM_RG10AE2S.pdf","count":13},
+    {"filename":"UM_RG57A2.pdf","count":10},
+    {"filename":"UM_KJR120CTFE-1.pdf","count":9},
+    {"filename":"IM_VRF_MI2_UI_CANALIZZABILI_ALTA_PREVALENZA_MI2-T1DN1_DC_FAN_MOTOR.pdf","count":8},
+    {"filename":"DF_PDC_ACS.pdf","count":8},
+    {"filename":"UM_RG57A4.pdf","count":6},
+    {"filename":"UM_KJR120C1BTFEAU.pdf","count":6},
+    {"filename":"IM-UM_WDC3-86S.pdf","count":6},
+    {"filename":"UM_RCH-RTY2-0.pdf","count":5},
+    {"filename":"UM_AEH-W0G2.pdf","count":5},
+    {"filename":"VRF_100IV6-UE_IV6-I_2_TUBI.pdf","count":5},
+    {"filename":"IM_UE_IV6-I_2_TUBI_ENG-ITA.pdf","count":5},
+    {"filename":"UM_UE_IV6-I_2_TUBI_ENG-ITA.pdf","count":5},
+    {"filename":"UM_RG57A6.pdf","count":4},
+    {"filename":"IM_MULTI_UE_R32_Z_2024.pdf","count":4},
+    {"filename":"Scheda_IQZZI-35-R32.pdf","count":4},
+    {"filename":"IM_MULTI_UE_R32.pdf","count":4}
+  ]
+}
