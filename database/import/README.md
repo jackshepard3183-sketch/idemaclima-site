@@ -10,6 +10,7 @@ Questa cartella contiene l'importatore **una tantum** del dataset `src/data/data
 - Categorie, prodotti, modelli e documenti vengono creati in modo idempotente.
 - Le etichette dei manuali (`INSTALLAZIONE`, `USO`, telecomandi, Wi-Fi) non vengono erroneamente trasformate in modelli prodotto.
 - URL e asset Lovable/originali vengono inizialmente conservati come `file_path`; la copia fisica dei PDF nel nuovo archivio sarà una fase successiva e separata.
+- Le integrazioni non presenti come record autonomi nel dataset Lovable sono ammesse solo se documentate da fonti pubbliche originali IDEMA e registrate in `verified_component_models.json`.
 
 ## 1. Dry-run archivio tecnico
 
@@ -19,9 +20,27 @@ php database/import/import_datasheets.php --source=/path/to/datasheets.ts
 
 Il report contiene statistiche, warning e la coda dei casi non standard.
 
-## 2. Normalizzazione combinazioni
+## 2. Import modelli componenti verificati
 
-Prima dell'import reale eseguire:
+Il registry `verified_component_models.json` contiene i modelli unità interna confermati tramite fonti IDEMA e la loro serie di appartenenza.
+
+Dry-run:
+
+```bash
+php database/import/import_verified_component_models.php
+```
+
+Import reale, solo dopo l'import base dell'archivio tecnico:
+
+```bash
+php database/import/import_verified_component_models.php --execute
+```
+
+Il registry può anche dichiarare serie mancanti nel dataset Lovable ma confermate da documentazione IDEMA. Al momento sono `ITX-R32` e `IFFN-R32`.
+
+## 3. Normalizzazione combinazioni
+
+Generare il manifest base:
 
 ```bash
 php database/import/normalize_combinations.php \
@@ -56,7 +75,28 @@ Stati combinazione:
 
 **Regola di sicurezza:** un componente `pending` non genera automaticamente un nuovo prodotto o modello.
 
-## 3. Schema database combinazioni
+## 4. Applicazione registry verificato al manifest
+
+Dopo aver creato i modelli verificati, applicare il registry al manifest base:
+
+```bash
+php database/import/apply_verified_models_to_combinations.php \
+  --manifest=/tmp/idemaclima-combinations.json \
+  --output=/tmp/idemaclima-combinations-verified.json
+```
+
+Questo passaggio trasforma in `resolved_model` solo i `raw_code` presenti esplicitamente nel registry verificato. La fonte di verifica resta annotata nel manifest.
+
+Il report del 26/08/2026 indica come esito atteso:
+
+- 128 combinazioni contestualizzate;
+- 256 componenti;
+- 128 componenti risolti come prodotto;
+- 128 componenti risolti come modello;
+- 0 pending;
+- 0 review.
+
+## 5. Schema database combinazioni
 
 Le tabelle base `product_combinations` e `product_combination_items` sono definite in `002_documents_relations.sql`.
 La migration `006_combination_normalization.sql` aggiunge:
@@ -67,36 +107,34 @@ La migration `006_combination_normalization.sql` aggiunge:
 - `raw_code` per i componenti non risolti;
 - relazione dedicata tra combinazioni e documenti PDF.
 
-## 4. Import archivio tecnico
+## 6. Sequenza import reale
 
-Solo dopo aver applicato le migration, configurato `.env` e verificato i report:
+Solo dopo aver applicato le migration, configurato `.env` e verificato tutti i report:
 
 ```bash
+# 1. Archivio tecnico base
 php database/import/import_datasheets.php --source=/path/to/datasheets.ts --execute
-```
 
-Report personalizzato:
+# 2. Serie/modelli verificati mancanti dal parsing base
+php database/import/import_verified_component_models.php --execute
 
-```bash
-php database/import/import_datasheets.php \
+# 3. Generazione manifest combinazioni
+php database/import/normalize_combinations.php \
   --source=/path/to/datasheets.ts \
-  --report=/tmp/idemaclima-import-report.json
-```
+  --output=/tmp/idemaclima-combinations.json
 
-## 5. Import combinazioni
-
-Dopo l'import dell'archivio tecnico, validare prima il manifest senza scritture:
-
-```bash
-php database/import/import_combinations.php \
-  --manifest=/tmp/idemaclima-combinations.json
-```
-
-Solo dopo il controllo del report:
-
-```bash
-php database/import/import_combinations.php \
+# 4. Applicazione dei modelli verificati
+php database/import/apply_verified_models_to_combinations.php \
   --manifest=/tmp/idemaclima-combinations.json \
+  --output=/tmp/idemaclima-combinations-verified.json
+
+# 5. Verifica import combinazioni, senza scrivere
+php database/import/import_combinations.php \
+  --manifest=/tmp/idemaclima-combinations-verified.json
+
+# 6. Import combinazioni
+php database/import/import_combinations.php \
+  --manifest=/tmp/idemaclima-combinations-verified.json \
   --execute
 ```
 
