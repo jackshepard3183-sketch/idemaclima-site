@@ -56,16 +56,32 @@ try {
 $stats = [
     'root_categories' => 0,
     'subcategories' => 0,
+    'empty_subcategories' => 0,
     'products' => 0,
-    'models' => 0,
-    'documents' => 0,
+    'products_unavailable' => 0,
+    'products_without_files' => 0,
+    'model_candidate_occurrences' => 0,
+    'model_pairs_unique' => 0,
+    'model_labels_distinct' => 0,
+    'document_entries' => 0,
+    'unique_documents' => 0,
+    'duplicate_document_occurrences' => 0,
+    'urls_used_once' => 0,
+    'urls_reused' => 0,
+    'entries_pointing_to_reused_urls' => 0,
     'document_links' => 0,
-    'combinations_detected' => 0,
+    'combination_occurrences' => 0,
+    'combination_labels_distinct' => 0,
     'ambiguous_labels' => 0,
 ];
 
 $warnings = [];
 $normalization = [];
+$documentUrlCounts = [];
+$modelPairs = [];
+$modelLabels = [];
+$combinationLabels = [];
+$groupLabelCounts = [];
 
 $pdo = null;
 if ($execute) {
@@ -87,9 +103,7 @@ try {
         $stats['root_categories']++;
 
         foreach ($subcategories as $subcategoryIndex => $subcategory) {
-            if (!is_array($subcategory)) {
-                continue;
-            }
+            if (!is_array($subcategory)) continue;
 
             $subcategoryName = trim((string) ($subcategory['subcategoryName'] ?? ''));
             $subcategorySlug = trim((string) ($subcategory['subcategorySlug'] ?? ''));
@@ -108,14 +122,19 @@ try {
             $stats['subcategories']++;
 
             $products = $subcategory['products'] ?? [];
-            if (!is_array($products)) {
-                continue;
+            if (!is_array($products)) $products = [];
+            if ($products === []) {
+                $stats['empty_subcategories']++;
+                $normalization[] = [
+                    'type' => 'empty_subcategory',
+                    'root_category' => $rootName,
+                    'subcategory' => $subcategoryName,
+                    'subcategory_slug' => $subcategorySlug,
+                ];
             }
 
             foreach ($products as $productIndex => $product) {
-                if (!is_array($product)) {
-                    continue;
-                }
+                if (!is_array($product)) continue;
 
                 $productName = trim((string) ($product['name'] ?? ''));
                 if ($productName === '') {
@@ -150,6 +169,7 @@ try {
                     )
                     : null;
                 $stats['products']++;
+                if ($unavailable) $stats['products_unavailable']++;
 
                 if ($role === 'complete_system' && preg_match('/(UNIT[ÀA]\s+(INTERNE|ESTERNE)|ACCESSORI|SERBATOI?)/iu', $subcategoryName)) {
                     $normalization[] = [
@@ -161,24 +181,17 @@ try {
                 }
 
                 $groups = $product['groups'] ?? [];
-                if (!is_array($groups)) {
-                    continue;
-                }
+                if (!is_array($groups)) $groups = [];
+                $productFileCount = 0;
 
                 foreach ($groups as $group) {
-                    if (!is_array($group)) {
-                        continue;
-                    }
+                    if (!is_array($group)) continue;
                     $groupLabel = trim((string) ($group['label'] ?? 'ALTRO'));
                     $files = $group['files'] ?? [];
-                    if (!is_array($files)) {
-                        continue;
-                    }
+                    if (!is_array($files)) continue;
 
                     foreach ($files as $fileIndex => $file) {
-                        if (!is_array($file)) {
-                            continue;
-                        }
+                        if (!is_array($file)) continue;
 
                         $label = trim((string) ($file['model'] ?? ''));
                         $url = trim((string) ($file['url'] ?? ''));
@@ -192,6 +205,12 @@ try {
                             continue;
                         }
 
+                        $productFileCount++;
+                        $stats['document_entries']++;
+                        $stats['document_links']++;
+                        $documentUrlCounts[$url] = ($documentUrlCounts[$url] ?? 0) + 1;
+                        $groupLabelCounts[$groupLabel] = ($groupLabelCounts[$groupLabel] ?? 0) + 1;
+
                         $documentType = classifyDocumentType($groupLabel, $label);
                         $filename = filenameFromUrl($url);
                         $title = buildDocumentTitle($documentType, $productName, $label);
@@ -199,7 +218,8 @@ try {
                         $targetModelId = null;
                         $isCombination = str_contains($label, '+');
                         if ($isCombination) {
-                            $stats['combinations_detected']++;
+                            $stats['combination_occurrences']++;
+                            $combinationLabels[$label] = true;
                             $normalization[] = [
                                 'type' => 'combination',
                                 'root_category' => $rootName,
@@ -210,8 +230,11 @@ try {
                                 'document_url' => $url,
                             ];
                         } elseif (shouldCreateModel($label, $productName, $groupLabel)) {
+                            $stats['model_candidate_occurrences']++;
+                            $pairKey = $productSlug . '|' . strtoupper(normalizeWhitespace($label));
+                            $modelPairs[$pairKey] = true;
+                            $modelLabels[strtoupper(normalizeWhitespace($label))] = $label;
                             $targetModelId = $execute ? ensureModel($pdo, $productId, $label, $fileIndex) : null;
-                            $stats['models']++;
                         } elseif ($label !== '' && !isGenericDocumentLabel($label) && strcasecmp($label, $productName) !== 0) {
                             $stats['ambiguous_labels']++;
                             $normalization[] = [
@@ -227,33 +250,59 @@ try {
 
                         if ($execute) {
                             $documentTypeId = ensureDocumentType($pdo, $documentType);
-                            $documentId = ensureDocument(
-                                $pdo,
-                                $documentTypeId,
-                                $title,
-                                $filename,
-                                $url,
-                                $fileIndex
-                            );
+                            $documentId = ensureDocument($pdo, $documentTypeId, $title, $filename, $url, $fileIndex);
                             ensureDocumentLink($pdo, $documentId, null, $productId, $targetModelId);
                         }
-
-                        $stats['documents']++;
-                        $stats['document_links']++;
                     }
+                }
+
+                if ($productFileCount === 0) {
+                    $stats['products_without_files']++;
+                    $normalization[] = [
+                        'type' => 'product_without_files',
+                        'root_category' => $rootName,
+                        'subcategory' => $subcategoryName,
+                        'product' => $productName,
+                    ];
                 }
             }
         }
     }
 
+    $stats['model_pairs_unique'] = count($modelPairs);
+    $stats['model_labels_distinct'] = count($modelLabels);
+    $stats['combination_labels_distinct'] = count($combinationLabels);
+    $stats['unique_documents'] = count($documentUrlCounts);
+
+    foreach ($documentUrlCounts as $count) {
+        if ($count === 1) {
+            $stats['urls_used_once']++;
+        } else {
+            $stats['urls_reused']++;
+            $stats['entries_pointing_to_reused_urls'] += $count;
+        }
+    }
+    $stats['duplicate_document_occurrences'] = $stats['document_entries'] - $stats['unique_documents'];
+
     if ($execute && $pdo instanceof PDO) {
         $pdo->commit();
     }
 } catch (Throwable $e) {
-    if ($execute && $pdo instanceof PDO && $pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
+    if ($execute && $pdo instanceof PDO && $pdo->inTransaction()) $pdo->rollBack();
     fail('Import interrotto: ' . $e->getMessage());
+}
+
+arsort($groupLabelCounts);
+arsort($documentUrlCounts);
+$topReusedDocuments = [];
+foreach ($documentUrlCounts as $url => $count) {
+    if ($count < 2) continue;
+    $topReusedDocuments[] = [
+        'url' => $url,
+        'filename' => filenameFromUrl($url),
+        'count' => $count,
+    ];
+    if (count($topReusedDocuments) >= 20) break;
 }
 
 $report = [
@@ -261,6 +310,8 @@ $report = [
     'mode' => $execute ? 'execute' : 'dry-run',
     'source' => $sourcePath,
     'stats' => $stats,
+    'group_label_counts' => $groupLabelCounts,
+    'top_reused_documents' => $topReusedDocuments,
     'warnings' => $warnings,
     'normalization_queue' => $normalization,
 ];
@@ -278,9 +329,9 @@ file_put_contents(
 fwrite(STDOUT, ($execute ? 'IMPORT COMPLETATO' : 'DRY-RUN COMPLETATO') . "\n");
 fwrite(STDOUT, "Categorie root: {$stats['root_categories']}\n");
 fwrite(STDOUT, "Sottocategorie: {$stats['subcategories']}\n");
-fwrite(STDOUT, "Prodotti: {$stats['products']}\n");
-fwrite(STDOUT, "Modelli rilevati: {$stats['models']}\n");
-fwrite(STDOUT, "Documenti: {$stats['documents']}\n");
-fwrite(STDOUT, "Combinazioni da normalizzare: {$stats['combinations_detected']}\n");
+fwrite(STDOUT, "Prodotti: {$stats['products']} ({$stats['products_unavailable']} non disponibili)\n");
+fwrite(STDOUT, "Modelli candidati: {$stats['model_candidate_occurrences']} occorrenze / {$stats['model_pairs_unique']} coppie prodotto+modello uniche\n");
+fwrite(STDOUT, "Documenti: {$stats['document_entries']} collegamenti / {$stats['unique_documents']} PDF unici / {$stats['duplicate_document_occurrences']} riutilizzi\n");
+fwrite(STDOUT, "Combinazioni da normalizzare: {$stats['combination_occurrences']} occorrenze / {$stats['combination_labels_distinct']} etichette distinte\n");
 fwrite(STDOUT, "Etichette ambigue: {$stats['ambiguous_labels']}\n");
 fwrite(STDOUT, "Report: {$reportPath}\n");
