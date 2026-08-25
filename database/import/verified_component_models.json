@@ -1,0 +1,88 @@
+{
+  "generated_at": "2026-08-26",
+  "policy": "Only explicit IDEMA source evidence; no fuzzy matching.",
+  "source_groups": {
+    "commercial_internal_page": [
+      "https://www.idemaclima.it/schede-tecniche/linea-commerciale-r32/linea-commerciale-r32-unita-interne/",
+      "https://www.idemaclima.it/schede-tecniche/linea-commerciale-r32/linea-commerciale-r32-unita-esterne/"
+    ],
+    "dimensional_2026": [
+      "https://www.idemaclima.it/wp-content/uploads/D-DIMENSIONALI-RAC-LCAC-2026.pdf"
+    ],
+    "price_list_2026": [
+      "https://www.idemaclima.it/wp-content/uploads/LISTINO_PREZZI_IDEMA_2026.pdf"
+    ]
+  },
+  "missing_series": [
+    {
+      "name": "ITX-R32",
+      "subcategory_slug": "linea-commerciale-r32-unita-interne",
+      "product_role": "indoor_unit",
+      "refrigerant": "R32",
+      "status": "active",
+      "evidence_groups": ["dimensional_2026", "price_list_2026"]
+    },
+    {
+      "name": "IFFN-R32",
+      "subcategory_slug": "linea-commerciale-r32-unita-interne",
+      "product_role": "indoor_unit",
+      "refrigerant": "R32",
+      "status": "active",
+      "evidence_groups": ["price_list_2026"]
+    }
+  ],
+  "models": [
+    {"code":"ICZ-70-R32","target_product_name":"ICZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"ICZ-88-R32","target_product_name":"ICZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"ICZ-105-R32","target_product_name":"ICZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"ICZ-120-R32","target_product_name":"ICZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"ICZ-140-R32","target_product_name":"ICZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"ICZ-160-R32","target_product_name":"ICZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+
+    {"code":"IUZ-70-R32","target_product_name":"IUZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"IUZ-88-R32","target_product_name":"IUZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"IUZ-105-R32","target_product_name":"IUZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"IUZ-140-R32","target_product_name":"IUZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"IUZ-160-R32","target_product_name":"IUZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+
+    {"code":"ITZ-70-R32","target_product_name":"ITZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"ITZ-88-R32","target_product_name":"ITZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"ITZ-105-R32","target_product_name":"ITZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"ITZ-120-R32","target_product_name":"ITZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"ITZ-140-R32","target_product_name":"ITZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"ITZ-160-R32","target_product_name":"ITZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+
+    {"code":"ITX-70-R32","target_product_name":"ITX-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["dimensional_2026","price_list_2026"]},
+    {"code":"ITX-88-R32","target_product_name":"ITX-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["dimensional_2026","price_list_2026"]},
+    {"code":"ITX-105-R32","target_product_name":"ITX-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["dimensional_2026","price_list_2026"]},
+    {"code":"ITX-120-R32","target_product_name":"ITX-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["dimensional_2026","price_list_2026"]},
+    {"code":"ITX-140-R32","target_product_name":"ITX-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["dimensional_2026","price_list_2026"]},
+    {"code":"ITX-160-R32","target_product_name":"ITX-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["dimensional_2026","price_list_2026"]},
+    {"code":"ITXI-35-R32","target_product_name":"ITXI-R32","subcategory_slug":"linea-residenziale-r32-multi-split","evidence_groups":["commercial_internal_page"]},
+    {"code":"ITXI-53-R32","target_product_name":"ITXI-R32","subcategory_slug":"linea-residenziale-r32-multi-split","evidence_groups":["commercial_internal_page"]},
+    {"code":"IFGZ-140-R32","target_product_name":"IFGZ-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page","dimensional_2026"]},
+    {"code":"IFFN-140-R32","target_product_name":"IFFN-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["price_list_2026"]},
+
+    {"code":"ICKE-70-R32","target_product_name":"ICKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"ICKE-88-R32","target_product_name":"ICKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"ICKE-105-R32","target_product_name":"ICKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"ICKE-120-R32","target_product_name":"ICKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"ICKE-140-R32","target_product_name":"ICKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"ICKE-160-R32","target_product_name":"ICKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+
+    {"code":"IUKE-70-R32","target_product_name":"IUKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"IUKE-88-R32","target_product_name":"IUKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"IUKE-105-R32","target_product_name":"IUKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"IUKE-120-R32","target_product_name":"IUKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"IUKE-140-R32","target_product_name":"IUKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"IUKE-160-R32","target_product_name":"IUKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+
+    {"code":"ITKE-70-R32","target_product_name":"ITKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"ITKE-88-R32","target_product_name":"ITKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"ITKE-105-R32","target_product_name":"ITKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"ITKE-120-R32","target_product_name":"ITKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"ITKE-140-R32","target_product_name":"ITKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"ITKE-160-R32","target_product_name":"ITKE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]},
+    {"code":"IFGE-140-R32","target_product_name":"IFGE-R32","subcategory_slug":"linea-commerciale-r32-unita-interne","evidence_groups":["commercial_internal_page"]}
+  ]
+}
