@@ -6,6 +6,7 @@ namespace App\Controllers\Public;
 
 use App\Auth\CatAuth;
 use App\Core\Database;
+use App\Core\RateLimiter;
 use App\Core\Security;
 use PDO;
 
@@ -47,6 +48,7 @@ final class CampusController
 
     public static function register(string $slug): void
     {
+        if (!RateLimiter::allow('campus-register', 8, 900)) RateLimiter::reject(900);
         if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}
         $pdo=Database::connection();
         $stmt=$pdo->prepare('SELECT * FROM events WHERE slug=? AND published=1 AND cancelled=0 LIMIT 1');
