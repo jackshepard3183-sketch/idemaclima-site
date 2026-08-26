@@ -14,6 +14,11 @@ final class Security
         header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()');
         header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://www.googletagmanager.com; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://*.google-analytics.com; font-src 'self' data:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com");
 
+        $env = strtolower((string)($_ENV['APP_ENV'] ?? getenv('APP_ENV') ?: 'production'));
+        if ($env === 'staging') {
+            header('X-Robots-Tag: noindex, nofollow, noarchive', true);
+        }
+
         if (self::isHttps()) {
             header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
         }
@@ -23,11 +28,12 @@ final class Security
     {
         $cfg = require dirname(__DIR__, 2) . '/config/app.php';
         session_name($cfg['session_cookie']);
+        $cookiePath = Url::basePath();
         session_set_cookie_params([
             'httponly' => true,
             'secure' => self::isHttps(),
             'samesite' => 'Lax',
-            'path' => '/',
+            'path' => $cookiePath === '' ? '/' : $cookiePath . '/',
         ]);
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
