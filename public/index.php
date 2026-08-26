@@ -11,16 +11,18 @@ use App\Controllers\Admin\DocumentsController;
 use App\Controllers\Admin\ProductsController;
 use App\Controllers\Admin\WarrantyController as AdminWarrantyController;
 use App\Controllers\Admin\CampusController as AdminCampusController;
+use App\Controllers\Admin\ContentController as AdminContentController;
 use App\Controllers\Public\TechnicalSheetsController;
 use App\Controllers\Public\WarrantyController;
 use App\Controllers\Public\CampusController;
 use App\Controllers\Public\CatAuthController;
+use App\Controllers\Public\ContentController;
 use App\Core\Router;
 
 $router = new Router();
 $router->get('/', static function (): void {
     header('Content-Type: text/html; charset=UTF-8');
-    echo '<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IDEMA Clima</title></head><body><main><h1>IDEMA Clima</h1><p>Nuovo progetto autonomo - ambiente di sviluppo.</p><p><a href="/schede-tecniche">Schede tecniche</a> · <a href="/garanzia">Garanzia</a> · <a href="/campus">Campus</a></p></main></body></html>';
+    echo '<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IDEMA Clima</title></head><body><main><h1>IDEMA Clima</h1><p>Nuovo progetto autonomo - ambiente di sviluppo.</p><p><a href="/schede-tecniche">Schede tecniche</a> · <a href="/cataloghi">Cataloghi</a> · <a href="/garanzia">Garanzia</a> · <a href="/campus">Campus</a> · <a href="/galleria">Galleria</a> · <a href="/referenze">Referenze</a></p></main></body></html>';
 });
 $router->get('/health', static function (): void { header('Content-Type: application/json; charset=UTF-8'); echo json_encode(['ok'=>true],JSON_THROW_ON_ERROR); });
 
@@ -29,10 +31,14 @@ $router->get('/schede-tecniche/ricerca', [TechnicalSheetsController::class, 'sea
 $router->get('/schede-tecniche/famiglia/{slug}', [TechnicalSheetsController::class, 'family']);
 $router->get('/schede-tecniche/prodotto/{slug}', [TechnicalSheetsController::class, 'product']);
 $router->get('/schede-tecniche/{slug}', [TechnicalSheetsController::class, 'category']);
+$router->get('/cataloghi', [ContentController::class, 'catalogs']);
+$router->get('/galleria', [ContentController::class, 'gallery']);
+$router->get('/galleria/{slug}', [ContentController::class, 'galleryAlbum']);
+$router->get('/referenze', [ContentController::class, 'references']);
+$router->get('/referenze/{slug}', [ContentController::class, 'reference']);
 $router->get('/garanzia', [WarrantyController::class, 'form']);
 $router->post('/garanzia', [WarrantyController::class, 'register']);
 
-// Campus pubblico e area CAT
 $router->get('/campus', [CampusController::class, 'index']);
 $router->get('/campus/cat/login', [CatAuthController::class, 'loginForm']);
 $router->post('/campus/cat/login', [CatAuthController::class, 'login']);
@@ -43,7 +49,6 @@ $router->post('/campus/cat/{slug}/iscrizione', [CampusController::class, 'regist
 $router->get('/campus/{slug}', [CampusController::class, 'event']);
 $router->post('/campus/{slug}/iscrizione', [CampusController::class, 'register']);
 
-// Area amministrativa
 $router->get('/admin/login', [AuthController::class, 'loginForm']);
 $router->post('/admin/login', [AuthController::class, 'login']);
 $router->post('/admin/logout', [AuthController::class, 'logout']);
@@ -73,5 +78,16 @@ $router->post('/admin/campus/registrations/update', [AdminCampusController::clas
 $router->get('/admin/cat/users', [AdminCampusController::class, 'catUsers']);
 $router->get('/admin/cat/users/form', [AdminCampusController::class, 'catUserForm']);
 $router->post('/admin/cat/users/save', [AdminCampusController::class, 'saveCatUser']);
+$router->get('/admin/content/catalogs', [AdminContentController::class, 'catalogs']);
+$router->get('/admin/content/catalogs/form', [AdminContentController::class, 'catalogForm']);
+$router->post('/admin/content/catalogs/save', [AdminContentController::class, 'saveCatalog']);
+$router->get('/admin/content/gallery', [AdminContentController::class, 'albums']);
+$router->get('/admin/content/gallery/form', [AdminContentController::class, 'albumForm']);
+$router->post('/admin/content/gallery/save', [AdminContentController::class, 'saveAlbum']);
+$router->post('/admin/content/gallery/image', [AdminContentController::class, 'addGalleryImage']);
+$router->get('/admin/content/references', [AdminContentController::class, 'references']);
+$router->get('/admin/content/references/form', [AdminContentController::class, 'referenceForm']);
+$router->post('/admin/content/references/save', [AdminContentController::class, 'saveReference']);
+$router->post('/admin/content/references/image', [AdminContentController::class, 'addReferenceImage']);
 
 $router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $_SERVER['REQUEST_URI'] ?? '/');
