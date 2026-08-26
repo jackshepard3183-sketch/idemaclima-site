@@ -91,6 +91,7 @@ $router->get('/admin/warranties/file/{kind}/{id}', [AdminWarrantyController::cla
 $router->get('/admin/assistance', [AdminAssistanceController::class, 'index']);
 $router->get('/admin/assistance/form', [AdminAssistanceController::class, 'form']);
 $router->post('/admin/assistance/save', [AdminAssistanceController::class, 'save']);
+$router->post('/admin/assistance/archive', [AdminAssistanceController::class, 'archive']);
 $router->get('/admin/editorial', [AdminEditorialController::class, 'index']);
 $router->get('/admin/editorial/form', [AdminEditorialController::class, 'form']);
 $router->post('/admin/editorial/save', [AdminEditorialController::class, 'savePage']);
