@@ -24,6 +24,7 @@ $router->get('/health', static function (): void {
 
 // Area pubblica schede tecniche
 $router->get('/schede-tecniche', [TechnicalSheetsController::class, 'index']);
+$router->get('/schede-tecniche/ricerca', [TechnicalSheetsController::class, 'search']);
 $router->get('/schede-tecniche/famiglia/{slug}', [TechnicalSheetsController::class, 'family']);
 $router->get('/schede-tecniche/prodotto/{slug}', [TechnicalSheetsController::class, 'product']);
 $router->get('/schede-tecniche/{slug}', [TechnicalSheetsController::class, 'category']);
