@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use DateTimeImmutable;
 use PDO;
 
 final class WarrantyService
 {
     public static function applicableRule(PDO $pdo, int $modelId, ?string $invoiceDate = null): ?array
     {
+        $date = $invoiceDate !== null && self::isIsoDate($invoiceDate) ? $invoiceDate : null;
         $stmt = $pdo->prepare(
             'SELECT wr.*, pm.product_id
              FROM product_models pm
@@ -20,7 +22,7 @@ final class WarrantyService
              ORDER BY (wr.model_id = pm.id) DESC, wr.id DESC
              LIMIT 1'
         );
-        $stmt->execute([$modelId, $invoiceDate, $invoiceDate]);
+        $stmt->execute([$modelId, $date, $date]);
         $rule = $stmt->fetch(PDO::FETCH_ASSOC);
         return $rule ?: null;
     }
@@ -45,9 +47,19 @@ final class WarrantyService
     {
         $limit = isset($rule['registration_days_limit']) ? (int)$rule['registration_days_limit'] : 0;
         if ($limit <= 0) return true;
-        $invoice = \DateTimeImmutable::createFromFormat('Y-m-d', $invoiceDate);
+        if (!self::isIsoDate($invoiceDate)) return false;
+        $invoice = DateTimeImmutable::createFromFormat('!Y-m-d', $invoiceDate);
         if (!$invoice) return false;
         $deadline = $invoice->modify('+' . $limit . ' days')->setTime(23, 59, 59);
-        return new \DateTimeImmutable('now') <= $deadline;
+        return new DateTimeImmutable('now') <= $deadline;
+    }
+
+    public static function isIsoDate(string $value): bool
+    {
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        $errors = DateTimeImmutable::getLastErrors();
+        return $date !== false
+            && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))
+            && $date->format('Y-m-d') === $value;
     }
 }
