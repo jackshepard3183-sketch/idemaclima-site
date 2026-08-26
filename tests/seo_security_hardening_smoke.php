@@ -30,9 +30,9 @@ $checks = [
     [$system, "'noindex,follow'", '404 noindex'],
     [$security, 'TRUSTED_PROXIES', 'proxy affidabili'],
     [$security, 'requireAppKey', 'APP_KEY obbligatoria'],
-    [$security, 'adminNoStore', 'no-store admin'],
+    [$security, 'X-Robots-Tag: noindex, nofollow, noarchive', 'header noindex admin'],
     [$bootstrap, 'Security::requireAppKey()', 'bootstrap APP_KEY'],
-    [$adminLayout, 'X-Robots-Tag', 'admin noindex header tramite helper'],
+    [$adminLayout, 'Security::adminNoStore()', 'layout admin no-store'],
     [$analytics, 'Security::clientIp()', 'IP da proxy affidabile'],
 ];
 
