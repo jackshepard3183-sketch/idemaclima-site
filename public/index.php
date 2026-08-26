@@ -13,6 +13,7 @@ use App\Controllers\Admin\WarrantyController as AdminWarrantyController;
 use App\Controllers\Admin\CampusController as AdminCampusController;
 use App\Controllers\Admin\ContentController as AdminContentController;
 use App\Controllers\Admin\ContactsAnalyticsController as AdminContactsAnalyticsController;
+use App\Controllers\Admin\RedirectsController;
 use App\Controllers\Public\TechnicalSheetsController;
 use App\Controllers\Public\WarrantyController;
 use App\Controllers\Public\CampusController;
@@ -20,6 +21,7 @@ use App\Controllers\Public\CatAuthController;
 use App\Controllers\Public\ContentController;
 use App\Controllers\Public\ContactController;
 use App\Controllers\Public\AnalyticsController;
+use App\Controllers\Public\SystemController;
 use App\Core\Router;
 
 $router = new Router();
@@ -101,5 +103,9 @@ $router->post('/admin/contacts/update', [AdminContactsAnalyticsController::class
 $router->get('/admin/contacts/file/{id}', [AdminContactsAnalyticsController::class, 'attachment']);
 $router->get('/admin/analytics', [AdminContactsAnalyticsController::class, 'analytics']);
 $router->post('/admin/analytics/save', [AdminContactsAnalyticsController::class, 'saveAnalytics']);
+$router->get('/admin/redirects', [RedirectsController::class, 'index']);
+$router->get('/admin/redirects/form', [RedirectsController::class, 'form']);
+$router->post('/admin/redirects/save', [RedirectsController::class, 'save']);
 
+$router->setNotFoundHandler([SystemController::class, 'notFound']);
 $router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $_SERVER['REQUEST_URI'] ?? '/');
