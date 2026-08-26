@@ -11,7 +11,7 @@
 <?php foreach ($documentGroups as $groupName => $documents): ?>
 <section class="doc-group"><h2><?= e((string)$groupName) ?></h2><div class="doc-list">
 <?php foreach ($documents as $document): ?>
-<div class="doc"><div><strong><?= e($document['title']) ?></strong><?php if (!empty($document['document_year']) || !empty($document['revision'])): ?><br><small><?= !empty($document['document_year']) ? (int)$document['document_year'] : '' ?><?= !empty($document['revision']) ? ' · Rev. ' . e($document['revision']) : '' ?></small><?php endif; ?></div><a class="btn" href="<?= e($document['file_path']) ?>" target="_blank" rel="noopener">Apri PDF</a></div>
+<div class="doc"><div><strong><?= e($document['title']) ?></strong><?php if (!empty($document['document_year']) || !empty($document['revision'])): ?><br><small><?= !empty($document['document_year']) ? (int)$document['document_year'] : '' ?><?= !empty($document['revision']) ? ' · Rev. ' . e($document['revision']) : '' ?></small><?php endif; ?></div><a class="btn" href="/documento/<?= (int)$document['id'] ?>/download" target="_blank" rel="noopener">Apri PDF</a></div>
 <?php endforeach; ?>
 </div></section>
 <?php endforeach; ?>
