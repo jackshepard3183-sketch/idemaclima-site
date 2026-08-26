@@ -1,0 +1,1 @@
+<section class="hero"><div class="wrap"><h1><?= e($title) ?></h1><p><?= e($message) ?></p></div></section><section class="content"><div class="wrap"><a class="btn" href="/campus">Torna al Campus</a></div></section>
