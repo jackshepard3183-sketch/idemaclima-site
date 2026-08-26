@@ -1,10 +1,15 @@
 {
-  "version": 2,
+  "version": 3,
   "generated_at": "2026-08-26",
   "sources": [
     {"label":"Schede tecniche hub","url":"https://www.idemaclima.it/schede-tecniche/"},
     {"label":"Linea Residenziale R32","url":"https://www.idemaclima.it/schede-tecniche/linea-residenziale-r32/"},
     {"label":"Linea Commerciale R32","url":"https://www.idemaclima.it/schede-tecniche/linea-commerciale-r32/"},
+    {"label":"Linea Residenziale R410A","url":"https://www.idemaclima.it/schede-tecniche/linea-residenziale-r410a/"},
+    {"label":"Mono Split Residenziale R410A","url":"https://www.idemaclima.it/schede-tecniche/linea-residenziale-r410a/linea-residenziale-r410a-monosplit/"},
+    {"label":"Multi Split Residenziale R410A","url":"https://www.idemaclima.it/schede-tecniche/linea-residenziale-r410a/linea-residenziale-r410a-multisplit/"},
+    {"label":"Linea Commerciale R410A","url":"https://www.idemaclima.it/schede-tecniche/linea-commerciale-r410a/"},
+    {"label":"Unita interne Commerciale R410A","url":"https://www.idemaclima.it/schede-tecniche/linea-commerciale-r410a/linea-commerciale-r410a-unita-interne/"},
     {"label":"Linea VRF","url":"https://www.idemaclima.it/schede-tecniche/linea-vrf/"},
     {"label":"Linea Idronica","url":"https://www.idemaclima.it/schede-tecniche/linea-idronica/"},
     {"label":"Dichiarazioni CE","url":"https://www.idemaclima.it/schede-tecniche/dichiarazioni-conformita-ce/"},
