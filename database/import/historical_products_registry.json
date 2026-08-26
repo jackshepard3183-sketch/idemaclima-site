@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "source": "www.idemaclima.it historical technical sheets",
   "generated_at": "2026-08-26",
   "categories": [
@@ -79,6 +79,96 @@
       "products": [
         {"name":"AC-SA1","slug":"ac-sa1","role":"other","status":"unavailable","models":["AC-SA1"]},
         {"name":"AC-RE","slug":"ac-re","role":"other","status":"unavailable","models":["AC-RE"]}
+      ]
+    },
+    {
+      "parent_slug": null,
+      "name": "Linea Residenziale R410A",
+      "slug": "linea-residenziale-r410a",
+      "sort_order": 80,
+      "children": [
+        {
+          "name": "Mono Split R410A",
+          "slug": "linea-residenziale-r410a-monosplit",
+          "sort_order": 10,
+          "products": [
+            {"name":"HTW-IX39","slug":"legacy-htw-ix39","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["HTW-S026-IX39","HTW-S035-IX39"]},
+            {"name":"HTW-IX21C","slug":"legacy-htw-ix21c","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["HTW-S052-IX21C"]},
+            {"name":"HTW-IX21B","slug":"legacy-htw-ix21b","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":[],"description":"La pagina storica riporta la serie HTW-IX21B ma associa il codice HTW-S071-IX21C. Il modello resta non normalizzato finché l'incongruenza non viene verificata."},
+            {"name":"ISKE Mono Split","slug":"legacy-res-r410a-mono-iske","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["ISKE-25","ISKE-35","ISKE-50","ISKE-70"]},
+            {"name":"ISZ Mono Split","slug":"legacy-res-r410a-mono-isz","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["ISZ-25","ISZ-35","ISZ-50","ISZ-70"]},
+            {"name":"ISA Mono Split","slug":"legacy-res-r410a-mono-isa","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["ISA-25","ISA-35","ISA-50","ISA-70"]},
+            {"name":"IST Mono Split","slug":"legacy-res-r410a-mono-ist","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["IST-25","IST-35","IST-50","IST-70"]}
+          ]
+        },
+        {
+          "name": "Multi Split R410A",
+          "slug": "linea-residenziale-r410a-multisplit",
+          "sort_order": 20,
+          "products": [
+            {"name":"2MI-40~50E","slug":"legacy-2mi-40-50e","role":"outdoor_unit","refrigerant":"R410A","status":"discontinued","models":["2MI-40E","2MI-50E"]},
+            {"name":"3MI-62~78E","slug":"legacy-3mi-62-78e","role":"outdoor_unit","refrigerant":"R410A","status":"discontinued","models":["3MI-62E","3MI-78E"]},
+            {"name":"4MI-82~105E","slug":"legacy-4mi-82-105e","role":"outdoor_unit","refrigerant":"R410A","status":"discontinued","models":["4MI-82E","4MI-105E"]},
+            {"name":"5MI-125E","slug":"legacy-5mi-125e","role":"outdoor_unit","refrigerant":"R410A","status":"discontinued","models":["5MI-125E"]},
+            {"name":"ISKE unità interna","slug":"legacy-res-r410a-multi-iske","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["ISKE-20UI","ISKE-25UI","ISKE-35UI","ISKE-50UI","ISKE-70UI"]},
+            {"name":"ISZ unità interna","slug":"legacy-res-r410a-multi-isz","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["ISZ-25UI","ISZ-35UI","ISZ-50UI","ISZ-70UI"]},
+            {"name":"ISA unità interna","slug":"legacy-res-r410a-multi-isa","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["ISA-20UI","ISA-25UI","ISA-35UI","ISA-50UI","ISA-70UI"]},
+            {"name":"IST unità interna","slug":"legacy-res-r410a-multi-ist","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["IST-25UI","IST-35UI","IST-50UI","IST-70UI"]},
+            {"name":"ISW unità interna","slug":"legacy-res-r410a-multi-isw","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["ISW-25UI","ISW-35UI","ISW-50UI"]},
+            {"name":"IQKEI unità interna","slug":"legacy-iqkei-ui","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["IQKEI-25UI","IQKEI-35UI","IQKEI-50UI","IQKEI-52UI"],"also_category_slugs":["linea-commerciale-r410a-unita-interne"]},
+            {"name":"IFKEI unità interna","slug":"legacy-ifkei-ui","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["IFKEI-25UI","IFKEI-35UI","IFKEI-50UI"],"also_category_slugs":["linea-commerciale-r410a-unita-interne"]},
+            {"name":"ITKEI unità interna","slug":"legacy-itkei-ui","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["ITKEI-25UI","ITKEI-35UI","ITKEI-50UI"],"also_category_slugs":["linea-commerciale-r410a-unita-interne"]}
+          ]
+        },
+        {
+          "name": "Accessori R410A",
+          "slug": "linea-residenziale-r410a-accessori",
+          "sort_order": 30,
+          "products": [
+            {"name":"RG57A6","slug":"legacy-rg57a6","role":"controller","status":"discontinued","models":["RG57A6"]},
+            {"name":"RG57A4","slug":"legacy-rg57a4","role":"controller","status":"discontinued","models":["RG57A4"]},
+            {"name":"RG57A2","slug":"legacy-rg57a2","role":"controller","status":"discontinued","models":["RG57A2"],"also_category_slugs":["linea-commerciale-r410a-accessori"]},
+            {"name":"RG66A1","slug":"legacy-rg66a1","role":"controller","status":"discontinued","models":["RG66A1"]},
+            {"name":"KJR-120C/TF-E","slug":"legacy-kjr-120c-tf-e","role":"controller","status":"discontinued","models":["KJR-120C/TF-E"],"also_category_slugs":["linea-commerciale-r410a-accessori"]},
+            {"name":"EU-OSK103","slug":"legacy-eu-osk103","role":"accessory","status":"discontinued","models":["EU-OSK103"]},
+            {"name":"ICONTROL","slug":"legacy-icontrol","role":"controller","status":"discontinued","models":["ICONTROL"],"also_category_slugs":["linea-commerciale-r410a-accessori"]},
+            {"name":"WIFI-1 IR","slug":"legacy-wifi-1-ir","role":"accessory","status":"discontinued","models":["WIFI-1 IR"],"also_category_slugs":["linea-commerciale-r410a-accessori"]}
+          ]
+        }
+      ]
+    },
+    {
+      "parent_slug": null,
+      "name": "Linea Commerciale R410A",
+      "slug": "linea-commerciale-r410a",
+      "sort_order": 90,
+      "children": [
+        {
+          "name": "Unità esterne R410A",
+          "slug": "linea-commerciale-r410a-unita-esterne",
+          "sort_order": 10,
+          "products": [
+            {"name":"IOKE 35-120","slug":"legacy-ioke-r410a-35-120","role":"outdoor_unit","refrigerant":"R410A","status":"discontinued","models":["IOKE-35M","IOKE-52M","IOKE-70M","IOKE-88M","IOKE-105M","IOKE-105T","IOKE-120M","IOKE-120T"]},
+            {"name":"IOKE 140-160 (verifica refrigerante)","slug":"legacy-ioke-140-160-unverified","role":"outdoor_unit","status":"discontinued","models":["IOKE-140M","IOKE-140T","IOKE-160T"],"description":"La pagina è nell'archivio Commerciale R410A ma il blocco 140/160 cita la serie IOKE-R32. Refrigerante lasciato volutamente non valorizzato in attesa di verifica documentale."}
+          ]
+        },
+        {
+          "name": "Unità interne R410A",
+          "slug": "linea-commerciale-r410a-unita-interne",
+          "sort_order": 20,
+          "products": [
+            {"name":"ICKE","slug":"legacy-icke","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["ICKE-52","ICKE-70","ICKE-88","ICKE-105","ICKE-120","ICKE-140","ICKE-160"]},
+            {"name":"IUKE","slug":"legacy-iuke","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["IUKE-52","IUKE-70","IUKE-88","IUKE-105","IUKE-120","IUKE-140","IUKE-160"]},
+            {"name":"ITKE","slug":"legacy-itke","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["ITKE-52","ITKE-70","ITKE-88","ITKE-105","ITKE-120","ITKE-140","ITKE-160"]},
+            {"name":"MFGE","slug":"legacy-mfge","role":"indoor_unit","refrigerant":"R410A","status":"discontinued","models":["MFGE-160"]}
+          ]
+        },
+        {
+          "name": "Accessori Commerciale R410A",
+          "slug": "linea-commerciale-r410a-accessori",
+          "sort_order": 30,
+          "products": []
+        }
       ]
     },
     {
