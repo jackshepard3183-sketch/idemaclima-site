@@ -14,6 +14,7 @@ use App\Controllers\Admin\CampusController as AdminCampusController;
 use App\Controllers\Admin\ContentController as AdminContentController;
 use App\Controllers\Admin\ContactsAnalyticsController as AdminContactsAnalyticsController;
 use App\Controllers\Admin\RedirectsController;
+use App\Controllers\Admin\AssistanceController as AdminAssistanceController;
 use App\Controllers\Public\TechnicalSheetsController;
 use App\Controllers\Public\WarrantyController;
 use App\Controllers\Public\CampusController;
@@ -22,12 +23,13 @@ use App\Controllers\Public\ContentController;
 use App\Controllers\Public\ContactController;
 use App\Controllers\Public\AnalyticsController;
 use App\Controllers\Public\SystemController;
+use App\Controllers\Public\AssistanceController;
 use App\Core\Router;
 
 $router = new Router();
 $router->get('/', static function (): void {
     header('Content-Type: text/html; charset=UTF-8');
-    echo '<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IDEMA Clima</title></head><body><main><h1>IDEMA Clima</h1><p>Nuovo progetto autonomo - ambiente di sviluppo.</p><p><a href="/schede-tecniche">Schede tecniche</a> · <a href="/cataloghi">Cataloghi</a> · <a href="/garanzia">Garanzia</a> · <a href="/campus">Campus</a> · <a href="/galleria">Galleria</a> · <a href="/referenze">Referenze</a> · <a href="/contatti">Contatti</a></p></main></body></html>';
+    echo '<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IDEMA Clima</title></head><body><main><h1>IDEMA Clima</h1><p>Nuovo progetto autonomo - ambiente di sviluppo.</p><p><a href="/schede-tecniche">Schede tecniche</a> · <a href="/cataloghi">Cataloghi</a> · <a href="/assistenza">Assistenza</a> · <a href="/garanzia">Garanzia</a> · <a href="/campus">Campus</a> · <a href="/galleria">Galleria</a> · <a href="/referenze">Referenze</a> · <a href="/contatti">Contatti</a></p></main></body></html>';
 });
 $router->get('/health', static function (): void { header('Content-Type: application/json; charset=UTF-8'); echo json_encode(['ok'=>true],JSON_THROW_ON_ERROR); });
 
@@ -38,6 +40,7 @@ $router->get('/schede-tecniche/prodotto/{slug}', [TechnicalSheetsController::cla
 $router->get('/schede-tecniche/{slug}', [TechnicalSheetsController::class, 'category']);
 $router->get('/documento/{id}/download', [AnalyticsController::class, 'documentDownload']);
 $router->get('/cataloghi', [ContentController::class, 'catalogs']);
+$router->get('/assistenza', [AssistanceController::class, 'index']);
 $router->get('/galleria', [ContentController::class, 'gallery']);
 $router->get('/galleria/{slug}', [ContentController::class, 'galleryAlbum']);
 $router->get('/referenze', [ContentController::class, 'references']);
@@ -78,6 +81,9 @@ $router->get('/admin/warranties/rules', [AdminWarrantyController::class, 'rules'
 $router->get('/admin/warranties/rules/form', [AdminWarrantyController::class, 'ruleForm']);
 $router->post('/admin/warranties/rules/save', [AdminWarrantyController::class, 'saveRule']);
 $router->get('/admin/warranties/file/{kind}/{id}', [AdminWarrantyController::class, 'privateFile']);
+$router->get('/admin/assistance', [AdminAssistanceController::class, 'index']);
+$router->get('/admin/assistance/form', [AdminAssistanceController::class, 'form']);
+$router->post('/admin/assistance/save', [AdminAssistanceController::class, 'save']);
 $router->get('/admin/campus/events', [AdminCampusController::class, 'events']);
 $router->get('/admin/campus/events/form', [AdminCampusController::class, 'eventForm']);
 $router->post('/admin/campus/events/save', [AdminCampusController::class, 'saveEvent']);
