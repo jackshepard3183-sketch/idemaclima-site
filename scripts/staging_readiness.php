@@ -14,9 +14,13 @@ checkItem($checks,$blocking,'PHP >= 8.2',version_compare(PHP_VERSION,'8.2.0','>=
 foreach(['pdo','pdo_mysql','fileinfo','json','openssl','mbstring'] as $ext)checkItem($checks,$blocking,'Estensione '.$ext,extension_loaded($ext),extension_loaded($ext)?'disponibile':'mancante');
 checkItem($checks,$blocking,'Estensione curl',extension_loaded('curl'),extension_loaded('curl')?'disponibile':'mancante; fallback stream disponibile',false);
 
-$appEnv=envValue('APP_ENV');$appUrl=envValue('APP_URL');$appKey=envValue('APP_KEY');$timezone=envValue('APP_TIMEZONE')?:'Europe/Rome';
+$appEnv=envValue('APP_ENV');$appUrl=rtrim(envValue('APP_URL'),'/');$appKey=envValue('APP_KEY');$timezone=envValue('APP_TIMEZONE')?:'Europe/Rome';$basePath=envValue('APP_BASE_PATH');
+$basePath=$basePath===''||$basePath==='/'?'':'/'.trim($basePath,'/');
 checkItem($checks,$blocking,'APP_ENV',in_array($appEnv,['staging','production'],true),'Valore: '.($appEnv?:'(vuoto)'));
 checkItem($checks,$blocking,'APP_URL HTTPS',$appUrl!==''&&filter_var($appUrl,FILTER_VALIDATE_URL)!==false&&str_starts_with(strtolower($appUrl),'https://'),'Valore: '.($appUrl?:'(vuoto)'));
+checkItem($checks,$blocking,'APP_BASE_PATH formato',$basePath===''||preg_match('#^/[A-Za-z0-9._~/-]+$#',$basePath)===1,'Valore: '.($basePath?:'(root)'));
+$baseConsistent=$basePath===''||str_ends_with($appUrl,$basePath);
+checkItem($checks,$blocking,'APP_URL coerente con APP_BASE_PATH',$baseConsistent,$baseConsistent?'coerente':'APP_URL deve terminare con '.$basePath);
 checkItem($checks,$blocking,'APP_KEY',strlen($appKey)>=32,'Lunghezza: '.strlen($appKey));
 checkItem($checks,$blocking,'APP_TIMEZONE',in_array($timezone,timezone_identifiers_list(),true),'Valore: '.$timezone);
 foreach(['DB_HOST','DB_DATABASE','DB_USERNAME','DB_PASSWORD'] as $name){$value=envValue($name);checkItem($checks,$blocking,$name,$value!=='',$value!==''?'configurato':'mancante');}
