@@ -4,5 +4,6 @@
 /storage/sessions/*
 /storage/warranty/*
 /storage/contacts/*
+/storage/private/*
 /public/uploads/*
 !/public/uploads/.gitkeep
