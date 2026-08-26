@@ -50,27 +50,50 @@ final class CampusController
     {
         if (!RateLimiter::allow('campus-register', 8, 900)) RateLimiter::reject(900);
         if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}
+        if(trim((string)($_POST['company_website']??''))!==''){self::render('campus/result',['title'=>'Iscrizione non valida','message'=>'Non è stato possibile elaborare la richiesta.']);return;}
+
         $pdo=Database::connection();
-        $stmt=$pdo->prepare('SELECT * FROM events WHERE slug=? AND published=1 AND cancelled=0 LIMIT 1');
-        $stmt->execute([$slug]);$event=$stmt->fetch(PDO::FETCH_ASSOC);
-        if(!$event){self::notFound();return;}
         $catUser=null;
-        if($event['audience']==='cat') $catUser=CatAuth::requireLogin();
-        if(!(int)$event['registration_open']){self::render('campus/result',['title'=>'Iscrizioni chiuse','message'=>'Le iscrizioni a questo evento sono chiuse.']);return;}
-        if(!empty($event['registration_deadline']) && strtotime((string)$event['registration_deadline']) < time()){self::render('campus/result',['title'=>'Iscrizioni chiuse','message'=>'Il termine per l’iscrizione è scaduto.']);return;}
-        $first=trim((string)($_POST['first_name']??($catUser['contact_first_name']??'')));
-        $last=trim((string)($_POST['last_name']??($catUser['contact_last_name']??'')));
-        $email=trim((string)($_POST['email']??($catUser['email']??'')));
-        if($first===''||$last===''||!filter_var($email,FILTER_VALIDATE_EMAIL)||empty($_POST['privacy'])){self::render('campus/result',['title'=>'Dati non validi','message'=>'Compila correttamente i campi obbligatori e accetta la privacy.']);return;}
-        $count=$pdo->prepare('SELECT COUNT(*) FROM event_registrations WHERE event_id=? AND status IN ("registered","confirmed")');$count->execute([(int)$event['id']]);
-        $booked=(int)$count->fetchColumn();
-        $status=(!empty($event['max_seats']) && $booked >= (int)$event['max_seats'])?'waitlist':'registered';
         try{
+            $pdo->beginTransaction();
+            $stmt=$pdo->prepare('SELECT * FROM events WHERE slug=? AND published=1 AND cancelled=0 LIMIT 1 FOR UPDATE');
+            $stmt->execute([$slug]);
+            $event=$stmt->fetch(PDO::FETCH_ASSOC);
+            if(!$event){$pdo->rollBack();self::notFound();return;}
+            if($event['audience']==='cat')$catUser=CatAuth::requireLogin();
+            if(!(int)$event['registration_open']){$pdo->rollBack();self::render('campus/result',['title'=>'Iscrizioni chiuse','message'=>'Le iscrizioni a questo evento sono chiuse.']);return;}
+            if(!empty($event['registration_deadline']) && new \DateTimeImmutable((string)$event['registration_deadline']) < new \DateTimeImmutable('now')){$pdo->rollBack();self::render('campus/result',['title'=>'Iscrizioni chiuse','message'=>'Il termine per l’iscrizione è scaduto.']);return;}
+            if(new \DateTimeImmutable((string)$event['starts_at']) <= new \DateTimeImmutable('now')){$pdo->rollBack();self::render('campus/result',['title'=>'Iscrizioni chiuse','message'=>'L’evento è già iniziato o concluso.']);return;}
+
+            $first=trim((string)($_POST['first_name']??($catUser['contact_first_name']??'')));
+            $last=trim((string)($_POST['last_name']??($catUser['contact_last_name']??'')));
+            $email=strtolower(trim((string)($_POST['email']??($catUser['email']??''))));
+            $phone=trim((string)($_POST['phone']??($catUser['phone']??'')));
+            $company=trim((string)($_POST['company']??($catUser['company_name']??'')));
+            $role=trim((string)($_POST['role']??''));
+            $notes=trim((string)($_POST['notes']??''));
+            $invalid=$first===''||$last===''||mb_strlen($first)>120||mb_strlen($last)>120||!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>190||mb_strlen($phone)>50||mb_strlen($company)>190||mb_strlen($role)>120||mb_strlen($notes)>4000||empty($_POST['privacy']);
+            if($invalid){$pdo->rollBack();self::render('campus/result',['title'=>'Dati non validi','message'=>'Compila correttamente i campi obbligatori e accetta la privacy.']);return;}
+
+            $existing=$pdo->prepare('SELECT id FROM event_registrations WHERE event_id=? AND LOWER(email)=LOWER(?) LIMIT 1');
+            $existing->execute([(int)$event['id'],$email]);
+            if($existing->fetchColumn()!==false){$pdo->rollBack();self::render('campus/result',['title'=>'Iscrizione già presente','message'=>'Risulta già un’iscrizione per questa email.']);return;}
+
+            $count=$pdo->prepare('SELECT COUNT(*) FROM event_registrations WHERE event_id=? AND status IN ("registered","confirmed")');
+            $count->execute([(int)$event['id']]);
+            $booked=(int)$count->fetchColumn();
+            $status=(!empty($event['max_seats']) && $booked >= (int)$event['max_seats'])?'waitlist':'registered';
             $ins=$pdo->prepare('INSERT INTO event_registrations(event_id,cat_account_id,first_name,last_name,email,phone,company,role,notes,status,privacy_accepted_at) VALUES(?,?,?,?,?,?,?,?,?,?,NOW())');
-            $ins->execute([(int)$event['id'],$catUser['id']??null,$first,$last,$email,trim((string)($_POST['phone']??($catUser['phone']??'')))?:null,trim((string)($_POST['company']??($catUser['company_name']??'')))?:null,trim((string)($_POST['role']??''))?:null,trim((string)($_POST['notes']??''))?:null,$status]);
+            $ins->execute([(int)$event['id'],$catUser['id']??null,$first,$last,$email,$phone?:null,$company?:null,$role?:null,$notes?:null,$status]);
+            $pdo->commit();
             self::render('campus/result',['title'=>'Iscrizione ricevuta','message'=>$status==='waitlist'?'Posti esauriti: sei stato inserito in lista d’attesa.':'Iscrizione registrata correttamente.']);
         }catch(\PDOException $e){
-            if((string)$e->getCode()==='23000'){self::render('campus/result',['title'=>'Iscrizione già presente','message'=>'Risulta già un’iscrizione per questa email.']);return;} throw $e;
+            if($pdo->inTransaction())$pdo->rollBack();
+            if((string)$e->getCode()==='23000'){self::render('campus/result',['title'=>'Iscrizione già presente','message'=>'Risulta già un’iscrizione per questa email.']);return;}
+            throw $e;
+        }catch(\Throwable $e){
+            if($pdo->inTransaction())$pdo->rollBack();
+            throw $e;
         }
     }
 
