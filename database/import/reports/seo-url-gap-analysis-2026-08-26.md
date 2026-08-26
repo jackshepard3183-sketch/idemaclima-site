@@ -14,7 +14,7 @@ Il dataset Lovable `datasheets.ts` non è sufficiente come unica fonte SEO/stori
 |---|---|---|
 | `/schede-tecniche/` | mantenere come hub | già previsto |
 | `/cataloghi/` | mantenere | già previsto |
-| `/assistenza/` | ricreare pagina dedicata | mancante |
+| `/assistenza/` | mantenere pagina informativa dedicata | implementata nel nuovo progetto |
 | `/faq/` | ricreare pagina FAQ | mancante |
 | `/configurazione-wi-fi/` | ricreare guida dedicata | mancante |
 | `/detrazioni-e-incentivi/` | ricreare hub incentivi | mancante |
@@ -41,7 +41,15 @@ Questi contenuti vanno mantenuti come archivio storico ricercabile, marcati `dis
 ## Gap informativi
 
 ### Assistenza
-Il sito originale presenta una pagina Assistenza che collega FAQ, richiesta assistenza, termini di garanzia e codici di errore. Nel nuovo sito manca ancora una pagina editoriale equivalente.
+Il sito originale presenta una vera pagina informativa `/assistenza/`, che deve essere preservata. La pagina contiene:
+- introduzione al servizio di assistenza;
+- invito a contattare prima l'installatore;
+- collegamento alle FAQ;
+- pulsante al modulo richieste di assistenza esterno;
+- sezione Garanzia di prodotto;
+- sezione Codici di errore.
+
+Nel nuovo progetto la pagina `/assistenza` è stata implementata. Il modulo richieste resta esterno su `idemaassistenza.it`, mentre i PDF di garanzia e i volumi codici errore sono gestibili dal backend tramite risorse Assistenza collegate ai documenti migrati.
 
 ### FAQ
 Il sito originale contiene una raccolta FAQ con contenuti informativi/SEO. Va migrata in una struttura editoriale amministrabile, non hardcoded.
@@ -78,13 +86,14 @@ Gli URL `/wp-content/uploads/.../*.pdf` risultano ancora indicizzati. Prima del 
 
 ## Priorità implementative emerse
 
-1. creare modulo/pagine editoriali per Assistenza, FAQ, Wi-Fi, Detrazioni/Incentivi;
-2. estendere import storico delle Schede Tecniche oltre `datasheets.ts`;
-3. importare Dichiarazioni CE come documenti categorizzati + pagina raccolta;
-4. aggiungere famiglie/prodotti storici mancanti (purificatori, barriere aria, VRF storici, chiller, distribuzione aria);
-5. produrre inventario URL storico completo e tabella redirect 1:1;
-6. importare cataloghi e PDF storici/correnti;
-7. solo dopo congelare sitemap e redirect di produzione.
+1. completare FAQ, Wi-Fi e Detrazioni/Incentivi;
+2. popolare la nuova pagina Assistenza con i documenti di garanzia e codici errore migrati;
+3. estendere import storico delle Schede Tecniche oltre `datasheets.ts`;
+4. importare Dichiarazioni CE come documenti categorizzati + pagina raccolta;
+5. aggiungere famiglie/prodotti storici mancanti (purificatori, barriere aria, VRF storici, chiller, distribuzione aria);
+6. produrre inventario URL storico completo e tabella redirect 1:1;
+7. importare cataloghi e PDF storici/correnti;
+8. solo dopo congelare sitemap e redirect di produzione.
 
 ## Regola di sicurezza SEO
 Nessun redirect storico va attivato sul dominio pubblico finché il target non è disponibile nello staging e verificato con risposta 200.
