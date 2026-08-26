@@ -6,6 +6,7 @@ namespace App\Controllers\Public;
 
 use App\Core\Database;
 use App\Core\Seo;
+use App\Core\Url;
 use PDO;
 use Throwable;
 
@@ -66,9 +67,14 @@ final class SeoController
     public static function robots(): void
     {
         header('Content-Type: text/plain; charset=UTF-8');
+        $env = strtolower((string)($_ENV['APP_ENV'] ?? getenv('APP_ENV') ?: 'production'));
         echo "User-agent: *\n";
-        echo "Disallow: /admin/\n";
-        echo "Disallow: /campus/cat/\n";
+        if ($env === 'staging') {
+            echo "Disallow: /\n";
+        } else {
+            echo 'Disallow: ' . Url::to('/admin/') . "\n";
+            echo 'Disallow: ' . Url::to('/campus/cat/') . "\n";
+        }
         echo 'Sitemap: ' . Seo::publicBaseUrl() . "/sitemap.xml\n";
     }
 
