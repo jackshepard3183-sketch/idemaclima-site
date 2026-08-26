@@ -6,6 +6,7 @@ namespace App\Controllers\Public;
 
 use App\Core\Database;
 use App\Core\PrivateUpload;
+use App\Core\RateLimiter;
 use App\Core\Security;
 use App\Services\WarrantyService;
 use Throwable;
@@ -26,6 +27,7 @@ final class WarrantyController
 
     public static function register(): void
     {
+        if (!RateLimiter::allow('warranty-submit', 5, 1800)) RateLimiter::reject(1800);
         if (!Security::verifyCsrf($_POST['_csrf'] ?? null)) {
             http_response_code(419);
             self::render('warranty/result', ['title' => 'Sessione scaduta', 'success' => false, 'message' => 'Sessione non valida. Ricarica il modulo e riprova.']);
