@@ -1,16 +1,35 @@
 # Pipeline sicura di import IDEMA
 
-Questa procedura separa rigorosamente configurazione ambiente, copia fisica dei file e scritture database. Il sito pubblico `idemaclima.it` e il progetto Lovable restano sorgenti in sola lettura fino al go-live.
+Questa procedura separa rigorosamente configurazione ambiente, migration, copia fisica dei file e scritture database. Il sito pubblico `idemaclima.it` e il progetto Lovable restano sorgenti in sola lettura fino al go-live.
 
-## 0. Readiness dello staging
+## 0. Preflight dello staging
 
-Prima di applicare migration o importare dati:
+Configurare almeno:
+
+- `APP_ENV=staging`;
+- `APP_URL` HTTPS;
+- `APP_KEY` casuale di almeno 32 caratteri;
+- `APP_TIMEZONE=Europe/Rome`;
+- credenziali DB dedicate allo staging;
+- `TRUSTED_PROXIES` se lo staging è dietro reverse proxy/CDN.
+
+Il comando consigliato è:
+
+```bash
+bash scripts/staging_preflight.sh
+```
+
+Esegue, nell'ordine:
 
 ```bash
 php scripts/staging_readiness.php
+php scripts/migrate.php --status
+bash tests/run_all.sh
 ```
 
-Il comando termina con exit code 2 se manca un requisito bloccante e produce `database/import/reports/staging-readiness-latest.json`.
+Nessuno di questi tre passaggi applica migration. `migrate.php --status` è read-only anche su un database vuoto e non crea `schema_migrations`.
+
+`staging_readiness.php` termina con exit code 2 se manca un requisito bloccante e produce `database/import/reports/staging-readiness-latest.json`.
 
 Controlla almeno:
 
@@ -19,17 +38,40 @@ Controlla almeno:
 - `APP_ENV=staging` o `production`;
 - `APP_URL` HTTPS;
 - `APP_KEY` di almeno 32 caratteri;
+- timezone valida;
 - credenziali DB esplicite;
 - directory private/upload/report scrivibili;
 - numerazione migration senza duplicati;
-- presenza degli importer critici;
-- connessione MySQL/MariaDB reale.
+- presenza del migration runner e degli importer critici;
+- connessione MySQL/MariaDB reale;
+- MySQL >= 8.0.16 oppure MariaDB >= 10.2.1, così i vincoli `CHECK` usati dalle migration sono effettivamente supportati.
 
 `curl` è raccomandato ma non bloccante perché il downloader dispone di fallback stream HTTPS.
 
 ## 1. Migration
 
-Applicare tutte le migration SQL in ordine numerico e registrare in staging quali file sono stati eseguiti. Non applicare migration direttamente in produzione come primo test.
+Prima visualizzare lo stato:
+
+```bash
+php scripts/migrate.php --status
+```
+
+Per applicare le migration pendenti nello staging:
+
+```bash
+php scripts/migrate.php --execute
+```
+
+Il runner:
+
+- inizializza `schema_migrations` solo in modalità `--execute`;
+- applica i file in ordine naturale/numerico;
+- salva SHA-256 di ogni migration applicata;
+- blocca l'esecuzione se una migration già registrata è stata modificata;
+- usa `GET_LOCK()` per impedire due processi migration concorrenti;
+- non finge rollback DDL: MySQL/MariaDB può eseguire implicit commit, quindi in caso di failure il runner si ferma e richiede correzione prima del retry.
+
+Non applicare migration direttamente in produzione come primo test.
 
 La migration `018_warranty_hardening.sql` non crea un indice aggiuntivo su `certificate_number`: il vincolo `UNIQUE` definito nello schema originario è già sufficiente.
 
@@ -111,7 +153,7 @@ php database/import/import_downloaded_documents.php --manifest=document_migratio
 php database/import/import_downloaded_documents.php --manifest=supplemental_document_manifest.csv --execute
 ```
 
-Tutte le scritture del singolo manifest avvengono nella stessa transazione MySQL. In caso di errore viene eseguito `ROLLBACK`; i PDF già copiati restano sul filesystem per poter correggere e riprovare.
+Tutte le scritture applicative del singolo manifest avvengono nella stessa transazione MySQL. In caso di errore viene eseguito `ROLLBACK`; i PDF già copiati restano sul filesystem per poter correggere e riprovare.
 
 La deduplica DB usa `documents.sha256`; gli URL sorgente sono conservati in `document_source_aliases`.
 
@@ -141,21 +183,23 @@ La suite statica/smoke deve essere eseguita prima dei test HTTP end-to-end. Non 
 ## 8. Sequenza obbligata sul primo staging
 
 1. clonare `idemaclima-site` in ambiente non pubblico;
-2. configurare `.env` staging con URL HTTPS, APP_KEY e DB dedicato;
-3. eseguire `php scripts/staging_readiness.php`;
-4. applicare tutte le migration in ordine;
-5. importare base Lovable;
-6. importare modelli/combinazioni verificati;
-7. preflight prodotti storici;
-8. import prodotti storici;
-9. scaricare/verificare PDF;
-10. preflight DB documenti;
-11. import DB documenti;
-12. preflight/import Cataloghi;
-13. importare o compilare contenuti rimanenti;
-14. eseguire `bash tests/run_all.sh`;
-15. test HTTP end-to-end di frontend, admin, Campus/CAT, Garanzia, Contatti, sitemap, redirect e download;
-16. controllare alias storici e mapping SEO;
-17. solo dopo preparare checklist di go-live e rollback.
+2. configurare `.env` staging con URL HTTPS, APP_KEY, APP_TIMEZONE e DB dedicato;
+3. eseguire `bash scripts/staging_preflight.sh`;
+4. verificare l'elenco delle migration pendenti;
+5. eseguire `php scripts/migrate.php --execute`;
+6. rieseguire `php scripts/migrate.php --status` e verificare zero pendenti;
+7. importare base Lovable;
+8. importare modelli/combinazioni verificati;
+9. preflight prodotti storici;
+10. import prodotti storici;
+11. scaricare/verificare PDF;
+12. preflight DB documenti;
+13. import DB documenti;
+14. preflight/import Cataloghi;
+15. importare o compilare contenuti rimanenti;
+16. eseguire nuovamente `bash tests/run_all.sh`;
+17. test HTTP end-to-end di frontend, admin, Campus/CAT, Garanzia, Contatti, sitemap, redirect e download;
+18. controllare alias storici e mapping SEO;
+19. solo dopo preparare checklist di go-live e rollback.
 
 Nessun passaggio di questa procedura autorizza modifiche al sito pubblico o al progetto Lovable.
