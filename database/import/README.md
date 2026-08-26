@@ -1,16 +1,16 @@
 # Import archivio tecnico Lovable
 
-Questa cartella contiene l'importatore **una tantum** del dataset `src/data/datasheets.ts` del progetto Lovable verso il database autonomo IDEMA.
+Questa cartella contiene gli importatori **una tantum** del dataset `src/data/datasheets.ts` del progetto Lovable e dello storico verificato del sito originale verso il database autonomo IDEMA.
 
 ## Principi
 
 - Il repository Lovable è sempre trattato come **sorgente in sola lettura**.
-- L'importatore non scrive sul sito `idemaclima.it` e non modifica il progetto Lovable.
+- Il sito pubblico `idemaclima.it` è usato esclusivamente come fonte storica/SEO in sola lettura.
+- Gli importatori non scrivono sul sito `idemaclima.it` e non modificano il progetto Lovable.
 - L'esecuzione predefinita è **dry-run**: nessuna scrittura MySQL avviene senza `--execute`.
 - Categorie, prodotti, modelli e documenti vengono creati in modo idempotente.
 - Le etichette dei manuali (`INSTALLAZIONE`, `USO`, telecomandi, Wi-Fi) non vengono erroneamente trasformate in modelli prodotto.
-- URL e asset Lovable/originali vengono inizialmente conservati come `file_path`; la copia fisica dei PDF nel nuovo archivio sarà una fase successiva e separata.
-- Le integrazioni non presenti come record autonomi nel dataset Lovable sono ammesse solo se documentate da fonti pubbliche originali IDEMA e registrate in `verified_component_models.json`.
+- Le integrazioni non presenti come record autonomi nel dataset Lovable sono ammesse solo se documentate da fonti pubbliche originali IDEMA e registrate in un registry curato.
 
 ## 1. Dry-run archivio tecnico
 
@@ -107,7 +107,7 @@ La migration `006_combination_normalization.sql` aggiunge:
 - `raw_code` per i componenti non risolti;
 - relazione dedicata tra combinazioni e documenti PDF.
 
-## 6. Sequenza import reale
+## 6. Sequenza import Lovable reale
 
 Solo dopo aver applicato le migration, configurato `.env` e verificato tutti i report:
 
@@ -138,6 +138,90 @@ php database/import/import_combinations.php \
   --execute
 ```
 
-L'importatore delle combinazioni è separato perché deve poter collegare prodotti, modelli e PDF già presenti nel database. Se un target indicato nel manifest non viene trovato, l'item viene degradato a `pending` e il problema viene registrato nel report invece di creare automaticamente entità mancanti.
+## 7. Archivio storico non presente in Lovable
+
+`historical_products_registry.json` contiene esclusivamente categorie/prodotti/modelli verificati sul sito originale ma non affidabili come derivazione del solo `datasheets.ts`.
+
+Stato iniziale del registry (26/08/2026):
+
+- 9 categorie;
+- 24 prodotti;
+- 33 modelli;
+- VRF Individuali e VRF V5;
+- Mini Chiller e Chiller modulari;
+- comandi/accessori refrigeratori;
+- purificatore FTXM-740XIT;
+- barriere AC-SA1 e AC-RE;
+- Distribuzione aria.
+
+Dry-run:
+
+```bash
+php database/import/import_historical_products.php
+```
+
+Import DB, **solo dopo l'import Lovable e dopo verifica conflitti**:
+
+```bash
+php database/import/import_historical_products.php --execute
+```
+
+L'importatore controlla i codici modello globalmente: se un modello storico esiste già sotto un altro prodotto, l'operazione viene interrotta e la transazione viene annullata. Non vengono creati doppioni automaticamente.
+
+## 8. Migrazione fisica documenti
+
+`document_migration_manifest.csv` è la lista curata dei PDF da trasferire dal vecchio WordPress allo storage autonomo. Il manifest iniziale contiene le Dichiarazioni CE verificate.
+
+Solo controllo manifest, senza rete e senza DB:
+
+```bash
+php database/import/migrate_documents.php
+```
+
+Copia fisica e verifica dei PDF, **senza scrittura DB**:
+
+```bash
+php database/import/migrate_documents.php --download
+```
+
+Copia + inserimento documenti/collegamenti nel DB:
+
+```bash
+php database/import/migrate_documents.php --execute
+```
+
+Protezioni della migrazione documentale:
+
+- accetta come sorgente solo `https://www.idemaclima.it/wp-content/uploads/...`;
+- solo HTTPS;
+- massimo 4 redirect;
+- verifica firma `%PDF-`;
+- limite 50 MB;
+- calcolo SHA-256;
+- non sovrascrive un PDF locale già presente senza prima verificarlo;
+- report JSON in `database/import/reports/document-migration-latest.json`;
+- i documenti CE vengono anche collegati alla pagina editoriale Dichiarazioni CE quando disponibile.
+
+## 9. Test preventivi
+
+```bash
+php tests/historical_import_smoke.php
+./tests/run_all.sh
+```
+
+Lo smoke test verifica duplicati di slug categoria/prodotto, duplicati dei codici modello nel registry e duplicati/forme non valide degli URL nel manifest documenti.
+
+## Ordine raccomandato complessivo
+
+1. migration schema;
+2. import Lovable base;
+3. modelli verificati;
+4. combinazioni;
+5. dry-run archivio storico;
+6. risoluzione di eventuali conflitti modello;
+7. import archivio storico;
+8. `migrate_documents.php --download` e controllo hash/report;
+9. solo dopo, `migrate_documents.php --execute`;
+10. verifica URL e redirect SEO su staging.
 
 L'import reale del database non va eseguito finché i report di dry-run e normalizzazione non sono stati controllati.
