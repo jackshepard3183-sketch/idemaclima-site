@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Auth\AdminAuth;
+use App\Core\RateLimiter;
 use App\Core\Security;
 
 final class AuthController
@@ -21,6 +22,7 @@ final class AuthController
 
     public static function login(): void
     {
+        if (!RateLimiter::allow('admin-login', 10, 900)) RateLimiter::reject(900);
         if (!Security::verifyCsrf($_POST['_csrf'] ?? null)) {
             http_response_code(419);
             self::loginForm('Sessione scaduta. Ricarica la pagina e riprova.');
