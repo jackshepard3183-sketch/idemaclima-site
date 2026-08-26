@@ -33,11 +33,21 @@ if (!is_string($bootstrapSql) || trim($bootstrapSql) === '') {
     fwrite(STDERR, "Migration bootstrap non leggibile.\n");
     exit(1);
 }
-$pdo->exec($bootstrapSql);
 
-$rows = $pdo->query('SELECT migration,checksum,executed_at FROM schema_migrations ORDER BY migration')->fetchAll(PDO::FETCH_ASSOC);
+$tableCheck = $pdo->prepare("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='schema_migrations'");
+$tableCheck->execute();
+$trackingExists = (int)$tableCheck->fetchColumn() === 1;
+
+if ($execute && !$trackingExists) {
+    $pdo->exec($bootstrapSql);
+    $trackingExists = true;
+}
+
 $existing = [];
-foreach ($rows as $row) $existing[(string)$row['migration']] = $row;
+if ($trackingExists) {
+    $rows = $pdo->query('SELECT migration,checksum,executed_at FROM schema_migrations ORDER BY migration')->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as $row) $existing[(string)$row['migration']] = $row;
+}
 
 $pending = [];
 $checksumErrors = [];
@@ -60,12 +70,13 @@ if ($checksumErrors !== []) {
 }
 
 echo "IDEMA migration status\n";
+echo 'Tracking : ' . ($trackingExists ? 'presente' : 'non inizializzato') . "\n";
 echo 'Applicate: ' . count($existing) . "\n";
 echo 'Pendenti : ' . count($pending) . "\n";
 foreach ($pending as $item) echo '  - ' . $item['name'] . "\n";
 
 if ($statusOnly) {
-    echo "Nessuna migration applicata. Usa --execute per applicare quelle pendenti.\n";
+    echo "Nessuna scrittura eseguita. Usa --execute per inizializzare/applicare le migration pendenti.\n";
     exit(0);
 }
 
