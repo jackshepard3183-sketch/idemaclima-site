@@ -31,6 +31,13 @@ if (is_file($envFile)) {
     }
 }
 
+$appConfig = require dirname(__DIR__) . '/config/app.php';
+$timezone = (string)($appConfig['timezone'] ?? 'Europe/Rome');
+if (!in_array($timezone, timezone_identifiers_list(), true)) {
+    throw new RuntimeException('APP_TIMEZONE non valida: ' . $timezone);
+}
+date_default_timezone_set($timezone);
+
 \App\Core\Security::requireAppKey();
 \App\Core\Security::sendHeaders();
 \App\Core\Security::startSession();
