@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require dirname(__DIR__) . '/app/Core/Url.php';
 require dirname(__DIR__) . '/app/Core/Router.php';
 
 use App\Core\Router;
