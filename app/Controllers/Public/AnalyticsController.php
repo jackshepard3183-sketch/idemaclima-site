@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Public;
 
 use App\Core\Database;
+use App\Core\Security;
 use PDO;
 
 final class AnalyticsController
@@ -35,7 +36,7 @@ final class AnalyticsController
 
     private static function recordDownload(PDO $pdo,int $documentId):void
     {
-        $ip=(string)($_SERVER['REMOTE_ADDR']??'');
+        $ip=Security::clientIp();
         $key=(string)($_ENV['APP_KEY']??getenv('APP_KEY')?:'');
         $visitor=null;
         if($ip!=='' && $key!==''){
