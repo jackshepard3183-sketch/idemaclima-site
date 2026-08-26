@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Auth\AdminAuth;
 use App\Core\Audit;
+use App\Core\DataIntegrity;
 use App\Core\Database;
 use App\Core\Security;
 use App\Core\Upload;
@@ -53,10 +54,12 @@ final class DocumentsController
         $errors = [];
         $id = Validator::int($_POST['id'] ?? 0);
         $typeId = Validator::int($_POST['document_type_id'] ?? 0);
-        if ($typeId < 1) $errors[] = 'Tipo documento obbligatorio.';
+        $pdo = Database::connection();
+        $type = $pdo->prepare('SELECT 1 FROM document_types WHERE id=? AND active=1');
+        $type->execute([$typeId]);
+        if ($typeId < 1 || !$type->fetchColumn()) $errors[] = 'Tipo documento non valido.';
+
         $title = Validator::requiredString($_POST['title'] ?? '', 'Titolo', 255, $errors);
-        $existingFilename = Validator::optionalString($_POST['existing_filename'] ?? '', 255, 'Nome file', $errors);
-        $existingPath = Validator::optionalString($_POST['existing_file_path'] ?? '', 500, 'Percorso file', $errors);
         $revision = Validator::optionalString($_POST['revision'] ?? '', 80, 'Revisione', $errors);
         $year = Validator::int($_POST['document_year'] ?? 0);
         $year = $year > 0 ? $year : null;
@@ -68,14 +71,32 @@ final class DocumentsController
         $modelId = Validator::int($_POST['model_id'] ?? 0) ?: null;
         if (!$categoryId && !$productId && !$modelId) $errors[] = 'Collega il documento almeno a categoria, prodotto o modello.';
 
+        $normalized = DataIntegrity::normalizeDocumentLink($pdo, $categoryId, $productId, $modelId);
+        if ($normalized['error'] !== null) $errors[] = $normalized['error'];
+        else {
+            $categoryId = $normalized['category_id'];
+            $productId = $normalized['product_id'];
+            $modelId = $normalized['model_id'];
+        }
+
+        $existingFilename = '';
+        $existingPath = '';
+        if ($id) {
+            $s = $pdo->prepare('SELECT filename,file_path FROM documents WHERE id=?');
+            $s->execute([$id]);
+            $existing = $s->fetch(PDO::FETCH_ASSOC);
+            if (!$existing) $errors[] = 'Documento non trovato.';
+            else {
+                $existingFilename = (string)$existing['filename'];
+                $existingPath = (string)$existing['file_path'];
+            }
+        }
+
         $uploaded = Upload::pdf('document_file', $errors);
         $filename = $uploaded['filename'] ?? $existingFilename;
         $path = $uploaded['path'] ?? $existingPath;
-        if ($filename === '' || $path === '') {
-            $errors[] = 'Carica un file PDF.';
-        }
+        if ($filename === '' || $path === '') $errors[] = 'Carica un file PDF.';
 
-        $pdo = Database::connection();
         if ($errors) {
             if ($uploaded) Upload::removeManaged($uploaded['path']);
             $document = ['id'=>$id,'document_type_id'=>$typeId,'title'=>$title,'filename'=>$filename,'file_path'=>$path,'revision'=>$revision,'document_year'=>$year,'published'=>$published,'sort_order'=>$sort,'category_id'=>$categoryId,'product_id'=>$productId,'model_id'=>$modelId];
@@ -84,13 +105,6 @@ final class DocumentsController
             $csrf = Security::csrfToken();
             require dirname(__DIR__, 2) . '/Views/admin/document_form.php';
             return;
-        }
-
-        $oldPath = '';
-        if ($id) {
-            $s = $pdo->prepare('SELECT file_path FROM documents WHERE id=?');
-            $s->execute([$id]);
-            $oldPath = (string)($s->fetchColumn() ?: '');
         }
 
         $pdo->beginTransaction();
@@ -110,8 +124,8 @@ final class DocumentsController
             $l = $pdo->prepare('INSERT INTO document_links(document_id,category_id,product_id,model_id) VALUES(?,?,?,?)');
             $l->execute([$entityId,$categoryId,$productId,$modelId]);
             $pdo->commit();
-            if ($uploaded && $oldPath && $oldPath !== $path) Upload::removeManaged($oldPath);
-            Audit::log($action, 'document', $entityId, ['title'=>$title,'file_path'=>$path]);
+            if ($uploaded && $existingPath && $existingPath !== $path) Upload::removeManaged($existingPath);
+            Audit::log($action, 'document', $entityId, ['title'=>$title,'file_path'=>$path,'category_id'=>$categoryId,'product_id'=>$productId,'model_id'=>$modelId]);
         } catch (\Throwable $e) {
             $pdo->rollBack();
             if ($uploaded) Upload::removeManaged($uploaded['path']);
@@ -128,8 +142,8 @@ final class DocumentsController
         return [
             $pdo->query('SELECT id,name FROM document_types WHERE active=1 ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC),
             $pdo->query('SELECT id,name FROM product_categories ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC),
-            $pdo->query('SELECT id,name FROM products ORDER BY name')->fetchAll(PDO::FETCH_ASSOC),
-            $pdo->query('SELECT id,code FROM product_models ORDER BY code')->fetchAll(PDO::FETCH_ASSOC),
+            $pdo->query('SELECT id,name,category_id FROM products ORDER BY name')->fetchAll(PDO::FETCH_ASSOC),
+            $pdo->query('SELECT m.id,m.code,m.product_id,p.category_id FROM product_models m JOIN products p ON p.id=m.product_id ORDER BY m.code')->fetchAll(PDO::FETCH_ASSOC),
         ];
     }
 }
