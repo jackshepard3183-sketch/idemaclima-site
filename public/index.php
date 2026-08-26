@@ -12,17 +12,20 @@ use App\Controllers\Admin\ProductsController;
 use App\Controllers\Admin\WarrantyController as AdminWarrantyController;
 use App\Controllers\Admin\CampusController as AdminCampusController;
 use App\Controllers\Admin\ContentController as AdminContentController;
+use App\Controllers\Admin\ContactsAnalyticsController as AdminContactsAnalyticsController;
 use App\Controllers\Public\TechnicalSheetsController;
 use App\Controllers\Public\WarrantyController;
 use App\Controllers\Public\CampusController;
 use App\Controllers\Public\CatAuthController;
 use App\Controllers\Public\ContentController;
+use App\Controllers\Public\ContactController;
+use App\Controllers\Public\AnalyticsController;
 use App\Core\Router;
 
 $router = new Router();
 $router->get('/', static function (): void {
     header('Content-Type: text/html; charset=UTF-8');
-    echo '<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IDEMA Clima</title></head><body><main><h1>IDEMA Clima</h1><p>Nuovo progetto autonomo - ambiente di sviluppo.</p><p><a href="/schede-tecniche">Schede tecniche</a> · <a href="/cataloghi">Cataloghi</a> · <a href="/garanzia">Garanzia</a> · <a href="/campus">Campus</a> · <a href="/galleria">Galleria</a> · <a href="/referenze">Referenze</a></p></main></body></html>';
+    echo '<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IDEMA Clima</title></head><body><main><h1>IDEMA Clima</h1><p>Nuovo progetto autonomo - ambiente di sviluppo.</p><p><a href="/schede-tecniche">Schede tecniche</a> · <a href="/cataloghi">Cataloghi</a> · <a href="/garanzia">Garanzia</a> · <a href="/campus">Campus</a> · <a href="/galleria">Galleria</a> · <a href="/referenze">Referenze</a> · <a href="/contatti">Contatti</a></p></main></body></html>';
 });
 $router->get('/health', static function (): void { header('Content-Type: application/json; charset=UTF-8'); echo json_encode(['ok'=>true],JSON_THROW_ON_ERROR); });
 
@@ -31,11 +34,14 @@ $router->get('/schede-tecniche/ricerca', [TechnicalSheetsController::class, 'sea
 $router->get('/schede-tecniche/famiglia/{slug}', [TechnicalSheetsController::class, 'family']);
 $router->get('/schede-tecniche/prodotto/{slug}', [TechnicalSheetsController::class, 'product']);
 $router->get('/schede-tecniche/{slug}', [TechnicalSheetsController::class, 'category']);
+$router->get('/documento/{id}/download', [AnalyticsController::class, 'documentDownload']);
 $router->get('/cataloghi', [ContentController::class, 'catalogs']);
 $router->get('/galleria', [ContentController::class, 'gallery']);
 $router->get('/galleria/{slug}', [ContentController::class, 'galleryAlbum']);
 $router->get('/referenze', [ContentController::class, 'references']);
 $router->get('/referenze/{slug}', [ContentController::class, 'reference']);
+$router->get('/contatti', [ContactController::class, 'form']);
+$router->post('/contatti', [ContactController::class, 'submit']);
 $router->get('/garanzia', [WarrantyController::class, 'form']);
 $router->post('/garanzia', [WarrantyController::class, 'register']);
 
@@ -89,5 +95,11 @@ $router->get('/admin/content/references', [AdminContentController::class, 'refer
 $router->get('/admin/content/references/form', [AdminContentController::class, 'referenceForm']);
 $router->post('/admin/content/references/save', [AdminContentController::class, 'saveReference']);
 $router->post('/admin/content/references/image', [AdminContentController::class, 'addReferenceImage']);
+$router->get('/admin/contacts', [AdminContactsAnalyticsController::class, 'contacts']);
+$router->get('/admin/contacts/view', [AdminContactsAnalyticsController::class, 'contact']);
+$router->post('/admin/contacts/update', [AdminContactsAnalyticsController::class, 'updateContact']);
+$router->get('/admin/contacts/file/{id}', [AdminContactsAnalyticsController::class, 'attachment']);
+$router->get('/admin/analytics', [AdminContactsAnalyticsController::class, 'analytics']);
+$router->post('/admin/analytics/save', [AdminContactsAnalyticsController::class, 'saveAnalytics']);
 
 $router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $_SERVER['REQUEST_URI'] ?? '/');
