@@ -14,18 +14,18 @@ foreach ([$public,$admin,$service,$form,$migration] as $content) {
 }
 
 $checks = [
-    [$public, "company_website", 'honeypot pubblico'],
-    [$public, "La data fattura non può essere futura", 'blocco data futura'],
-    [$public, "invoice_required_snapshot", 'snapshot fattura'],
-    [$public, "fgas_required_snapshot", 'snapshot F-GAS'],
-    [$public, "count($indoorSerials) > 20", 'limite seriali interni'],
-    [$admin, "Il modello selezionato non appartiene al prodotto indicato", 'coerenza prodotto/modello'],
-    [$admin, "warranty_certificates", 'vincolo certificato prima di issued'],
-    [$admin, "reviewed_at", 'timestamp revisione'],
-    [$admin, "Cache-Control: private, no-store", 'no-store file privati'],
-    [$service, "isIsoDate", 'validazione date ISO'],
+    [$public, 'company_website', 'honeypot pubblico'],
+    [$public, 'La data fattura non può essere futura', 'blocco data futura'],
+    [$public, 'invoice_required_snapshot', 'snapshot fattura'],
+    [$public, 'fgas_required_snapshot', 'snapshot F-GAS'],
+    [$public, 'count($indoorSerials) > 20', 'limite seriali interni'],
+    [$admin, 'Il modello selezionato non appartiene al prodotto indicato', 'coerenza prodotto/modello'],
+    [$admin, 'warranty_certificates', 'vincolo certificato prima di issued'],
+    [$admin, 'reviewed_at', 'timestamp revisione'],
+    [$admin, 'Cache-Control: private, no-store', 'no-store file privati'],
+    [$service, 'isIsoDate', 'validazione date ISO'],
     [$form, "L'obbligatorietà dipende dalla regola", 'fattura dinamica'],
-    [$migration, "MODIFY COLUMN invoice_file VARCHAR(500) NULL", 'fattura opzionale DB'],
+    [$migration, 'MODIFY COLUMN invoice_file VARCHAR(500) NULL', 'fattura opzionale DB'],
 ];
 
 foreach ($checks as [$haystack,$needle,$label]) {
