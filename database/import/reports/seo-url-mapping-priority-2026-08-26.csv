@@ -1,0 +1,22 @@
+source_path,target_path,action,priority,notes
+/schede-tecniche/,/schede-tecniche,keep,P0,Hub principale schede tecniche
+/cataloghi/,/cataloghi,keep,P0,Modulo già previsto
+/garanzia/,/garanzia,keep,P0,Modulo già previsto
+/campus/,/campus,keep,P0,Modulo già previsto
+/galleria/,/galleria,keep,P1,Modulo già previsto
+/referenze/,/referenze,keep,P1,Modulo già previsto
+/contatti/,/contatti,keep,P0,Modulo già previsto
+/assistenza/,/assistenza,recreate,P0,Pagina editoriale e accesso richieste assistenza
+/faq/,/faq,recreate,P0,Contenuto SEO informativo storico
+/configurazione-wi-fi/,/configurazione-wi-fi,recreate,P0,Guida estesa Wi-Fi e troubleshooting
+/detrazioni-e-incentivi/,/detrazioni-e-incentivi,recreate,P0,Hub bonus ed incentivi
+/detrazioni-e-incentivi/conto-termico/,/detrazioni-e-incentivi/conto-termico,recreate,P0,Pagina informativa dedicata
+/schede-tecniche/dichiarazioni-conformita-ce/,/schede-tecniche/dichiarazioni-conformita-ce,recreate,P0,Raccolta dichiarazioni CE
+/schede-tecniche/altri-prodotti/,/schede-tecniche/altri-prodotti,historical-import,P1,Preservare recuperatori purificatori e barriere aria
+/schede-tecniche/linea-vrf/linea-vrf-vrf-individuali/,/schede-tecniche/famiglia/vrf-individuali,historical-import,P1,Famiglia storica R410A fuori catalogo
+/schede-tecniche/linea-vrf/linea-vrf-vrf-v5/,/schede-tecniche/famiglia/vrf-v5,historical-import,P1,Famiglia storica VRF V5
+/schede-tecniche/linea-idronica/linea-idronica-refrigeratori/refrigeratori-chiller-modulari/,/schede-tecniche/famiglia/chiller-modulari,historical-import,P1,Famiglia idronica storica
+/schede-tecniche/linea-commerciale-r32/linea-commerciale-r32-unita-interne/,/schede-tecniche/famiglia/unita-interne-commerciale,redirect,P1,Target definitivo da confermare dopo import
+/schede-tecniche/linea-vrf/linea-vrf-unita-interne/,/schede-tecniche/famiglia/unita-interne-vrf,redirect,P1,Target definitivo da confermare dopo import
+/schede-tecniche/linea-vrf/linea-vrf-atomix-r32/,/schede-tecniche/famiglia/atomix-r32,redirect,P1,Target definitivo da confermare dopo import
+/schede-tecniche/linea-idronica/linea-idronica-pdc-all-in-one/,/schede-tecniche/famiglia/pdc-all-in-one,redirect,P1,Target definitivo da confermare dopo import
