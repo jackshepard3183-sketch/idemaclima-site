@@ -2,6 +2,11 @@ name: Deploy staging to Aruba
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deploy-staging-aruba.yml"
 
 permissions:
   contents: read
@@ -36,7 +41,16 @@ jobs:
           test ! -f build/idemaclima-staging/.env
           test -f build/idemaclima-staging/DEPLOY_SHA256SUMS.txt
 
+      - name: Upload staging package
+        uses: actions/upload-artifact@v4
+        with:
+          name: idemaclima-staging
+          path: build/idemaclima-staging.zip
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Deploy to Aruba /idemaclima
+        if: github.event_name == 'workflow_dispatch'
         env:
           FTP_SERVER: ${{ secrets.ARUBA_FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.ARUBA_FTP_USERNAME }}
@@ -59,6 +73,7 @@ jobs:
           EOF
 
       - name: Verify public staging endpoint
+        if: github.event_name == 'workflow_dispatch'
         run: |
           curl --fail --silent --show-error --location \
             --retry 3 --retry-delay 3 \
