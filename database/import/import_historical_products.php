@@ -9,9 +9,39 @@ use PDO;
 
 $execute = in_array('--execute', $argv, true);
 $registryPath = __DIR__ . '/historical_products_registry.json';
+
+foreach ($argv as $arg) {
+    if (!str_starts_with($arg, '--registry=')) continue;
+
+    $value = trim(substr($arg, strlen('--registry=')));
+    if ($value === '' || str_contains($value, "\0")) {
+        fwrite(STDERR, "Valore --registry non valido.\n");
+        exit(1);
+    }
+
+    $candidate = str_starts_with($value, DIRECTORY_SEPARATOR)
+        ? $value
+        : __DIR__ . DIRECTORY_SEPARATOR . ltrim($value, '/\\');
+
+    $real = realpath($candidate);
+    if ($real === false || !is_file($real)) {
+        fwrite(STDERR, "Registry non trovato: {$value}\n");
+        exit(1);
+    }
+
+    if (!str_starts_with($value, DIRECTORY_SEPARATOR)) {
+        $importRoot = realpath(__DIR__);
+        if ($importRoot === false || !str_starts_with($real, $importRoot . DIRECTORY_SEPARATOR)) {
+            fwrite(STDERR, "Registry relativo fuori dalla cartella import non consentito.\n");
+            exit(1);
+        }
+    }
+    $registryPath = $real;
+}
+
 $raw = file_get_contents($registryPath);
 if ($raw === false) {
-    fwrite(STDERR, "Impossibile leggere historical_products_registry.json\n");
+    fwrite(STDERR, 'Impossibile leggere ' . basename($registryPath) . "\n");
     exit(1);
 }
 $data = json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
@@ -124,6 +154,7 @@ try {
 }
 
 echo ($execute ? 'EXECUTE' : 'DRY-RUN') . " historical products\n";
+echo 'registry             : ' . basename($registryPath) . "\n";
 foreach ($stats as $key => $value) {
     echo str_pad($key, 20) . ': ' . $value . "\n";
 }
