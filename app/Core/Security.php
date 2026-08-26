@@ -11,7 +11,12 @@ final class Security
         header('X-Content-Type-Options: nosniff');
         header('Referrer-Policy: strict-origin-when-cross-origin');
         header('X-Frame-Options: SAMEORIGIN');
-        header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+        header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+        header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://www.googletagmanager.com; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://*.google-analytics.com; font-src 'self' data:");
+
+        if (self::isHttps()) {
+            header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+        }
     }
 
     public static function startSession(): void
@@ -20,7 +25,7 @@ final class Security
         session_name($cfg['session_cookie']);
         session_set_cookie_params([
             'httponly' => true,
-            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+            'secure' => self::isHttps(),
             'samesite' => 'Lax',
             'path' => '/',
         ]);
@@ -42,5 +47,11 @@ final class Security
         return is_string($token)
             && isset($_SESSION['_csrf'])
             && hash_equals($_SESSION['_csrf'], $token);
+    }
+
+    private static function isHttps(): bool
+    {
+        if (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') return true;
+        return strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
     }
 }
