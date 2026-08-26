@@ -1,1 +1,13 @@
-<?php require __DIR__.'/_layout_start.php'; ?><div class="toolbar"><div><h1>Assistenza</h1><p class="muted">Gestisci documenti di garanzia e codici di errore mostrati nella pagina pubblica.</p></div><a class="btnlink" href="/admin/assistance/form">Nuova risorsa</a></div><table><thead><tr><th>Sezione</th><th>Etichetta</th><th>Destinazione</th><th>Ordine</th><th>Stato</th><th></th></tr></thead><tbody><?php foreach($rows as $r): ?><tr><td><?= $r['section']==='warranty'?'Garanzia':'Codici errore' ?></td><td><?= htmlspecialchars($r['label'],ENT_QUOTES,'UTF-8') ?></td><td><?= htmlspecialchars((string)($r['document_title']?:$r['external_url']),ENT_QUOTES,'UTF-8') ?></td><td><?= (int)$r['sort_order'] ?></td><td><?= $r['published']?'Pubblicato':'Bozza' ?></td><td><a href="/admin/assistance/form?id=<?= (int)$r['id'] ?>">Modifica</a></td></tr><?php endforeach; ?></tbody></table><?php require __DIR__.'/_layout_end.php'; ?>
+<?php require __DIR__.'/_layout_start.php'; ?>
+<div class="toolbar"><div><h1>Assistenza</h1><p class="muted">Gestisci documenti di garanzia e codici di errore mostrati nella pagina pubblica.</p></div><a class="btnlink" href="/admin/assistance/form">Nuova risorsa</a></div>
+<table><thead><tr><th>Sezione</th><th>Etichetta</th><th>Destinazione</th><th>Ordine</th><th>Stato</th><th></th></tr></thead><tbody>
+<?php foreach($rows as $r): ?><tr>
+<td><?= $r['section']==='warranty'?'Garanzia':'Codici errore' ?></td>
+<td><?= htmlspecialchars($r['label'],ENT_QUOTES,'UTF-8') ?></td>
+<td><?= htmlspecialchars((string)($r['document_title']?:$r['external_url']),ENT_QUOTES,'UTF-8') ?></td>
+<td><?= (int)$r['sort_order'] ?></td>
+<td><?= $r['published']?'Pubblicato':'Bozza' ?></td>
+<td style="white-space:nowrap"><a href="/admin/assistance/form?id=<?= (int)$r['id'] ?>">Modifica</a> <form method="post" action="/admin/assistance/archive" style="display:inline" onsubmit="return confirm('Archiviare questa risorsa?');"><input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf,ENT_QUOTES,'UTF-8') ?>"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>"><button type="submit" class="linkbutton">Archivia</button></form></td>
+</tr><?php endforeach; ?>
+</tbody></table>
+<?php require __DIR__.'/_layout_end.php'; ?>
