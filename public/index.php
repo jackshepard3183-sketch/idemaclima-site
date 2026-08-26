@@ -27,6 +27,7 @@ use App\Controllers\Public\AnalyticsController;
 use App\Controllers\Public\SystemController;
 use App\Controllers\Public\AssistanceController;
 use App\Controllers\Public\EditorialController;
+use App\Controllers\Public\SeoController;
 use App\Core\Router;
 
 $router = new Router();
@@ -35,6 +36,8 @@ $router->get('/', static function (): void {
     echo '<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IDEMA Clima</title></head><body><main><h1>IDEMA Clima</h1><p>Nuovo progetto autonomo - ambiente di sviluppo.</p><p><a href="/schede-tecniche">Schede tecniche</a> · <a href="/cataloghi">Cataloghi</a> · <a href="/assistenza">Assistenza</a> · <a href="/detrazioni-e-incentivi">Detrazioni e incentivi</a> · <a href="/garanzia">Garanzia</a> · <a href="/campus">Campus</a> · <a href="/galleria">Galleria</a> · <a href="/referenze">Referenze</a> · <a href="/contatti">Contatti</a></p></main></body></html>';
 });
 $router->get('/health', static function (): void { header('Content-Type: application/json; charset=UTF-8'); echo json_encode(['ok'=>true],JSON_THROW_ON_ERROR); });
+$router->get('/sitemap.xml', [SeoController::class, 'sitemap']);
+$router->get('/robots.txt', [SeoController::class, 'robots']);
 
 $router->get('/schede-tecniche', [TechnicalSheetsController::class, 'index']);
 $router->get('/schede-tecniche/ricerca', [TechnicalSheetsController::class, 'search']);
