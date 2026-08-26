@@ -13,9 +13,15 @@ source_path,target_path,action,priority,notes
 /detrazioni-e-incentivi/conto-termico/,/detrazioni-e-incentivi/conto-termico,recreate,P0,Pagina informativa dedicata
 /schede-tecniche/dichiarazioni-conformita-ce/,/schede-tecniche/dichiarazioni-conformita-ce,recreate,P0,Raccolta dichiarazioni CE
 /schede-tecniche/altri-prodotti/,/schede-tecniche/altri-prodotti,historical-import,P1,Preservare recuperatori purificatori e barriere aria
+/schede-tecniche/altri-prodotti/purificatori-daria/,/schede-tecniche/famiglia/purificatori-aria,historical-import,P1,FTXM-740XIT storico/non disponibile
+/schede-tecniche/altri-prodotti/barriere-a-lama-daria/,/schede-tecniche/famiglia/barriere-lama-aria,historical-import,P1,AC-SA1 e AC-RE storiche/non disponibili
+/schede-tecniche/distribuzione-aria/,/schede-tecniche/distribuzione-aria,historical-import,P1,Sistemi Easy Kit Sistema Radio componenti e modulo plenum
 /schede-tecniche/linea-vrf/linea-vrf-vrf-individuali/,/schede-tecniche/famiglia/vrf-individuali,historical-import,P1,Famiglia storica R410A fuori catalogo
 /schede-tecniche/linea-vrf/linea-vrf-vrf-v5/,/schede-tecniche/famiglia/vrf-v5,historical-import,P1,Famiglia storica VRF V5
+/schede-tecniche/linea-idronica/linea-idronica-refrigeratori/,/schede-tecniche/famiglia/refrigeratori,historical-import,P1,Hub storico refrigeratori
+/schede-tecniche/linea-idronica/linea-idronica-refrigeratori/refrigeratori-mini-chiller/,/schede-tecniche/famiglia/mini-chiller,historical-import,P1,Mini Chiller R32 e R410A fuori catalogo
 /schede-tecniche/linea-idronica/linea-idronica-refrigeratori/refrigeratori-chiller-modulari/,/schede-tecniche/famiglia/chiller-modulari,historical-import,P1,Famiglia idronica storica
+/schede-tecniche/linea-idronica/linea-idronica-refrigeratori/refrigeratori-accessori/,/schede-tecniche/famiglia/accessori-refrigeratori,historical-import,P1,Comandi remoti storici refrigeratori
 /schede-tecniche/linea-commerciale-r32/linea-commerciale-r32-unita-interne/,/schede-tecniche/famiglia/unita-interne-commerciale,redirect,P1,Target definitivo da confermare dopo import
 /schede-tecniche/linea-vrf/linea-vrf-unita-interne/,/schede-tecniche/famiglia/unita-interne-vrf,redirect,P1,Target definitivo da confermare dopo import
 /schede-tecniche/linea-vrf/linea-vrf-atomix-r32/,/schede-tecniche/famiglia/atomix-r32,redirect,P1,Target definitivo da confermare dopo import
