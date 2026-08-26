@@ -18,7 +18,7 @@ final class ProductsController
     public static function index(): void
     {
         AdminAuth::requireLogin();
-        $sql = 'SELECT p.id,p.name,p.slug,p.product_role,p.refrigerant,p.status,p.published,p.sort_order,c.name category_name,COUNT(m.id) model_count FROM products p JOIN product_categories c ON c.id=p.category_id LEFT JOIN product_models m ON m.product_id=p.id GROUP BY p.id,p.name,p.slug,p.product_role,p.refrigerant,p.status,p.published,p.sort_order,c.name ORDER BY c.sort_order,c.name,p.sort_order,p.name';
+        $sql = 'SELECT p.id,p.name,p.slug,p.product_role,p.refrigerant,p.status,p.published,p.sort_order,c.name category_name,COUNT(DISTINCT m.id) model_count,COUNT(DISTINCT pcl.category_id) secondary_category_count FROM products p JOIN product_categories c ON c.id=p.category_id LEFT JOIN product_models m ON m.product_id=p.id LEFT JOIN product_category_links pcl ON pcl.product_id=p.id GROUP BY p.id,p.name,p.slug,p.product_role,p.refrigerant,p.status,p.published,p.sort_order,c.name ORDER BY c.sort_order,c.name,p.sort_order,p.name';
         $products = Database::connection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
@@ -28,17 +28,23 @@ final class ProductsController
     public static function form(): void
     {
         AdminAuth::requireLogin();
+        $pdo = Database::connection();
         $id = Validator::int($_GET['id'] ?? 0);
         $product = ['id'=>0,'category_id'=>'','name'=>'','slug'=>'','description'=>'','product_role'=>'complete_system','refrigerant'=>'','status'=>'active','image_path'=>'','sort_order'=>0,'published'=>1];
         if ($id) {
-            $s = Database::connection()->prepare('SELECT * FROM products WHERE id=?');
+            $s = $pdo->prepare('SELECT * FROM products WHERE id=?');
             $s->execute([$id]);
             $product = $s->fetch(PDO::FETCH_ASSOC) ?: $product;
         }
-        $categories = Database::connection()->query('SELECT id,name FROM product_categories ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC);
+        $categories = $pdo->query('SELECT id,name FROM product_categories ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC);
+        $secondaryCategoryIds = [];
         $models = [];
         if ($id) {
-            $s = Database::connection()->prepare('SELECT * FROM product_models WHERE product_id=? ORDER BY sort_order,code');
+            $s = $pdo->prepare('SELECT category_id FROM product_category_links WHERE product_id=? ORDER BY category_id');
+            $s->execute([$id]);
+            $secondaryCategoryIds = array_map('intval', $s->fetchAll(PDO::FETCH_COLUMN));
+
+            $s = $pdo->prepare('SELECT * FROM product_models WHERE product_id=? ORDER BY sort_order,code');
             $s->execute([$id]);
             $models = $s->fetchAll(PDO::FETCH_ASSOC);
         }
@@ -60,7 +66,21 @@ final class ProductsController
         $id = Validator::int($_POST['id'] ?? 0);
         $categoryId = Validator::int($_POST['category_id'] ?? 0);
         $pdo = Database::connection();
-        if ($categoryId < 1 || !DataIntegrity::categoryExists($pdo, $categoryId)) $errors[] = 'Categoria non valida.';
+        if ($categoryId < 1 || !DataIntegrity::categoryExists($pdo, $categoryId)) $errors[] = 'Categoria principale non valida.';
+
+        $secondaryCategoryIds = [];
+        $postedSecondary = $_POST['secondary_category_ids'] ?? [];
+        if (!is_array($postedSecondary)) $postedSecondary = [];
+        foreach ($postedSecondary as $rawId) {
+            $secondaryId = Validator::int($rawId);
+            if ($secondaryId < 1 || $secondaryId === $categoryId) continue;
+            if (!DataIntegrity::categoryExists($pdo, $secondaryId)) {
+                $errors[] = 'Una delle categorie aggiuntive non è valida.';
+                continue;
+            }
+            $secondaryCategoryIds[$secondaryId] = $secondaryId;
+        }
+        $secondaryCategoryIds = array_values($secondaryCategoryIds);
 
         $name = Validator::requiredString($_POST['name'] ?? '', 'Nome', 180, $errors);
         $slug = Validator::slug((string)($_POST['slug'] ?? ''));
@@ -106,20 +126,40 @@ final class ProductsController
             return;
         }
 
-        if ($id) {
-            $s = $pdo->prepare('UPDATE products SET category_id=?,name=?,slug=?,description=?,product_role=?,refrigerant=?,status=?,image_path=?,sort_order=?,published=? WHERE id=?');
-            $s->execute([$categoryId,$name,$slug,$description,$role,$refrigerant,$status,$image,$sort,$published,$id]);
-            if ($uploaded && $existingImage && $existingImage !== $image) Upload::removeManaged($existingImage);
-            $entityId = $id;
-            $action = 'product.update';
-        } else {
-            $s = $pdo->prepare('INSERT INTO products(category_id,name,slug,description,product_role,refrigerant,status,image_path,sort_order,published) VALUES(?,?,?,?,?,?,?,?,?,?)');
-            $s->execute([$categoryId,$name,$slug,$description,$role,$refrigerant,$status,$image,$sort,$published]);
-            $entityId = (int)$pdo->lastInsertId();
-            $action = 'product.create';
+        try {
+            $pdo->beginTransaction();
+            if ($id) {
+                $s = $pdo->prepare('UPDATE products SET category_id=?,name=?,slug=?,description=?,product_role=?,refrigerant=?,status=?,image_path=?,sort_order=?,published=? WHERE id=?');
+                $s->execute([$categoryId,$name,$slug,$description,$role,$refrigerant,$status,$image,$sort,$published,$id]);
+                $entityId = $id;
+                $action = 'product.update';
+            } else {
+                $s = $pdo->prepare('INSERT INTO products(category_id,name,slug,description,product_role,refrigerant,status,image_path,sort_order,published) VALUES(?,?,?,?,?,?,?,?,?,?)');
+                $s->execute([$categoryId,$name,$slug,$description,$role,$refrigerant,$status,$image,$sort,$published]);
+                $entityId = (int)$pdo->lastInsertId();
+                $action = 'product.create';
+            }
+
+            $pdo->prepare('DELETE FROM product_category_links WHERE product_id=?')->execute([$entityId]);
+            if ($secondaryCategoryIds !== []) {
+                $link = $pdo->prepare('INSERT INTO product_category_links(product_id,category_id) VALUES(?,?)');
+                foreach ($secondaryCategoryIds as $secondaryId) $link->execute([$entityId,$secondaryId]);
+            }
+
+            Audit::log($action, 'product', $entityId, [
+                'name'=>$name,
+                'image_path'=>$image,
+                'category_id'=>$categoryId,
+                'secondary_category_ids'=>$secondaryCategoryIds,
+            ]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            if ($uploaded) Upload::removeManaged($uploaded['path']);
+            throw $e;
         }
 
-        Audit::log($action, 'product', $entityId, ['name'=>$name,'image_path'=>$image,'category_id'=>$categoryId]);
+        if ($uploaded && $existingImage && $existingImage !== $image) Upload::removeManaged($existingImage);
         header('Location: /admin/products/form?id=' . $entityId);
         exit;
     }
