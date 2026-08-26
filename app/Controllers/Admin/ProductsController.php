@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Auth\AdminAuth;
 use App\Core\Audit;
+use App\Core\DataIntegrity;
 use App\Core\Database;
 use App\Core\Security;
 use App\Core\Upload;
@@ -58,7 +59,9 @@ final class ProductsController
         $errors = [];
         $id = Validator::int($_POST['id'] ?? 0);
         $categoryId = Validator::int($_POST['category_id'] ?? 0);
-        if ($categoryId < 1) $errors[] = 'Categoria obbligatoria.';
+        $pdo = Database::connection();
+        if ($categoryId < 1 || !DataIntegrity::categoryExists($pdo, $categoryId)) $errors[] = 'Categoria non valida.';
+
         $name = Validator::requiredString($_POST['name'] ?? '', 'Nome', 180, $errors);
         $slug = Validator::slug((string)($_POST['slug'] ?? ''));
         if ($slug === '') $slug = Validator::slug($name);
@@ -70,14 +73,19 @@ final class ProductsController
         $statuses = ['active','discontinued','unavailable'];
         $status = (string)($_POST['status'] ?? 'active');
         if (!in_array($status, $statuses, true)) $errors[] = 'Stato non valido.';
-        $existingImage = Validator::optionalString($_POST['existing_image_path'] ?? '', 500, 'Percorso immagine', $errors);
         $sort = Validator::int($_POST['sort_order'] ?? 0);
         $published = Validator::bool($_POST['published'] ?? 0);
 
-        $pdo = Database::connection();
         $q = $pdo->prepare('SELECT id FROM products WHERE slug=? AND id<>?');
         $q->execute([$slug, $id]);
         if ($q->fetch()) $errors[] = 'Slug già utilizzato.';
+
+        $existingImage = '';
+        if ($id) {
+            $q = $pdo->prepare('SELECT image_path FROM products WHERE id=?');
+            $q->execute([$id]);
+            $existingImage = (string)($q->fetchColumn() ?: '');
+        }
 
         $uploaded = Upload::image('image_file', $errors);
         $image = $uploaded['path'] ?? $existingImage;
@@ -87,6 +95,11 @@ final class ProductsController
             $product = ['id'=>$id,'category_id'=>$categoryId,'name'=>$name,'slug'=>$slug,'description'=>$description,'product_role'=>$role,'refrigerant'=>$refrigerant,'status'=>$status,'image_path'=>$image,'sort_order'=>$sort,'published'=>$published];
             $categories = $pdo->query('SELECT id,name FROM product_categories ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC);
             $models = [];
+            if ($id) {
+                $m = $pdo->prepare('SELECT * FROM product_models WHERE product_id=? ORDER BY sort_order,code');
+                $m->execute([$id]);
+                $models = $m->fetchAll(PDO::FETCH_ASSOC);
+            }
             $user = AdminAuth::user();
             $csrf = Security::csrfToken();
             require dirname(__DIR__, 2) . '/Views/admin/product_form.php';
@@ -94,12 +107,9 @@ final class ProductsController
         }
 
         if ($id) {
-            $s = $pdo->prepare('SELECT image_path FROM products WHERE id=?');
-            $s->execute([$id]);
-            $oldImage = (string)($s->fetchColumn() ?: '');
             $s = $pdo->prepare('UPDATE products SET category_id=?,name=?,slug=?,description=?,product_role=?,refrigerant=?,status=?,image_path=?,sort_order=?,published=? WHERE id=?');
             $s->execute([$categoryId,$name,$slug,$description,$role,$refrigerant,$status,$image,$sort,$published,$id]);
-            if ($uploaded && $oldImage && $oldImage !== $image) Upload::removeManaged($oldImage);
+            if ($uploaded && $existingImage && $existingImage !== $image) Upload::removeManaged($existingImage);
             $entityId = $id;
             $action = 'product.update';
         } else {
@@ -109,7 +119,7 @@ final class ProductsController
             $action = 'product.create';
         }
 
-        Audit::log($action, 'product', $entityId, ['name'=>$name,'image_path'=>$image]);
+        Audit::log($action, 'product', $entityId, ['name'=>$name,'image_path'=>$image,'category_id'=>$categoryId]);
         header('Location: /admin/products/form?id=' . $entityId);
         exit;
     }
@@ -124,18 +134,25 @@ final class ProductsController
         $productId = Validator::int($_POST['product_id'] ?? 0);
         $id = Validator::int($_POST['id'] ?? 0);
         $code = trim((string)($_POST['code'] ?? ''));
-        if ($productId < 1 || $code === '') {
+        $pdo = Database::connection();
+        $p = $pdo->prepare('SELECT 1 FROM products WHERE id=?');
+        $p->execute([$productId]);
+        if ($productId < 1 || !$p->fetchColumn() || $code === '') {
             http_response_code(422);
-            exit('Prodotto e codice modello obbligatori');
+            exit('Prodotto e codice modello validi sono obbligatori');
         }
         $name = trim((string)($_POST['name'] ?? ''));
         $sort = Validator::int($_POST['sort_order'] ?? 0);
         $published = Validator::bool($_POST['published'] ?? 0);
-        $pdo = Database::connection();
         try {
             if ($id) {
                 $s = $pdo->prepare('UPDATE product_models SET code=?,name=?,sort_order=?,published=? WHERE id=? AND product_id=?');
                 $s->execute([$code,$name?:null,$sort,$published,$id,$productId]);
+                if ($s->rowCount() === 0) {
+                    $exists = $pdo->prepare('SELECT 1 FROM product_models WHERE id=? AND product_id=?');
+                    $exists->execute([$id,$productId]);
+                    if (!$exists->fetchColumn()) { http_response_code(404); exit('Modello non trovato per il prodotto selezionato.'); }
+                }
                 $entityId = $id;
                 $action = 'model.update';
             } else {
@@ -144,7 +161,7 @@ final class ProductsController
                 $entityId = (int)$pdo->lastInsertId();
                 $action = 'model.create';
             }
-            Audit::log($action, 'product_model', $entityId, ['code'=>$code]);
+            Audit::log($action, 'product_model', $entityId, ['code'=>$code,'product_id'=>$productId]);
         } catch (\PDOException) {
             http_response_code(422);
             exit('Codice modello già presente per questo prodotto.');
