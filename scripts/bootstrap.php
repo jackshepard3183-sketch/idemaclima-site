@@ -31,5 +31,6 @@ if (is_file($envFile)) {
     }
 }
 
+\App\Core\Security::requireAppKey();
 \App\Core\Security::sendHeaders();
 \App\Core\Security::startSession();
