@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "source": "www.idemaclima.it historical technical sheets",
+  "generated_at": "2026-08-26",
+  "categories": [
+    {
+      "parent_slug": "linea-vrf",
+      "name": "VRF Individuali",
+      "slug": "vrf-individuali",
+      "sort_order": 80,
+      "products": [
+        {"name":"IVI-200-224-260WV2RN1(A)","slug":"ivi-200-224-260wv2rn1-a","role":"outdoor_unit","refrigerant":"R410A","status":"discontinued","models":["IVi-200WV2RN1(A)","IVi-224WV2RN1(A)","IVi-260WV2RN1(A)"]},
+        {"name":"IVI-280-335WV2RN1(A)","slug":"ivi-280-335wv2rn1-a","role":"outdoor_unit","refrigerant":"R410A","status":"discontinued","models":["IVi-280WV2RN1(A)","IVi-335WV2RN1(A)"]},
+        {"name":"IDV-V400-450W/DRN1(A)","slug":"idv-v400-450w-drn1-a","role":"outdoor_unit","refrigerant":"R410A","status":"discontinued","models":["IDV-V400W/DRN1(A)","IDV-V450W/DRN1(A)"]}
+      ]
+    },
+    {
+      "parent_slug": "linea-vrf",
+      "name": "VRF V5",
+      "slug": "vrf-v5",
+      "sort_order": 90,
+      "products": [
+        {"name":"V5-X252-280-335W/V2GN1","slug":"v5-x252-280-335w-v2gn1","role":"outdoor_unit","refrigerant":"R410A","status":"discontinued","models":["V5-X252W/V2GN1","V5-X280W/V2GN1","V5-X335W/V2GN1"]},
+        {"name":"VRF V5-E","slug":"vrf-v5-e","role":"outdoor_unit","refrigerant":"R410A","status":"discontinued","models":[]}
+      ]
+    },
+    {
+      "parent_slug": "linea-idronica",
+      "name": "Refrigeratori",
+      "slug": "refrigeratori",
+      "sort_order": 70,
+      "children": [
+        {
+          "name": "Mini Chiller",
+          "slug": "mini-chiller",
+          "products": [
+            {"name":"IGC-V7WD2N8-B-R32","slug":"igc-v7wd2n8-b-r32","role":"complete_system","refrigerant":"R32","status":"discontinued","models":["IGC-V7WD2N8-B-R32"]},
+            {"name":"IGC-V12-V16WD2N8-B-R32","slug":"igc-v12-v16wd2n8-b-r32","role":"complete_system","refrigerant":"R32","status":"discontinued","models":["IGC-V12WD2N8-B-R32","IGC-V16WD2N8-B-R32"]},
+            {"name":"IGC-V16WD2RN8-B-R32","slug":"igc-v16wd2rn8-b-r32","role":"complete_system","refrigerant":"R32","status":"discontinued","models":["IGC-V16WD2RN8-B-R32"]},
+            {"name":"IGC-V5-V7W/D2N1","slug":"igc-v5-v7w-d2n1","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["IGC-V5W/D2N1","IGC-V7W/D2N1"]},
+            {"name":"IGC-V10-12W/D2N1","slug":"igc-v10-12w-d2n1","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["IGC-V10W/D2N1","IGC-V12W/D2N1"]},
+            {"name":"IGC-V12-14-16W/D2RN1","slug":"igc-v12-14-16w-d2rn1","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["IGC-V12W/DR2N1","IGC-V14W/DR2N1","IGC-V16W/DR2N1"]}
+          ]
+        },
+        {
+          "name": "Chiller modulari",
+          "slug": "chiller-modulari",
+          "products": [
+            {"name":"MC-SU30(M)/RN8L","slug":"mc-su30-m-rn8l","role":"complete_system","refrigerant":"R32","status":"discontinued","models":["IC-SU30/RN8L","IC-SU30M/RN8L"]},
+            {"name":"MC-SU60(M)/RN8L","slug":"mc-su60-m-rn8l","role":"complete_system","refrigerant":"R32","status":"discontinued","models":["IC-SU60/RN8L","IC-SU60M/RN8L"]},
+            {"name":"MC-SU90(M)/RN1L","slug":"mc-su90-m-rn1l","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["IC-SU90/RN1L","IC-SU90M/RN1L"]}
+          ]
+        },
+        {
+          "name": "Accessori refrigeratori",
+          "slug": "accessori-refrigeratori",
+          "products": [
+            {"name":"KJR-120F/BMK-E","slug":"kjr-120f-bmk-e","role":"controller","status":"discontinued","models":["KJR-120F/BMK-E"]},
+            {"name":"KJRM-120H/BMWKO-E","slug":"kjrm-120h-bmwko-e","role":"controller","status":"discontinued","models":["KJRM-120H/BMWKO-E"]},
+            {"name":"KJRH-120K-BMKO-E","slug":"kjrh-120k-bmko-e","role":"controller","status":"discontinued","models":["KJRH-120K-BMKO-E"]}
+          ]
+        }
+      ]
+    },
+    {
+      "parent_slug": "altri-prodotti",
+      "name": "Purificatori d'aria",
+      "slug": "purificatori-aria",
+      "sort_order": 20,
+      "products": [
+        {"name":"FTXM-740XIT","slug":"ftxm-740xit","role":"other","status":"unavailable","models":["FTXM-740XIT"]}
+      ]
+    },
+    {
+      "parent_slug": "altri-prodotti",
+      "name": "Barriere a lama d'aria",
+      "slug": "barriere-lama-aria",
+      "sort_order": 30,
+      "products": [
+        {"name":"AC-SA1","slug":"ac-sa1","role":"other","status":"unavailable","models":["AC-SA1"]},
+        {"name":"AC-RE","slug":"ac-re","role":"other","status":"unavailable","models":["AC-RE"]}
+      ]
+    },
+    {
+      "parent_slug": null,
+      "name": "Distribuzione aria",
+      "slug": "distribuzione-aria",
+      "sort_order": 60,
+      "products": [
+        {"name":"Sistemi Easy Kit","slug":"sistemi-easy-kit","role":"accessory","status":"active","models":[]},
+        {"name":"Sistema Radio","slug":"sistema-radio","role":"accessory","status":"active","models":[]},
+        {"name":"Componenti distribuzione aria","slug":"componenti-distribuzione-aria","role":"accessory","status":"active","models":[]},
+        {"name":"Modulo richiesta plenum","slug":"modulo-richiesta-plenum","role":"other","status":"active","models":[]}
+      ]
+    }
+  ]
+}
