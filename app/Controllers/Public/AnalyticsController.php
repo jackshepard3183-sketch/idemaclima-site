@@ -60,8 +60,7 @@ final class AnalyticsController
     {
         $days=max(1,min(3650,$days));
         if(random_int(1,100)!==1)return;
-        $stmt=$pdo->prepare('DELETE FROM document_events WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)');
-        $stmt->execute([$days]);
+        $pdo->exec('DELETE FROM document_events WHERE created_at < DATE_SUB(NOW(), INTERVAL '.$days.' DAY)');
     }
 
     private static function safeFilename(string $name):string
