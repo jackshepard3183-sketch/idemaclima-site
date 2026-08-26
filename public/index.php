@@ -113,11 +113,17 @@ $router->post('/admin/content/catalogs/save', [AdminCatalogsController::class, '
 $router->get('/admin/content/gallery', [AdminContentController::class, 'albums']);
 $router->get('/admin/content/gallery/form', [AdminContentController::class, 'albumForm']);
 $router->post('/admin/content/gallery/save', [AdminContentController::class, 'saveAlbum']);
+$router->post('/admin/content/gallery/archive', [AdminContentController::class, 'archiveAlbum']);
 $router->post('/admin/content/gallery/image', [AdminContentController::class, 'addGalleryImage']);
+$router->post('/admin/content/gallery/image/update', [AdminContentController::class, 'updateGalleryImage']);
+$router->post('/admin/content/gallery/image/delete', [AdminContentController::class, 'deleteGalleryImage']);
 $router->get('/admin/content/references', [AdminContentController::class, 'references']);
 $router->get('/admin/content/references/form', [AdminContentController::class, 'referenceForm']);
 $router->post('/admin/content/references/save', [AdminContentController::class, 'saveReference']);
+$router->post('/admin/content/references/archive', [AdminContentController::class, 'archiveReference']);
 $router->post('/admin/content/references/image', [AdminContentController::class, 'addReferenceImage']);
+$router->post('/admin/content/references/image/update', [AdminContentController::class, 'updateReferenceImage']);
+$router->post('/admin/content/references/image/delete', [AdminContentController::class, 'deleteReferenceImage']);
 $router->get('/admin/contacts', [AdminContactsAnalyticsController::class, 'contacts']);
 $router->get('/admin/contacts/view', [AdminContactsAnalyticsController::class, 'contact']);
 $router->post('/admin/contacts/update', [AdminContactsAnalyticsController::class, 'updateContact']);
