@@ -33,6 +33,42 @@ final class TechnicalSheetsController
         ]);
     }
 
+    public static function search(): void
+    {
+        $query = trim((string)($_GET['q'] ?? ''));
+        $results = [];
+
+        if ($query !== '') {
+            $pdo = Database::connection();
+            $like = '%' . $query . '%';
+            $stmt = $pdo->prepare(
+                'SELECT DISTINCT p.id, p.name, p.slug, p.status, p.refrigerant,
+                        c.name AS family_name, parent.name AS category_name,
+                        GROUP_CONCAT(DISTINCT m.code ORDER BY m.code SEPARATOR ", ") AS matched_models,
+                        GROUP_CONCAT(DISTINCT d.title ORDER BY d.title SEPARATOR " | ") AS matched_documents
+                 FROM products p
+                 JOIN product_categories c ON c.id = p.category_id
+                 LEFT JOIN product_categories parent ON parent.id = c.parent_id
+                 LEFT JOIN product_models m ON m.product_id = p.id AND m.published = 1
+                 LEFT JOIN document_links dl ON dl.product_id = p.id
+                 LEFT JOIN documents d ON d.id = dl.document_id AND d.published = 1
+                 WHERE p.published = 1
+                   AND (p.name LIKE ? OR p.description LIKE ? OR m.code LIKE ? OR d.title LIKE ? OR d.filename LIKE ?)
+                 GROUP BY p.id
+                 ORDER BY (p.status = "active") DESC, p.name
+                 LIMIT 100'
+            );
+            $stmt->execute([$like, $like, $like, $like, $like]);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        self::render('technical_sheets/search', [
+            'title' => 'Ricerca schede tecniche',
+            'query' => $query,
+            'results' => $results,
+        ]);
+    }
+
     public static function category(string $slug): void
     {
         $pdo = Database::connection();
