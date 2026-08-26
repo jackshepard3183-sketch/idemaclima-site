@@ -6,7 +6,7 @@ source_path,target_path,action,priority,notes
 /galleria/,/galleria,keep,P1,Modulo già previsto
 /referenze/,/referenze,keep,P1,Modulo già previsto
 /contatti/,/contatti,keep,P0,Modulo già previsto
-/assistenza/,/assistenza,recreate,P0,Pagina editoriale e accesso richieste assistenza
+/assistenza/,/assistenza,keep,P0,Pagina informativa IDEMA da preservare; il modulo richieste resta esterno su idemaassistenza.it
 /faq/,/faq,recreate,P0,Contenuto SEO informativo storico
 /configurazione-wi-fi/,/configurazione-wi-fi,recreate,P0,Guida estesa Wi-Fi e troubleshooting
 /detrazioni-e-incentivi/,/detrazioni-e-incentivi,recreate,P0,Hub bonus ed incentivi
