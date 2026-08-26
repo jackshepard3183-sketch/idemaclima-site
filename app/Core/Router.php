@@ -6,7 +6,7 @@ namespace App\Core;
 
 final class Router
 {
-    /** @var array<string, callable> */
+    /** @var array<int, array{method:string,path:string,regex:string,params:array<int,string>,handler:callable}> */
     private array $routes = [];
 
     public function get(string $path, callable $handler): void
@@ -21,21 +21,51 @@ final class Router
 
     public function add(string $method, string $path, callable $handler): void
     {
-        $this->routes[strtoupper($method) . ' ' . $path] = $handler;
+        $params = [];
+        $regex = preg_replace_callback(
+            '/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/',
+            static function (array $matches) use (&$params): string {
+                $params[] = $matches[1];
+                return '([^/]+)';
+            },
+            $path
+        );
+
+        $this->routes[] = [
+            'method' => strtoupper($method),
+            'path' => $path,
+            'regex' => '#^' . ($regex ?? preg_quote($path, '#')) . '$#',
+            'params' => $params,
+            'handler' => $handler,
+        ];
     }
 
     public function dispatch(string $method, string $uri): void
     {
         $path = parse_url($uri, PHP_URL_PATH) ?: '/';
-        $key = strtoupper($method) . ' ' . $path;
+        $method = strtoupper($method);
 
-        if (!isset($this->routes[$key])) {
-            http_response_code(404);
-            header('Content-Type: text/plain; charset=UTF-8');
-            echo 'Pagina non trovata';
+        foreach ($this->routes as $route) {
+            if ($route['method'] !== $method) {
+                continue;
+            }
+
+            if (!preg_match($route['regex'], $path, $matches)) {
+                continue;
+            }
+
+            array_shift($matches);
+            $arguments = [];
+            foreach ($route['params'] as $index => $name) {
+                $arguments[$name] = isset($matches[$index]) ? rawurldecode($matches[$index]) : '';
+            }
+
+            call_user_func_array($route['handler'], array_values($arguments));
             return;
         }
 
-        ($this->routes[$key])();
+        http_response_code(404);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'Pagina non trovata';
     }
 }
