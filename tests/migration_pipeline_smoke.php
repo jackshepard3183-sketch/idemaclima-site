@@ -5,7 +5,7 @@ declare(strict_types=1);
 $root=dirname(__DIR__);
 $historical=$root.'/database/import/preflight_historical_products.php';
 $documents=$root.'/database/import/import_downloaded_documents.php';
-$migration=$root.'/database/migrations/017_product_category_links.sql';
+$migration=$root.'/database/migrations/017_product_secondary_categories.sql';
 
 foreach ([$historical,$documents,$migration] as $path) {
     if (!is_file($path)) throw new RuntimeException('File pipeline mancante: '.basename($path));
