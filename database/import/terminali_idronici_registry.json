@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "source": "www.idemaclima.it terminali idronici historical/current technical sheets",
+  "generated_at": "2026-08-26",
+  "categories": [
+    {
+      "parent_slug": "linea-idronica",
+      "name": "Terminali idronici",
+      "slug": "linea-idronica-terminali-idronici",
+      "sort_order": 80,
+      "products": [
+        {"name":"IHW","slug":"ihw","role":"indoor_unit","status":"active","models":[]},
+        {"name":"IFS","slug":"ifs","role":"indoor_unit","status":"active","models":[]},
+        {"name":"IMKG-V","slug":"imkg-v","role":"indoor_unit","status":"active","models":["IMKG-V250B","IMKG-V300B","IMKG-V300C","IMKG-V400B","IMKG-V400C","IMKG-V500B","IMKG-V600B","IMKG-V600C"]},
+        {"name":"IMKD-V","slug":"imkd-v","role":"indoor_unit","status":"active","models":["IMKD-V300","IMKD-V400","IMKD-V500"]},
+        {"name":"IMKA-V","slug":"imka-v","role":"indoor_unit","status":"active","models":["IMKA-V600R","IMKA-V750R","IMKA-V850R","IMKA-V950R","IMKA-V1200R","IMKA-V1500R"]},
+        {"name":"IMKH2-V","slug":"imkh2-v","role":"indoor_unit","status":"active","models":["IMKH2-V150-R3","IMKH2-V250-R3","IMKH2-V350-R3","IMKH2-V500-R3","IMKH2-V700-R3","IMKH2-V800-R3"]},
+        {"name":"IMK-CBS","slug":"imk-cbs","role":"indoor_unit","status":"active","models":[]},
+        {"name":"IMKT-V","slug":"imkt-v","role":"indoor_unit","status":"unavailable","models":["IMKT2-V","IMKT3-V"]},
+        {"name":"R51/E","slug":"r51-e","role":"controller","status":"active","models":["R51/E"]},
+        {"name":"RM05/BG(T)E-A","slug":"rm05-bg-t-e-a","role":"controller","status":"active","models":["RM05/BG(T)E-A"]},
+        {"name":"KJR-18B/E","slug":"kjr-18b-e","role":"controller","status":"active","models":["KJR-18B/E"]},
+        {"name":"KJR-12B/DP(T)-E","slug":"kjr-12b-dp-t-e","role":"controller","status":"active","models":["KJR-12B/DP(T)-E"]},
+        {"name":"KJR-21B/D","slug":"kjr-21b-d","role":"controller","status":"active","models":["KJR-21B/D"]},
+        {"name":"KJRP-86A1-E","slug":"kjrp-86a1-e","role":"controller","status":"active","models":["KJRP-86A1-E"]},
+        {"name":"KJRP-75A/BK-E","slug":"kjrp-75a-bk-e","role":"controller","status":"active","models":["KJRP-75A/BK-E"]},
+        {"name":"KJRP-86I/MFK-E","slug":"kjrp-86i-mfk-e","role":"controller","status":"active","models":["KJRP-86I/MFK-E"]},
+        {"name":"KJRP-86A/BMFNKD-E","slug":"kjrp-86a-bmfnkd-e","role":"controller","status":"active","models":["KJRP-86A/BMFNKD-E"]},
+        {"name":"NIM01","slug":"nim01","role":"accessory","status":"active","models":["NIM01"]},
+        {"name":"FCUKZ-01-02","slug":"fcukz-01-02","role":"accessory","status":"active","models":["FCUKZ-01-02"]},
+        {"name":"FCUKZ-03-04","slug":"fcukz-03-04","role":"accessory","status":"active","models":["FCUKZ-03-04"]},
+        {"name":"VITRO-CONTROL","slug":"vitro-control","role":"controller","status":"active","models":["VITRO-CONTROL"]}
+      ]
+    }
+  ]
+}
