@@ -23,7 +23,7 @@ if (is_file($envFile)) {
         }
         [$name, $value] = explode('=', $line, 2);
         $name = trim($name);
-        $value = trim($value);
+        $value = trim($value, " \t\n\r\0\x0B\"'");
         if (getenv($name) === false) {
             putenv($name . '=' . $value);
             $_ENV[$name] = $value;
@@ -31,13 +31,13 @@ if (is_file($envFile)) {
     }
 }
 
-$appConfig = require dirname(__DIR__) . '/config/app.php';
-$timezone = (string)($appConfig['timezone'] ?? 'Europe/Rome');
+$timezone = trim((string)($_ENV['APP_TIMEZONE'] ?? getenv('APP_TIMEZONE') ?: 'Europe/Rome'));
 if (!in_array($timezone, timezone_identifiers_list(), true)) {
-    throw new RuntimeException('APP_TIMEZONE non valida: ' . $timezone);
+    throw new RuntimeException('APP_TIMEZONE non valida.');
 }
 date_default_timezone_set($timezone);
 
 \App\Core\Security::requireAppKey();
+\App\Core\Url::installBasePathSupport();
 \App\Core\Security::sendHeaders();
 \App\Core\Security::startSession();
