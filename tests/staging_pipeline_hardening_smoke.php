@@ -13,7 +13,7 @@ foreach([$downloader,$dbImporter,$preflight,$readiness,$pipeline,$warrantyMigrat
 $checks=[
     [$downloader,'Modalita --execute disabilitata','legacy execute disabilitato'],
     [$downloader,"'actual_filename'",'mapping filename deduplicato'],
-    [$dbImporter,'document-migration-'.$literal='document-migration-','report download usato'],
+    [$dbImporter,'document-migration-','report download usato'],
     [$dbImporter,'resolveLocalPdf','resolver file deduplicati'],
     [$dbImporter,'SHA-256 diverso dal report download','verifica hash report/filesystem'],
     [$preflight,"'product_slug_conflict'",'slug product conflict implementato'],
