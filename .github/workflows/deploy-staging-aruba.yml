@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: idemaclima-staging-aruba
+  group: idemaclima-staging-aruba-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
