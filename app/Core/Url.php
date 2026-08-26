@@ -46,8 +46,10 @@ final class Url
                 if (stripos($headerLine, 'Location:') !== 0) continue;
                 $target = trim(substr($headerLine, strlen('Location:')));
                 if ($target === '' || preg_match('#^https?://#i', $target)) continue;
+                $status = http_response_code();
+                if ($status < 300 || $status > 399) $status = 302;
                 header_remove('Location');
-                header('Location: ' . self::to($target), true);
+                header('Location: ' . self::to($target), true, $status);
                 break;
             }
         });
@@ -59,7 +61,7 @@ final class Url
         if ($base === '' || $html === '') return $html;
 
         $html = preg_replace_callback(
-            '#\b(href|src|action|poster)=([' . "\"'" . '])/(?!/)([^' . "\"'" . ']*)\2#i',
+            "#\\b(href|src|action|poster)=([\"'])/(?!/)([^\"']*)\\2#i",
             static function (array $m) use ($base): string {
                 $value = '/' . ltrim((string)$m[3], '/');
                 if ($value === $base || str_starts_with($value, $base . '/')) return $m[0];
@@ -69,7 +71,7 @@ final class Url
         ) ?? $html;
 
         $html = preg_replace_callback(
-            '#url\(([' . "\"'" . ']?)/(?!/)([^)' . "\"'" . ']*)\1\)#i',
+            "#url\\(([\"']?)/(?!/)([^)\"']*)\\1\\)#i",
             static function (array $m) use ($base): string {
                 $value = '/' . ltrim((string)$m[2], '/');
                 if ($value === $base || str_starts_with($value, $base . '/')) return $m[0];
