@@ -154,6 +154,8 @@ Stato iniziale del registry (26/08/2026):
 - barriere AC-SA1 e AC-RE;
 - Distribuzione aria.
 
+Il crawler storico include inoltre le linee **Residenziale R410A** e **Commerciale R410A**, ancora pubblicate sul sito originale come archivio/fuori catalogo. Queste linee devono essere censite integralmente prima di congelare il registry prodotti definitivo.
+
 Dry-run:
 
 ```bash
@@ -168,9 +170,48 @@ php database/import/import_historical_products.php --execute
 
 L'importatore controlla i codici modello globalmente: se un modello storico esiste già sotto un altro prodotto, l'operazione viene interrotta e la transazione viene annullata. Non vengono creati doppioni automaticamente.
 
-## 8. Migrazione fisica documenti
+## 8. Scoperta ricorsiva dei documenti storici
 
-`document_migration_manifest.csv` è la lista curata dei PDF da trasferire dal vecchio WordPress allo storage autonomo. Il manifest iniziale contiene le Dichiarazioni CE verificate.
+`historical_document_sources.json` contiene gli hub di partenza. `discover_historical_documents.php` segue ricorsivamente le pagine figlie consentite delle aree tecniche/cataloghi, resta confinato a `idemaclima.it`, deduplica le pagine visitate e raccoglie soltanto i link PDF.
+
+```bash
+php database/import/discover_historical_documents.php
+```
+
+Output previsto:
+
+`database/import/reports/historical-document-discovery-latest.json`
+
+Questa fase è read-only rispetto al sito pubblico e non copia ancora i PDF nello storage autonomo.
+
+## 9. Confronto WordPress storico ↔ Lovable
+
+Confronto preliminare per filename:
+
+```bash
+php database/import/compare_document_archives.php \
+  --lovable=/path/to/datasheets.ts \
+  --historical=database/import/reports/historical-document-discovery-latest.json \
+  --output=/tmp/document-comparison.csv
+```
+
+Il match per filename è solo un segnale preliminare. Non autorizza la deduplica fisica.
+
+Per generare il manifest candidato finale e il registro alias:
+
+```bash
+php database/import/build_final_document_manifest.php \
+  --historical=database/import/reports/historical-document-discovery-latest.json \
+  --lovable=/path/to/datasheets.ts \
+  --output=/tmp/final-document-manifest.csv \
+  --aliases=/tmp/final-document-aliases.csv
+```
+
+Il primo CSV rappresenta i file fisici candidati; il secondo conserva tutti gli URL sorgente WordPress/Lovable. La risoluzione definitiva `1 file fisico ↔ N alias` avviene **solo dopo SHA-256**.
+
+## 10. Migrazione fisica documenti
+
+`document_migration_manifest.csv` è la lista curata dei PDF verificati da trasferire. Prima della copia reale deve essere sostituita/estesa dal manifest definitivo risultante dal confronto completo.
 
 Solo controllo manifest, senza rete e senza DB:
 
@@ -192,21 +233,23 @@ php database/import/migrate_documents.php --execute
 
 Protezioni della migrazione documentale:
 
-- accetta come sorgente solo `https://www.idemaclima.it/wp-content/uploads/...`;
-- solo HTTPS;
+- sorgenti IDEMA consentite in HTTPS;
 - massimo 4 redirect;
 - verifica firma `%PDF-`;
 - limite 50 MB;
 - calcolo SHA-256;
-- non sovrascrive un PDF locale già presente senza prima verificarlo;
+- deduplica fisica per SHA-256;
+- conservazione alias sorgente in `document_source_aliases`;
+- dimensione e MIME del file persistiti nel record documento;
+- non sovrascrive un PDF locale già presente senza verificarlo;
 - report JSON in `database/import/reports/document-migration-latest.json`;
 - i documenti CE vengono anche collegati alla pagina editoriale Dichiarazioni CE quando disponibile.
 
-## 9. Test preventivi
+## 11. Test preventivi
 
 ```bash
 php tests/historical_import_smoke.php
-./tests/run_all.sh
+bash tests/run_all.sh
 ```
 
 Lo smoke test verifica duplicati di slug categoria/prodotto, duplicati dei codici modello nel registry e duplicati/forme non valide degli URL nel manifest documenti.
@@ -217,11 +260,14 @@ Lo smoke test verifica duplicati di slug categoria/prodotto, duplicati dei codic
 2. import Lovable base;
 3. modelli verificati;
 4. combinazioni;
-5. dry-run archivio storico;
-6. risoluzione di eventuali conflitti modello;
-7. import archivio storico;
-8. `migrate_documents.php --download` e controllo hash/report;
-9. solo dopo, `migrate_documents.php --execute`;
-10. verifica URL e redirect SEO su staging.
+5. crawl completo archivio storico;
+6. confronto WordPress ↔ Lovable;
+7. manifest finale file + alias;
+8. dry-run archivio prodotti storico, incluse linee legacy R410A;
+9. risoluzione conflitti modello;
+10. import archivio storico;
+11. `migrate_documents.php --download` e controllo SHA-256/report;
+12. solo dopo, `migrate_documents.php --execute`;
+13. verifica URL e redirect SEO su staging.
 
-L'import reale del database non va eseguito finché i report di dry-run e normalizzazione non sono stati controllati.
+L'import reale del database non va eseguito finché i report di dry-run, confronto e normalizzazione non sono stati controllati.
