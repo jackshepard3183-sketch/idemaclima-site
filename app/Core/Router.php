@@ -8,6 +8,7 @@ final class Router
 {
     /** @var array<int, array{method:string,path:string,regex:string,params:array<int,string>,handler:callable}> */
     private array $routes = [];
+    private $notFoundHandler = null;
 
     public function get(string $path, callable $handler): void
     {
@@ -40,19 +41,19 @@ final class Router
         ];
     }
 
+    public function setNotFoundHandler(callable $handler): void
+    {
+        $this->notFoundHandler = $handler;
+    }
+
     public function dispatch(string $method, string $uri): void
     {
         $path = parse_url($uri, PHP_URL_PATH) ?: '/';
         $method = strtoupper($method);
 
         foreach ($this->routes as $route) {
-            if ($route['method'] !== $method) {
-                continue;
-            }
-
-            if (!preg_match($route['regex'], $path, $matches)) {
-                continue;
-            }
+            if ($route['method'] !== $method) continue;
+            if (!preg_match($route['regex'], $path, $matches)) continue;
 
             array_shift($matches);
             $arguments = [];
@@ -61,6 +62,11 @@ final class Router
             }
 
             call_user_func_array($route['handler'], array_values($arguments));
+            return;
+        }
+
+        if (is_callable($this->notFoundHandler)) {
+            call_user_func($this->notFoundHandler, $path, $method);
             return;
         }
 
