@@ -1,0 +1,67 @@
+name: Deploy staging to Aruba
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: idemaclima-staging-aruba
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp rsync zip php-cli
+
+      - name: Run smoke tests
+        run: bash tests/run_all.sh
+
+      - name: Build staging package
+        run: bash scripts/build_staging_package.sh
+
+      - name: Verify package does not contain secrets
+        run: |
+          test -d build/idemaclima-staging
+          test ! -f build/idemaclima-staging/.env
+          test -f build/idemaclima-staging/DEPLOY_SHA256SUMS.txt
+
+      - name: Deploy to Aruba /idemaclima
+        env:
+          FTP_SERVER: ${{ secrets.ARUBA_FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.ARUBA_FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.ARUBA_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${FTP_SERVER:?Missing ARUBA_FTP_SERVER secret}"
+          : "${FTP_USERNAME:?Missing ARUBA_FTP_USERNAME secret}"
+          : "${FTP_PASSWORD:?Missing ARUBA_FTP_PASSWORD secret}"
+
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<'EOF'
+          set ftp:ssl-allow yes
+          set ssl:verify-certificate yes
+          set net:max-retries 2
+          set net:timeout 20
+          mkdir -p /idemaclima
+          cd /idemaclima
+          mirror -R --delete --verbose --parallel=3 build/idemaclima-staging/ ./
+          bye
+          EOF
+
+      - name: Verify public staging endpoint
+        run: |
+          curl --fail --silent --show-error --location \
+            --retry 3 --retry-delay 3 \
+            https://www.rappresentanzeguanzirolisas.it/idemaclima/ \
+            -o /tmp/idemaclima-home.html
+          test -s /tmp/idemaclima-home.html
