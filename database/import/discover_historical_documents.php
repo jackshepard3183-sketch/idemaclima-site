@@ -20,7 +20,7 @@ function fetchHtml(string $url): string
             CURLOPT_MAXREDIRS => 4,
             CURLOPT_CONNECTTIMEOUT => 15,
             CURLOPT_TIMEOUT => 45,
-            CURLOPT_USERAGENT => 'IDEMA-Inventory/1.0',
+            CURLOPT_USERAGENT => 'IDEMA-Inventory/1.1',
             CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
         ]);
         $html = curl_exec($ch);
@@ -30,7 +30,7 @@ function fetchHtml(string $url): string
         if (!is_string($html) || $status < 200 || $status >= 300) throw new RuntimeException('HTTP ' . $status . ($err ? ': ' . $err : ''));
         return $html;
     }
-    $ctx = stream_context_create(['http'=>['timeout'=>45,'user_agent'=>'IDEMA-Inventory/1.0','follow_location'=>1,'max_redirects'=>4]]);
+    $ctx = stream_context_create(['http'=>['timeout'=>45,'user_agent'=>'IDEMA-Inventory/1.1','follow_location'=>1,'max_redirects'=>4]]);
     $html = @file_get_contents($url, false, $ctx);
     if (!is_string($html)) throw new RuntimeException('Download HTML fallito.');
     return $html;
@@ -51,43 +51,89 @@ function absoluteUrl(string $href, string $base): ?string
     return $origin . ($dir ? $dir : '') . '/' . $href;
 }
 
+function normalizeIdemaUrl(string $url): string
+{
+    $url = preg_replace('#^https://idemaclima\.it/#i','https://www.idemaclima.it/',$url) ?? $url;
+    $parts = parse_url($url);
+    if (!$parts) return $url;
+    $path = $parts['path'] ?? '/';
+    $query = isset($parts['query']) ? '?' . $parts['query'] : '';
+    return 'https://www.idemaclima.it' . $path . $query;
+}
+
+function isAllowedPage(string $url): bool
+{
+    $host = strtolower((string)(parse_url($url, PHP_URL_HOST) ?? ''));
+    if ($host !== 'www.idemaclima.it' && $host !== 'idemaclima.it') return false;
+    $path = (string)(parse_url($url, PHP_URL_PATH) ?? '/');
+    return str_starts_with($path, '/schede-tecniche/') || $path === '/schede-tecniche/' || $path === '/cataloghi/' || $path === '/cataloghi';
+}
+
 $all = [];
-$sourceReports = [];
+$pageReports = [];
+$queue = [];
+$queued = [];
+$maxDepth = 5;
+$maxPages = 500;
+
 foreach ($config['sources'] ?? [] as $source) {
-    $report = ['label'=>$source['label'],'url'=>$source['url'],'status'=>'ok','pdf_count'=>0];
+    $url = normalizeIdemaUrl((string)$source['url']);
+    if (!isset($queued[$url])) {
+        $queue[] = ['url'=>$url,'label'=>(string)$source['label'],'depth'=>0];
+        $queued[$url] = true;
+    }
+}
+
+while ($queue !== [] && count($pageReports) < $maxPages) {
+    $current = array_shift($queue);
+    $pageUrl = $current['url'];
+    $report = ['label'=>$current['label'],'url'=>$pageUrl,'depth'=>$current['depth'],'status'=>'ok','pdf_count'=>0,'child_pages'=>0];
     try {
-        $html = fetchHtml((string)$source['url']);
+        $html = fetchHtml($pageUrl);
         libxml_use_internal_errors(true);
         $dom = new DOMDocument();
         $dom->loadHTML($html, LIBXML_NOWARNING | LIBXML_NOERROR);
         libxml_clear_errors();
         $xpath = new DOMXPath($dom);
         foreach ($xpath->query('//a[@href]') ?: [] as $node) {
-            $href = absoluteUrl((string)$node->getAttribute('href'), (string)$source['url']);
+            $href = absoluteUrl((string)$node->getAttribute('href'), $pageUrl);
             if (!$href) continue;
+            $href = normalizeIdemaUrl($href);
             $path = (string)(parse_url($href, PHP_URL_PATH) ?? '');
-            if (!preg_match('/\.pdf$/i', $path)) continue;
             $host = strtolower((string)(parse_url($href, PHP_URL_HOST) ?? ''));
             if ($host !== 'www.idemaclima.it' && $host !== 'idemaclima.it') continue;
-            $normalized = preg_replace('#^https://idemaclima\.it/#i','https://www.idemaclima.it/',$href) ?? $href;
-            if (!isset($all[$normalized])) {
-                $all[$normalized] = [
-                    'url'=>$normalized,
-                    'filename'=>basename($path),
-                    'found_on'=>[],
-                    'anchor_text'=>[],
-                ];
+
+            if (preg_match('/\.pdf$/i', $path)) {
+                if (!isset($all[$href])) {
+                    $all[$href] = [
+                        'url'=>$href,
+                        'filename'=>basename($path),
+                        'found_on'=>[],
+                        'anchor_text'=>[],
+                    ];
+                }
+                $all[$href]['found_on'][] = $pageUrl;
+                $text = trim(preg_replace('/\s+/u',' ',(string)$node->textContent) ?? '');
+                if ($text !== '') $all[$href]['anchor_text'][] = $text;
+                $report['pdf_count']++;
+                continue;
             }
-            $all[$normalized]['found_on'][] = (string)$source['url'];
-            $text = trim(preg_replace('/\s+/u',' ',(string)$node->textContent) ?? '');
-            if ($text !== '') $all[$normalized]['anchor_text'][] = $text;
-            $report['pdf_count']++;
+
+            if ($current['depth'] >= $maxDepth || !isAllowedPage($href)) continue;
+            $childPath = (string)(parse_url($href, PHP_URL_PATH) ?? '');
+            if (preg_match('#/(?:wp-admin|wp-login|feed|tag|author|page)/#i', $childPath)) continue;
+            if (!str_ends_with($childPath, '/')) continue;
+            if (!isset($queued[$href])) {
+                $queue[] = ['url'=>$href,'label'=>'discovered','depth'=>$current['depth']+1];
+                $queued[$href] = true;
+                $report['child_pages']++;
+            }
         }
     } catch (Throwable $e) {
         $report['status'] = 'error';
         $report['error'] = $e->getMessage();
     }
-    $sourceReports[] = $report;
+    $pageReports[] = $report;
 }
 
 ksort($all, SORT_NATURAL | SORT_FLAG_CASE);
@@ -99,16 +145,18 @@ unset($item);
 
 $result = [
     'generated_at'=>date(DATE_ATOM),
-    'mode'=>'read-only-discovery',
-    'source_count'=>count($sourceReports),
+    'mode'=>'read-only-recursive-discovery',
+    'max_depth'=>$maxDepth,
+    'max_pages'=>$maxPages,
+    'pages_crawled'=>count($pageReports),
     'unique_pdf_count'=>count($all),
-    'sources'=>$sourceReports,
+    'pages'=>$pageReports,
     'documents'=>array_values($all),
 ];
 file_put_contents($outPath, json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
 echo "Historical document discovery\n";
-echo 'Pagine sorgente: ' . count($sourceReports) . "\n";
+echo 'Pagine attraversate: ' . count($pageReports) . "\n";
 echo 'PDF unici: ' . count($all) . "\n";
 echo 'Report: ' . $outPath . "\n";
-echo "Nessun file remoto è stato modificato o scaricato nello storage pubblico.\n";
+echo "Crawler confinato a /schede-tecniche/ e /cataloghi/, profondità massima {$maxDepth}, massimo {$maxPages} pagine. Nessun file remoto è stato modificato o copiato nello storage pubblico.\n";
