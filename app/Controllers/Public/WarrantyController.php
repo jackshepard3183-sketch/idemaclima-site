@@ -8,7 +8,6 @@ use App\Core\Database;
 use App\Core\PrivateUpload;
 use App\Core\Security;
 use App\Services\WarrantyService;
-use PDO;
 use Throwable;
 
 final class WarrantyController
@@ -71,6 +70,8 @@ final class WarrantyController
         if ($rule && (int)$rule['fgas_required'] === 1 && !$fgas) $errors[] = 'Allega la documentazione F-GAS richiesta.';
 
         if ($errors) {
+            PrivateUpload::remove($invoice['path'] ?? null);
+            PrivateUpload::remove($fgas['path'] ?? null);
             self::render('warranty/form', [
                 'title' => 'Estensione di garanzia',
                 'models' => WarrantyService::eligibleModels($pdo),
@@ -116,6 +117,8 @@ final class WarrantyController
             ]);
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
+            PrivateUpload::remove($invoice['path'] ?? null);
+            PrivateUpload::remove($fgas['path'] ?? null);
             http_response_code(500);
             self::render('warranty/result', ['title' => 'Errore', 'success' => false, 'message' => 'Non è stato possibile registrare la richiesta.']);
         }
