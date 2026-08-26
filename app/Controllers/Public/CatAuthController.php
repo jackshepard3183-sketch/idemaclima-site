@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Public;
 
 use App\Auth\CatAuth;
+use App\Core\RateLimiter;
 use App\Core\Security;
 
 final class CatAuthController
@@ -17,6 +18,7 @@ final class CatAuthController
 
     public static function login(): void
     {
+        if (!RateLimiter::allow('cat-login', 10, 900)) RateLimiter::reject(900);
         if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}
         $login=trim((string)($_POST['login']??''));$password=(string)($_POST['password']??'');
         if(CatAuth::attempt($login,$password)){
