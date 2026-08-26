@@ -22,7 +22,7 @@ final class CampusController
     public static function event(string $slug): void
     {
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="public" AND e.published=1 LIMIT 1');
+        $stmt = $pdo->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="public" AND e.published=1 AND e.cancelled=0 LIMIT 1');
         $stmt->execute([$slug]);
         $event=$stmt->fetch(PDO::FETCH_ASSOC);
         if(!$event){self::notFound();return;}
@@ -39,7 +39,7 @@ final class CampusController
     public static function catEvent(string $slug): void
     {
         $catUser=CatAuth::requireLogin();
-        $stmt=Database::connection()->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="cat" AND e.published=1 LIMIT 1');
+        $stmt=Database::connection()->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="cat" AND e.published=1 AND e.cancelled=0 LIMIT 1');
         $stmt->execute([$slug]);
         $event=$stmt->fetch(PDO::FETCH_ASSOC);
         if(!$event){self::notFound();return;}
@@ -53,14 +53,20 @@ final class CampusController
         if(trim((string)($_POST['company_website']??''))!==''){self::render('campus/result',['title'=>'Iscrizione non valida','message'=>'Non è stato possibile elaborare la richiesta.']);return;}
 
         $pdo=Database::connection();
+        $audienceStmt=$pdo->prepare('SELECT audience FROM events WHERE slug=? AND published=1 AND cancelled=0 LIMIT 1');
+        $audienceStmt->execute([$slug]);
+        $audience=$audienceStmt->fetchColumn();
+        if($audience===false){self::notFound();return;}
         $catUser=null;
+        if($audience==='cat')$catUser=CatAuth::requireLogin();
+
         try{
             $pdo->beginTransaction();
             $stmt=$pdo->prepare('SELECT * FROM events WHERE slug=? AND published=1 AND cancelled=0 LIMIT 1 FOR UPDATE');
             $stmt->execute([$slug]);
             $event=$stmt->fetch(PDO::FETCH_ASSOC);
             if(!$event){$pdo->rollBack();self::notFound();return;}
-            if($event['audience']==='cat')$catUser=CatAuth::requireLogin();
+            if((string)$event['audience']!==$audience){$pdo->rollBack();self::notFound();return;}
             if(!(int)$event['registration_open']){$pdo->rollBack();self::render('campus/result',['title'=>'Iscrizioni chiuse','message'=>'Le iscrizioni a questo evento sono chiuse.']);return;}
             if(!empty($event['registration_deadline']) && new \DateTimeImmutable((string)$event['registration_deadline']) < new \DateTimeImmutable('now')){$pdo->rollBack();self::render('campus/result',['title'=>'Iscrizioni chiuse','message'=>'Il termine per l’iscrizione è scaduto.']);return;}
             if(new \DateTimeImmutable((string)$event['starts_at']) <= new \DateTimeImmutable('now')){$pdo->rollBack();self::render('campus/result',['title'=>'Iscrizioni chiuse','message'=>'L’evento è già iniziato o concluso.']);return;}
