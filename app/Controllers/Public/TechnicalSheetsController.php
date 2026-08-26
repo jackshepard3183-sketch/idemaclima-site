@@ -18,7 +18,8 @@ final class TechnicalSheetsController
                     COUNT(DISTINCT d.id) AS document_count
              FROM product_categories c
              LEFT JOIN product_categories child ON child.parent_id = c.id AND child.published = 1
-             LEFT JOIN products p ON p.category_id = child.id AND p.published = 1
+             LEFT JOIN product_category_links pcl ON pcl.category_id = child.id
+             LEFT JOIN products p ON p.published = 1 AND (p.category_id = child.id OR p.id = pcl.product_id)
              LEFT JOIN document_links dl ON dl.product_id = p.id
              LEFT JOIN documents d ON d.id = dl.document_id AND d.published = 1
              WHERE c.parent_id IS NULL AND c.published = 1
@@ -84,7 +85,8 @@ final class TechnicalSheetsController
             'SELECT c.id, c.name, c.slug, c.sort_order,
                     COUNT(DISTINCT p.id) AS product_count
              FROM product_categories c
-             LEFT JOIN products p ON p.category_id = c.id AND p.published = 1
+             LEFT JOIN product_category_links pcl ON pcl.category_id = c.id
+             LEFT JOIN products p ON p.published = 1 AND (p.category_id = c.id OR p.id = pcl.product_id)
              WHERE c.parent_id = ? AND c.published = 1
              GROUP BY c.id
              ORDER BY c.sort_order, c.name'
@@ -121,14 +123,15 @@ final class TechnicalSheetsController
                     COUNT(DISTINCT m.id) AS model_count,
                     COUNT(DISTINCT d.id) AS document_count
              FROM products p
+             LEFT JOIN product_category_links pcl ON pcl.product_id = p.id AND pcl.category_id = ?
              LEFT JOIN product_models m ON m.product_id = p.id AND m.published = 1
              LEFT JOIN document_links dl ON dl.product_id = p.id
              LEFT JOIN documents d ON d.id = dl.document_id AND d.published = 1
-             WHERE p.category_id = ? AND p.published = 1
+             WHERE p.published = 1 AND (p.category_id = ? OR pcl.category_id IS NOT NULL)
              GROUP BY p.id
              ORDER BY (p.status = "active") DESC, p.sort_order, p.name'
         );
-        $stmt->execute([(int)$family['id']]);
+        $stmt->execute([(int)$family['id'], (int)$family['id']]);
         $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         self::render('technical_sheets/family', [
@@ -156,6 +159,17 @@ final class TechnicalSheetsController
             return;
         }
 
+        $stmt = $pdo->prepare(
+            'SELECT c.id, c.name, c.slug, parent.name AS parent_name, parent.slug AS parent_slug
+             FROM product_category_links pcl
+             JOIN product_categories c ON c.id = pcl.category_id AND c.published = 1
+             LEFT JOIN product_categories parent ON parent.id = c.parent_id
+             WHERE pcl.product_id = ?
+             ORDER BY COALESCE(parent.sort_order, c.sort_order), c.sort_order, c.name'
+        );
+        $stmt->execute([(int)$product['id']]);
+        $secondaryCategories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         $stmt = $pdo->prepare('SELECT id, code, name, sort_order FROM product_models WHERE product_id = ? AND published = 1 ORDER BY sort_order, code');
         $stmt->execute([(int)$product['id']]);
         $models = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -180,6 +194,7 @@ final class TechnicalSheetsController
         self::render('technical_sheets/product', [
             'title' => $product['name'] . ' - Schede tecniche',
             'product' => $product,
+            'secondaryCategories' => $secondaryCategories,
             'models' => $models,
             'documentGroups' => $grouped,
         ]);
