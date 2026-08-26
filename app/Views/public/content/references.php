@@ -1,0 +1,4 @@
+<section class="hero"><div class="wrap"><div class="crumbs">Home / Referenze</div><h1>Referenze</h1><p>Una selezione di installazioni e progetti realizzati con soluzioni IDEMA.</p></div></section>
+<section class="content"><div class="wrap"><div class="grid">
+<?php foreach($references as $reference): ?><a class="card" href="/referenze/<?= e($reference['slug']) ?>"><?php if(!empty($reference['cover_image'])): ?><img class="product-img" src="<?= e($reference['cover_image']) ?>" alt="<?= e($reference['title']) ?>"><?php endif; ?><h2><?= e($reference['title']) ?></h2><div class="meta"><?= e(trim(($reference['location']??'').(!empty($reference['project_year'])?' · '.$reference['project_year']:''))) ?></div><?php if(!empty($reference['short_description'])): ?><p><?= e($reference['short_description']) ?></p><?php endif; ?></a><?php endforeach; ?>
+</div></div></section>
