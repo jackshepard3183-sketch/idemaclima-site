@@ -9,6 +9,7 @@ if command -v php >/dev/null 2>&1; then
   php "$ROOT/tests/historical_import_smoke.php"
   php "$ROOT/tests/supplemental_import_smoke.php"
   php "$ROOT/tests/migration_pipeline_smoke.php"
+  php "$ROOT/tests/assistance_hardening_smoke.php"
 fi
 
 if [ -x "$ROOT/tests/import_datasheets_smoke.sh" ]; then
