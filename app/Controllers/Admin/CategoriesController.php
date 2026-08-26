@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Auth\AdminAuth;
 use App\Core\Audit;
+use App\Core\DataIntegrity;
 use App\Core\Database;
 use App\Core\Security;
 use App\Core\Validator;
@@ -43,14 +44,20 @@ final class CategoriesController
         $name=Validator::requiredString($_POST['name']??'', 'Nome',160,$errors);
         $slug=Validator::slug((string)($_POST['slug']??'')); if($slug==='') $slug=Validator::slug($name);
         $parentId=Validator::int($_POST['parent_id']??0); $parentId=$parentId>0?$parentId:null;
-        if($id && $parentId===$id) $errors[]='Una categoria non può essere genitore di se stessa.';
         $sort=Validator::int($_POST['sort_order']??0); $published=Validator::bool($_POST['published']??0);
         $pdo=Database::connection();
-        $q=$pdo->prepare('SELECT id FROM product_categories WHERE slug=? AND id<>?'); $q->execute([$slug,$id]); if($q->fetch()) $errors[]='Slug già utilizzato.';
+
+        $parentError = DataIntegrity::categoryParentError($pdo, $id, $parentId);
+        if ($parentError !== null) $errors[] = $parentError;
+
+        $q=$pdo->prepare('SELECT id FROM product_categories WHERE slug=? AND id<>?');
+        $q->execute([$slug,$id]);
+        if($q->fetch()) $errors[]='Slug già utilizzato.';
+
         if($errors){ self::renderErrors($id,$parentId,$name,$slug,$sort,$published,$errors); return; }
         if($id){$s=$pdo->prepare('UPDATE product_categories SET parent_id=?,name=?,slug=?,sort_order=?,published=? WHERE id=?');$s->execute([$parentId,$name,$slug,$sort,$published,$id]);$entityId=$id;$action='category.update';}
         else{$s=$pdo->prepare('INSERT INTO product_categories(parent_id,name,slug,sort_order,published) VALUES(?,?,?,?,?)');$s->execute([$parentId,$name,$slug,$sort,$published]);$entityId=(int)$pdo->lastInsertId();$action='category.create';}
-        Audit::log($action,'product_category',$entityId,['name'=>$name]); header('Location: /admin/categories'); exit;
+        Audit::log($action,'product_category',$entityId,['name'=>$name,'parent_id'=>$parentId]); header('Location: /admin/categories'); exit;
     }
 
     private static function renderErrors(int $id, ?int $parentId,string $name,string $slug,int $sort,int $published,array $errors):void
