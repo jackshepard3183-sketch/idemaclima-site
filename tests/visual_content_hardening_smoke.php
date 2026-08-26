@@ -15,20 +15,20 @@ foreach ([$admin,$public,$album,$reference,$routes,$migration] as $content) {
 }
 
 $checks = [
-    [$admin, "gallery.image.update", 'audit modifica immagine galleria'],
-    [$admin, "gallery.image.delete", 'audit cancellazione immagine galleria'],
-    [$admin, "reference.image.update", 'audit modifica immagine referenza'],
-    [$admin, "reference.image.delete", 'audit cancellazione immagine referenza'],
-    [$admin, "Upload::removeManaged($existing)", 'pulizia vecchia copertina'],
-    [$admin, "archived_at=NOW()", 'archiviazione contenuti'],
-    [$public, "archived_at IS NULL", 'filtro pubblico archiviati'],
-    [$album, "/admin/content/gallery/image/update", 'UI modifica immagine galleria'],
-    [$album, "/admin/content/gallery/image/delete", 'UI elimina immagine galleria'],
-    [$reference, "/admin/content/references/image/update", 'UI modifica immagine referenza'],
-    [$reference, "/admin/content/references/image/delete", 'UI elimina immagine referenza'],
-    [$routes, "/admin/content/gallery/archive", 'route archivia album'],
-    [$routes, "/admin/content/references/archive", 'route archivia referenza'],
-    [$migration, "ADD COLUMN archived_at", 'schema archiviazione'],
+    [$admin, 'gallery.image.update', 'audit modifica immagine galleria'],
+    [$admin, 'gallery.image.delete', 'audit cancellazione immagine galleria'],
+    [$admin, 'reference.image.update', 'audit modifica immagine referenza'],
+    [$admin, 'reference.image.delete', 'audit cancellazione immagine referenza'],
+    [$admin, 'Upload::removeManaged($existing)', 'pulizia vecchia copertina'],
+    [$admin, 'archived_at=NOW()', 'archiviazione contenuti'],
+    [$public, 'archived_at IS NULL', 'filtro pubblico archiviati'],
+    [$album, '/admin/content/gallery/image/update', 'UI modifica immagine galleria'],
+    [$album, '/admin/content/gallery/image/delete', 'UI elimina immagine galleria'],
+    [$reference, '/admin/content/references/image/update', 'UI modifica immagine referenza'],
+    [$reference, '/admin/content/references/image/delete', 'UI elimina immagine referenza'],
+    [$routes, '/admin/content/gallery/archive', 'route archivia album'],
+    [$routes, '/admin/content/references/archive', 'route archivia referenza'],
+    [$migration, 'ADD COLUMN archived_at', 'schema archiviazione'],
 ];
 
 foreach ($checks as [$haystack,$needle,$label]) {
