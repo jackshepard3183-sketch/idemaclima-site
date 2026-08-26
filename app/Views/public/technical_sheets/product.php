@@ -5,6 +5,7 @@
 <div>
 <?php if (!empty($product['description'])): ?><p><?= e($product['description']) ?></p><?php endif; ?>
 <div class="meta"><?php if (!empty($product['refrigerant'])): ?>Refrigerante: <?= e($product['refrigerant']) ?><?php endif; ?></div>
+<?php if (!empty($secondaryCategories)): ?><div class="meta" style="margin-top:10px"><strong>Presente anche in:</strong> <?php foreach ($secondaryCategories as $i => $category): ?><?= $i > 0 ? ' · ' : '' ?><a href="/schede-tecniche/famiglia/<?= e($category['slug']) ?>"><?= e(($category['parent_name'] ? $category['parent_name'] . ' / ' : '') . $category['name']) ?></a><?php endforeach; ?></div><?php endif; ?>
 <?php if ($models): ?><h3 style="margin-top:24px">Modelli</h3><div class="models"><?php foreach ($models as $model): ?><span class="model"><?= e($model['code']) ?></span><?php endforeach; ?></div><?php endif; ?>
 </div>
 </div>
