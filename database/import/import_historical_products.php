@@ -58,13 +58,19 @@ $upsertProduct = static function(PDO $pdo, int $categoryId, array $product) use 
 };
 
 $upsertModels = static function(PDO $pdo, int $productId, array $models) use (&$stats): void {
-    $check = $pdo->prepare('SELECT id FROM product_models WHERE product_id=? AND code=? LIMIT 1');
+    $checkScoped = $pdo->prepare('SELECT id FROM product_models WHERE product_id=? AND LOWER(code)=LOWER(?) LIMIT 1');
+    $checkGlobal = $pdo->prepare('SELECT pm.id,pm.product_id,p.name product_name FROM product_models pm JOIN products p ON p.id=pm.product_id WHERE LOWER(pm.code)=LOWER(?) LIMIT 1');
     $insert = $pdo->prepare('INSERT INTO product_models(product_id,code,name,sort_order,published) VALUES(?,?,NULL,?,1)');
     foreach (array_values($models) as $i => $code) {
-        $check->execute([$productId,$code]);
-        if ($check->fetchColumn() !== false) {
+        $checkScoped->execute([$productId,$code]);
+        if ($checkScoped->fetchColumn() !== false) {
             $stats['skipped_models']++;
             continue;
+        }
+        $checkGlobal->execute([$code]);
+        $global = $checkGlobal->fetch(PDO::FETCH_ASSOC);
+        if ($global && (int)$global['product_id'] !== $productId) {
+            throw new RuntimeException('Conflitto modello: ' . $code . ' esiste già nel prodotto ' . $global['product_name'] . '. Verifica prima di importare lo storico.');
         }
         $insert->execute([$productId,$code,$i]);
         $stats['models']++;
