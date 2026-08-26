@@ -32,13 +32,11 @@ final class PrivateUpload
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
             'application/vnd.ms-excel' => 'xls',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
-            'application/zip' => 'zip',
-            'application/x-zip-compressed' => 'zip',
-        ], $errors);
+        ], $errors, true);
     }
 
     /** @param array<string,string> $allowed */
-    private static function store(string $field, string $bucket, int $maxBytes, array $allowed, array &$errors): ?array
+    private static function store(string $field, string $bucket, int $maxBytes, array $allowed, array &$errors, bool $allowOfficeZipDetection = false): ?array
     {
         if (!isset($_FILES[$field]) || !is_array($_FILES[$field])) return null;
         $file = $_FILES[$field];
@@ -55,16 +53,26 @@ final class PrivateUpload
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $mime = (string)$finfo->file($tmp);
         $ext = $allowed[$mime] ?? null;
+        $originalExt = strtolower((string)pathinfo($original, PATHINFO_EXTENSION));
+
+        if ($ext === null && $allowOfficeZipDetection && in_array($mime, ['application/zip','application/x-zip-compressed'], true) && in_array($originalExt, ['docx','xlsx'], true)) {
+            $h = @fopen($tmp, 'rb'); $sig = $h ? (string)fread($h, 4) : ''; if ($h) fclose($h);
+            if (in_array($sig, ["PK\x03\x04", "PK\x05\x06", "PK\x07\x08"], true)) {
+                $ext = $originalExt;
+                $mime = $originalExt === 'docx'
+                    ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                    : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            }
+        }
+
         if ($ext === null) { $errors[] = 'Formato file non consentito.'; return null; }
+        if ($originalExt !== '' && $originalExt !== $ext) { $errors[] = 'Estensione e contenuto del file non coincidono.'; return null; }
 
         if ($mime === 'application/pdf') {
             $h = @fopen($tmp, 'rb'); $sig = $h ? (string)fread($h, 5) : ''; if ($h) fclose($h);
             if ($sig !== '%PDF-') { $errors[] = 'PDF non valido.'; return null; }
         } elseif (str_starts_with($mime, 'image/') && @getimagesize($tmp) === false) {
             $errors[] = 'Immagine non valida.'; return null;
-        } elseif ($ext === 'zip') {
-            $h = @fopen($tmp, 'rb'); $sig = $h ? (string)fread($h, 4) : ''; if ($h) fclose($h);
-            if (!in_array($sig, ["PK\x03\x04", "PK\x05\x06", "PK\x07\x08"], true)) { $errors[] = 'Archivio ZIP non valido.'; return null; }
         }
 
         $filename = bin2hex(random_bytes(16)) . '.' . $ext;
