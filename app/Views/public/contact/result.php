@@ -1,0 +1,1 @@
+<section class="hero"><div class="wrap"><h1><?= e($title) ?></h1></div></section><section class="content"><div class="wrap"><div class="panel"><p><?= e($message) ?></p><p><a class="btn" href="/contatti">Torna ai contatti</a></p></div></div></section>
