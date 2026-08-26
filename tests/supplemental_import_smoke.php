@@ -5,11 +5,28 @@ declare(strict_types=1);
 $root = dirname(__DIR__);
 $registryPath = $root . '/database/import/terminali_idronici_registry.json';
 $manifestPath = $root . '/database/import/supplemental_document_manifest.csv';
+$mainManifestPath = $root . '/database/import/document_migration_manifest.csv';
+$missingReportPath = $root . '/database/import/reports/document-archive-missing-66-2026-08-26.csv';
 
 function fail(string $message): never
 {
     fwrite(STDERR, "FAIL: {$message}\n");
     exit(1);
+}
+
+function readCsvRows(string $path): array
+{
+    $fh = fopen($path, 'rb');
+    if (!$fh) fail('CSV non leggibile: ' . basename($path));
+    $header = fgetcsv($fh);
+    if (!$header) fail('CSV vuoto: ' . basename($path));
+    $rows = [];
+    while (($line = fgetcsv($fh)) !== false) {
+        if (count($line) !== count($header)) fail('Riga CSV con numero colonne errato in ' . basename($path));
+        $rows[] = array_combine($header, $line);
+    }
+    fclose($fh);
+    return [$header, $rows];
 }
 
 $raw = file_get_contents($registryPath);
@@ -33,19 +50,9 @@ foreach ($products as $product) {
 }
 if ($modelCount !== 38) fail('Attesi 38 codici modello nel registry.');
 
-$fh = fopen($manifestPath, 'rb');
-if (!$fh) fail('Manifest supplementare non leggibile.');
-$header = fgetcsv($fh);
-if (!$header) fail('Manifest supplementare vuoto.');
+[$header, $rows] = readCsvRows($manifestPath);
 $required = ['source_url','title','type_slug','group_label','target_filename','category_slug','product_slug','model_code','notes'];
 if (array_diff($required, $header)) fail('Header manifest supplementare incompleto.');
-
-$rows = [];
-while (($line = fgetcsv($fh)) !== false) {
-    if (count($line) !== count($header)) fail('Riga CSV con numero colonne errato.');
-    $rows[] = array_combine($header, $line);
-}
-fclose($fh);
 
 if (count($rows) !== 57) fail('Attese 57 righe nel manifest supplementare.');
 $urls = array_column($rows, 'source_url');
@@ -79,4 +86,19 @@ foreach ($terminalRows as $row) {
     }
 }
 
-echo "OK supplemental import: 21 prodotti, 38 modelli, 57 PDF (55 terminali).\n";
+[, $mainRows] = readCsvRows($mainManifestPath);
+[, $missingRows] = readCsvRows($missingReportPath);
+if (count($missingRows) !== 66) fail('Il report di confronto deve contenere 66 PDF non referenziati in Lovable.');
+
+$covered = [];
+foreach (array_merge($mainRows, $rows) as $row) {
+    if (!empty($row['target_filename'])) $covered[(string)$row['target_filename']] = true;
+}
+$uncovered = [];
+foreach ($missingRows as $row) {
+    $filename = (string)($row['filename'] ?? '');
+    if ($filename === '' || !isset($covered[$filename])) $uncovered[] = $filename ?: '(filename vuoto)';
+}
+if ($uncovered !== []) fail('PDF del censimento non coperti dai manifest: ' . implode(', ', $uncovered));
+
+echo "OK supplemental import: 21 prodotti, 38 modelli, 57 PDF (55 terminali), copertura 66/66.\n";
