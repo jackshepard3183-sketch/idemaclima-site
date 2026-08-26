@@ -5,55 +5,99 @@ declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 
 use App\Core\Database;
+use PDO;
+use RuntimeException;
+use Throwable;
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(404);
     exit;
 }
 
+$execute = in_array('--execute', $argv, true);
+$statusOnly = in_array('--status', $argv, true) || !$execute;
 $pdo = Database::connection();
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $root = dirname(__DIR__);
 $dir = $root . '/database/migrations';
 $files = glob($dir . '/*.sql') ?: [];
 sort($files, SORT_NATURAL);
 
-$pdo->exec(file_get_contents($dir . '/000_migrations_table.sql'));
-$existing = $pdo->query('SELECT migration, checksum FROM schema_migrations')->fetchAll(PDO::FETCH_KEY_PAIR);
+if ($files === [] || basename($files[0]) !== '000_migrations_table.sql') {
+    fwrite(STDERR, "Migration bootstrap 000_migrations_table.sql mancante o fuori ordine.\n");
+    exit(1);
+}
 
-$applied = 0;
+$bootstrapSql = file_get_contents($files[0]);
+if (!is_string($bootstrapSql) || trim($bootstrapSql) === '') {
+    fwrite(STDERR, "Migration bootstrap non leggibile.\n");
+    exit(1);
+}
+$pdo->exec($bootstrapSql);
+
+$rows = $pdo->query('SELECT migration,checksum,executed_at FROM schema_migrations ORDER BY migration')->fetchAll(PDO::FETCH_ASSOC);
+$existing = [];
+foreach ($rows as $row) $existing[(string)$row['migration']] = $row;
+
+$pending = [];
+$checksumErrors = [];
 foreach ($files as $file) {
     $name = basename($file);
-    if ($name === '000_migrations_table.sql') {
-        continue;
-    }
+    if ($name === '000_migrations_table.sql') continue;
     $sql = file_get_contents($file);
-    if ($sql === false) {
-        throw new RuntimeException("Impossibile leggere {$name}");
-    }
+    if (!is_string($sql)) throw new RuntimeException("Impossibile leggere {$name}");
     $checksum = hash('sha256', $sql);
     if (isset($existing[$name])) {
-        if (!hash_equals((string) $existing[$name], $checksum)) {
-            fwrite(STDERR, "ERRORE: la migration già eseguita {$name} è stata modificata.\n");
-            exit(2);
-        }
-        echo "SKIP  {$name}\n";
+        if (!hash_equals((string)$existing[$name]['checksum'], $checksum)) $checksumErrors[] = $name;
         continue;
     }
+    $pending[] = ['name'=>$name,'sql'=>$sql,'checksum'=>$checksum];
+}
 
-    echo "RUN   {$name}\n";
-    $pdo->beginTransaction();
-    try {
-        $pdo->exec($sql);
-        $stmt = $pdo->prepare('INSERT INTO schema_migrations (migration, checksum) VALUES (?, ?)');
-        $stmt->execute([$name, $checksum]);
-        $pdo->commit();
-        $applied++;
-    } catch (Throwable $e) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
+if ($checksumErrors !== []) {
+    fwrite(STDERR, "ERRORE: migration già applicate sono state modificate:\n - " . implode("\n - ", $checksumErrors) . "\n");
+    exit(2);
+}
+
+echo "IDEMA migration status\n";
+echo 'Applicate: ' . count($existing) . "\n";
+echo 'Pendenti : ' . count($pending) . "\n";
+foreach ($pending as $item) echo '  - ' . $item['name'] . "\n";
+
+if ($statusOnly) {
+    echo "Nessuna migration applicata. Usa --execute per applicare quelle pendenti.\n";
+    exit(0);
+}
+
+$lockName = 'idemaclima_schema_migrations';
+$lock = $pdo->prepare('SELECT GET_LOCK(?,10)');
+$lock->execute([$lockName]);
+if ((int)$lock->fetchColumn() !== 1) {
+    fwrite(STDERR, "Impossibile ottenere il lock esclusivo delle migration.\n");
+    exit(3);
+}
+
+$applied = 0;
+try {
+    $insert = $pdo->prepare('INSERT INTO schema_migrations(migration,checksum) VALUES(?,?)');
+    foreach ($pending as $item) {
+        echo 'RUN   ' . $item['name'] . "\n";
+        try {
+            $pdo->exec($item['sql']);
+            $insert->execute([$item['name'],$item['checksum']]);
+            $applied++;
+            echo "OK    {$item['name']}\n";
+        } catch (Throwable $e) {
+            fwrite(STDERR, 'FAIL  ' . $item['name'] . ': ' . $e->getMessage() . "\n");
+            fwrite(STDERR, "Nota: MySQL/MariaDB esegue implicit commit per molte istruzioni DDL; correggere la migration prima di ripetere.\n");
+            exit(4);
         }
-        fwrite(STDERR, "FAIL  {$name}: {$e->getMessage()}\n");
-        exit(1);
+    }
+} finally {
+    try {
+        $release = $pdo->prepare('SELECT RELEASE_LOCK(?)');
+        $release->execute([$lockName]);
+    } catch (Throwable) {
     }
 }
 
