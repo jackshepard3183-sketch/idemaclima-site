@@ -11,7 +11,13 @@ final class ContentController
 {
     public static function catalogs(): void
     {
-        $rows=Database::connection()->query('SELECT * FROM catalogs WHERE published=1 ORDER BY sort_order,title')->fetchAll(PDO::FETCH_ASSOC);
+        $rows=Database::connection()->query(
+            'SELECT c.*,d.published document_published
+             FROM catalogs c
+             LEFT JOIN documents d ON d.id=c.document_id
+             WHERE c.published=1 AND (c.document_id IS NULL OR d.published=1)
+             ORDER BY c.sort_order,c.title'
+        )->fetchAll(PDO::FETCH_ASSOC);
         self::render('content/catalogs',['title'=>'Cataloghi','catalogs'=>$rows]);
     }
 
