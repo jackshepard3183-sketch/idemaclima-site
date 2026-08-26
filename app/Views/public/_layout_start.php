@@ -1,6 +1,7 @@
 <?php
 /** @var string $title */
 function e(string $value): string { return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
+$seo = $seo ?? \App\Core\Seo::meta($title ?? 'IDEMA Clima');
 $ga4 = null;
 try {
     $ga4 = \App\Core\Database::connection()->query('SELECT ga4_measurement_id,analytics_enabled,consent_required FROM analytics_settings WHERE id=1')->fetch(\PDO::FETCH_ASSOC) ?: null;
@@ -14,8 +15,14 @@ $gaAllowed = $ga4 && !empty($ga4['analytics_enabled']) && !empty($ga4['ga4_measu
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title><?= e($title ?? 'IDEMA Clima') ?></title>
-<meta name="robots" content="index,follow">
+<title><?= e((string)$seo['title']) ?></title>
+<meta name="description" content="<?= e((string)$seo['description']) ?>">
+<meta name="robots" content="<?= e((string)$seo['robots']) ?>">
+<link rel="canonical" href="<?= e((string)$seo['canonical']) ?>">
+<meta property="og:title" content="<?= e((string)$seo['title']) ?>">
+<meta property="og:description" content="<?= e((string)$seo['description']) ?>">
+<meta property="og:url" content="<?= e((string)$seo['canonical']) ?>">
+<meta property="og:type" content="website">
 <?php if ($gaAllowed): $mid=e((string)$ga4['ga4_measurement_id']); ?>
 <script async src="https://www.googletagmanager.com/gtag/js?id=<?= $mid ?>"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','<?= $mid ?>',{'anonymize_ip':true});</script>
