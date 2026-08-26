@@ -1,0 +1,4 @@
+<section class="hero"><div class="wrap"><div class="crumbs"><a href="/">Home</a> / <a href="/galleria">Galleria</a> / <?= e($album['title']) ?></div><h1><?= e($album['title']) ?></h1><?php if(!empty($album['description'])): ?><p><?= e($album['description']) ?></p><?php endif; ?></div></section>
+<section class="content"><div class="wrap"><div class="grid">
+<?php foreach($images as $image): ?><figure class="card" style="margin:0"><?php if(!empty($image['image_path'])): ?><img class="product-img" src="<?= e($image['image_path']) ?>" alt="<?= e($image['alt_text'] ?: $album['title']) ?>"><?php endif; ?><?php if(!empty($image['caption'])): ?><figcaption class="meta" style="margin-top:10px"><?= e($image['caption']) ?></figcaption><?php endif; ?></figure><?php endforeach; ?>
+</div></div></section>
