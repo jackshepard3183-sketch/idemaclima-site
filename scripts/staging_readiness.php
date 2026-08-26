@@ -14,10 +14,11 @@ checkItem($checks,$blocking,'PHP >= 8.2',version_compare(PHP_VERSION,'8.2.0','>=
 foreach(['pdo','pdo_mysql','fileinfo','json','openssl','mbstring'] as $ext)checkItem($checks,$blocking,'Estensione '.$ext,extension_loaded($ext),extension_loaded($ext)?'disponibile':'mancante');
 checkItem($checks,$blocking,'Estensione curl',extension_loaded('curl'),extension_loaded('curl')?'disponibile':'mancante; fallback stream disponibile',false);
 
-$appEnv=envValue('APP_ENV');$appUrl=envValue('APP_URL');$appKey=envValue('APP_KEY');
+$appEnv=envValue('APP_ENV');$appUrl=envValue('APP_URL');$appKey=envValue('APP_KEY');$timezone=envValue('APP_TIMEZONE')?:'Europe/Rome';
 checkItem($checks,$blocking,'APP_ENV',in_array($appEnv,['staging','production'],true),'Valore: '.($appEnv?:'(vuoto)'));
 checkItem($checks,$blocking,'APP_URL HTTPS',$appUrl!==''&&filter_var($appUrl,FILTER_VALIDATE_URL)!==false&&str_starts_with(strtolower($appUrl),'https://'),'Valore: '.($appUrl?:'(vuoto)'));
 checkItem($checks,$blocking,'APP_KEY',strlen($appKey)>=32,'Lunghezza: '.strlen($appKey));
+checkItem($checks,$blocking,'APP_TIMEZONE',in_array($timezone,timezone_identifiers_list(),true),'Valore: '.$timezone);
 foreach(['DB_HOST','DB_DATABASE','DB_USERNAME','DB_PASSWORD'] as $name){$value=envValue($name);checkItem($checks,$blocking,$name,$value!=='',$value!==''?'configurato':'mancante');}
 $trusted=envValue('TRUSTED_PROXIES');checkItem($checks,$blocking,'TRUSTED_PROXIES',$trusted!==''||$appEnv==='staging',$trusted!==''?'configurato':'vuoto; accettabile solo se staging non è dietro proxy',false);
 
@@ -30,6 +31,7 @@ foreach($paths as $label=>$path){$exists=is_dir($path);$writable=$exists&&is_wri
 
 $migrationDir=$root.'/database/migrations';$migrations=glob($migrationDir.'/*.sql')?:[];sort($migrations,SORT_NATURAL);checkItem($checks,$blocking,'Migration SQL',count($migrations)>=22,'Trovate: '.count($migrations));
 $numbers=[];foreach($migrations as $path){if(preg_match('/\/(\d{3})_/',str_replace('\\','/',$path),$m))$numbers[]=(int)$m[1];}$duplicates=array_diff_assoc($numbers,array_unique($numbers));checkItem($checks,$blocking,'Numerazione migration univoca',$duplicates===[],$duplicates===[]?'nessun duplicato':'duplicati: '.implode(', ',array_unique($duplicates)));
+checkItem($checks,$blocking,'Migration runner',is_file($root.'/scripts/migrate.php'),is_file($root.'/scripts/migrate.php')?'presente':'mancante');
 
 $requiredFiles=[
     'database/import/preflight_historical_products.php',
@@ -41,10 +43,20 @@ $requiredFiles=[
 ];
 foreach($requiredFiles as $file)checkItem($checks,$blocking,$file,is_file($root.'/'.$file),is_file($root.'/'.$file)?'presente':'mancante');
 
-$dbOk=false;$dbDetail='non verificato';
+$dbOk=false;$dbDetail='non verificato';$dbCompat=false;$dbCompatDetail='non verificata';
 if(envValue('DB_HOST')!==''&&envValue('DB_DATABASE')!==''&&envValue('DB_USERNAME')!==''&&extension_loaded('pdo_mysql')){
-    try{$port=(int)(envValue('DB_PORT')?:3306);$dsn='mysql:host='.envValue('DB_HOST').';port='.$port.';dbname='.envValue('DB_DATABASE').';charset=utf8mb4';$pdo=new PDO($dsn,envValue('DB_USERNAME'),envValue('DB_PASSWORD'),[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_TIMEOUT=>5]);$version=(string)$pdo->query('SELECT VERSION()')->fetchColumn();$dbOk=true;$dbDetail='connessione OK; server '.$version;}catch(Throwable $e){$dbDetail='connessione fallita: '.$e->getMessage();}}
+    try{
+        $port=(int)(envValue('DB_PORT')?:3306);$dsn='mysql:host='.envValue('DB_HOST').';port='.$port.';dbname='.envValue('DB_DATABASE').';charset=utf8mb4';
+        $pdo=new PDO($dsn,envValue('DB_USERNAME'),envValue('DB_PASSWORD'),[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_TIMEOUT=>5]);
+        $version=(string)$pdo->query('SELECT VERSION()')->fetchColumn();$dbOk=true;$dbDetail='connessione OK; server '.$version;
+        $isMaria=stripos($version,'mariadb')!==false;
+        preg_match('/(\d+\.\d+\.\d+)/',$version,$m);$numeric=$m[1]??'0.0.0';
+        $dbCompat=$isMaria?version_compare($numeric,'10.2.1','>='):version_compare($numeric,'8.0.16','>=');
+        $dbCompatDetail=($isMaria?'MariaDB ':'MySQL ').$numeric.($dbCompat?' compatibile con CHECK vincolanti':' troppo vecchio per i CHECK vincolanti usati dalle migration');
+    }catch(Throwable $e){$dbDetail='connessione fallita: '.$e->getMessage();}
+}
 checkItem($checks,$blocking,'Connessione database',$dbOk,$dbDetail);
+checkItem($checks,$blocking,'Compatibilità database migration',$dbCompat,$dbCompatDetail);
 
 $report=['ok'=>$blocking===0,'blocking_failures'=>$blocking,'generated_at'=>date(DATE_ATOM),'checks'=>$checks];
 $reportDir=$root.'/database/import/reports';if(is_dir($reportDir)&&is_writable($reportDir))@file_put_contents($reportDir.'/staging-readiness-latest.json',json_encode($report,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE));
