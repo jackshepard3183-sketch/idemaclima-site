@@ -7,176 +7,19 @@ require dirname(__DIR__, 2) . '/scripts/bootstrap.php';
 use App\Core\Database;
 use PDO;
 
-$execute = in_array('--execute', $argv, true);
-$manifest = __DIR__ . '/document_migration_manifest.csv';
-foreach ($argv as $arg) {
-    if (!str_starts_with($arg, '--manifest=')) continue;
-    $value = trim(substr($arg, strlen('--manifest=')));
-    if ($value === '' || str_contains($value, "\0")) { fwrite(STDERR,"Valore --manifest non valido.\n"); exit(1); }
-    $candidate = str_starts_with($value,DIRECTORY_SEPARATOR) ? $value : __DIR__ . DIRECTORY_SEPARATOR . ltrim($value,'/\\');
-    $real = realpath($candidate);
-    if ($real === false || !is_file($real)) { fwrite(STDERR,"Manifest non trovato: {$value}\n"); exit(1); }
-    if (!str_starts_with($value,DIRECTORY_SEPARATOR)) {
-        $root = realpath(__DIR__);
-        if ($root === false || !str_starts_with($real,$root . DIRECTORY_SEPARATOR)) { fwrite(STDERR,"Manifest relativo fuori dalla cartella import non consentito.\n"); exit(1); }
-    }
-    $manifest = $real;
-}
+$execute=in_array('--execute',$argv,true);$manifest=__DIR__.'/document_migration_manifest.csv';
+foreach($argv as $arg){if(!str_starts_with($arg,'--manifest='))continue;$value=trim(substr($arg,11));if($value===''||str_contains($value,"\0")){fwrite(STDERR,"Valore --manifest non valido.\n");exit(1);} $candidate=str_starts_with($value,DIRECTORY_SEPARATOR)?$value:__DIR__.DIRECTORY_SEPARATOR.ltrim($value,'/\\');$real=realpath($candidate);if($real===false||!is_file($real)){fwrite(STDERR,"Manifest non trovato: {$value}\n");exit(1);} if(!str_starts_with($value,DIRECTORY_SEPARATOR)){$root=realpath(__DIR__);if($root===false||!str_starts_with($real,$root.DIRECTORY_SEPARATOR)){fwrite(STDERR,"Manifest relativo fuori dalla cartella import non consentito.\n");exit(1);}}$manifest=$real;}
+$targetRoot=dirname(__DIR__,2).'/public/uploads/documents/migrated';
+$fh=fopen($manifest,'rb');if(!$fh){fwrite(STDERR,"Manifest non leggibile.\n");exit(1);} $header=fgetcsv($fh);if(!$header){fwrite(STDERR,"Manifest vuoto.\n");exit(1);} $required=['source_url','title','type_slug','group_label','target_filename','category_slug'];$missing=array_values(array_diff($required,$header));if($missing!==[]){fwrite(STDERR,'Colonne mancanti: '.implode(', ',$missing)."\n");exit(1);} $rows=[];while(($line=fgetcsv($fh))!==false){if(count($line)!==count($header)){fwrite(STDERR,"Riga CSV non valida.\n");exit(1);} $rows[]=array_combine($header,$line);}fclose($fh);
 
-$targetRoot = dirname(__DIR__, 2) . '/public/uploads/documents/migrated';
-$fh = fopen($manifest,'rb');
-if (!$fh) { fwrite(STDERR,"Manifest non leggibile.\n"); exit(1); }
-$header = fgetcsv($fh);
-if (!$header) { fwrite(STDERR,"Manifest vuoto.\n"); exit(1); }
-$required = ['source_url','title','type_slug','group_label','target_filename','category_slug'];
-$missing = array_values(array_diff($required,$header));
-if ($missing !== []) { fwrite(STDERR,'Colonne mancanti: '.implode(', ',$missing)."\n"); exit(1); }
-$rows=[];
-while (($line=fgetcsv($fh))!==false) {
-    if (count($line)!==count($header)) { fwrite(STDERR,"Riga CSV non valida.\n"); exit(1); }
-    $rows[]=array_combine($header,$line);
-}
-fclose($fh);
+$stem=preg_replace('/[^a-z0-9._-]+/i','-',pathinfo($manifest,PATHINFO_FILENAME))?:'manifest';
+$downloadReport=__DIR__.'/reports/document-migration-'.$stem.'-latest.json';$downloadMap=[];
+if(is_file($downloadReport)){$raw=file_get_contents($downloadReport);$data=is_string($raw)?json_decode($raw,true):null;if(is_array($data)&&($data['mode']??'')==='download'){foreach($data['items']??[] as $item){$source=(string)($item['source_url']??'');$filePath=(string)($item['file_path']??'');$sha=(string)($item['sha256']??'');if($source!==''&&str_starts_with($filePath,'/uploads/documents/migrated/')&&preg_match('/^[a-f0-9]{64}$/i',$sha))$downloadMap[$source]=['file_path'=>$filePath,'sha256'=>strtolower($sha)];}}}
 
-function ensureLink(PDO $pdo,int $documentId,?int $categoryId,?int $productId,?int $modelId): bool {
-    $s=$pdo->prepare('SELECT id FROM document_links WHERE document_id=? AND category_id <=> ? AND product_id <=> ? AND model_id <=> ? LIMIT 1');
-    $s->execute([$documentId,$categoryId,$productId,$modelId]);
-    if ($s->fetchColumn()!==false) return false;
-    $pdo->prepare('INSERT INTO document_links(document_id,category_id,product_id,model_id) VALUES(?,?,?,?)')->execute([$documentId,$categoryId,$productId,$modelId]);
-    return true;
-}
+function ensureLink(PDO $pdo,int $documentId,?int $categoryId,?int $productId,?int $modelId):bool{$s=$pdo->prepare('SELECT id FROM document_links WHERE document_id=? AND category_id <=> ? AND product_id <=> ? AND model_id <=> ? LIMIT 1');$s->execute([$documentId,$categoryId,$productId,$modelId]);if($s->fetchColumn()!==false)return false;$pdo->prepare('INSERT INTO document_links(document_id,category_id,product_id,model_id) VALUES(?,?,?,?)')->execute([$documentId,$categoryId,$productId,$modelId]);return true;}
+function resolveLocalPdf(string $targetRoot,array $row,array $downloadMap):array{$requested=basename((string)$row['target_filename']);if($requested===''||!preg_match('/\.pdf$/i',$requested))throw new RuntimeException('target_filename non PDF');$relative='/uploads/documents/migrated/'.$requested;$absolute=$targetRoot.'/'.$requested;$expectedSha=null;$source=(string)($row['source_url']??'');if(!is_file($absolute)&&isset($downloadMap[$source])){$relative=(string)$downloadMap[$source]['file_path'];$expectedSha=(string)$downloadMap[$source]['sha256'];$actual=basename($relative);$absolute=$targetRoot.'/'.$actual;}if(!is_file($absolute))throw new RuntimeException('file locale assente: '.$requested.' (eseguire prima migrate_documents.php --download)');$head=file_get_contents($absolute,false,null,0,5);if($head!=='%PDF-')throw new RuntimeException('firma PDF non valida: '.basename($absolute));$size=filesize($absolute);if($size===false||$size<5||$size>50*1024*1024)throw new RuntimeException('dimensione PDF non valida: '.basename($absolute));$sha=hash_file('sha256',$absolute);if(!is_string($sha)||strlen($sha)!==64)throw new RuntimeException('SHA-256 non calcolabile: '.basename($absolute));if($expectedSha!==null&&!hash_equals($expectedSha,strtolower($sha)))throw new RuntimeException('SHA-256 diverso dal report download per '.$source);return ['filename'=>basename($absolute),'relative_path'=>$relative,'sha256'=>strtolower($sha),'size'=>(int)$size];}
 
-$prepared=[];
-$preflightErrors=[];
-$pdo=Database::connection();
-$typeStmt=$pdo->prepare('SELECT id FROM document_types WHERE slug=? LIMIT 1');
-$catStmt=$pdo->prepare('SELECT id FROM product_categories WHERE slug=? LIMIT 1');
-$productStmt=$pdo->prepare('SELECT id FROM products WHERE slug=? LIMIT 1');
-$modelStmt=$pdo->prepare('SELECT id FROM product_models WHERE product_id=? AND LOWER(code)=LOWER(?) LIMIT 1');
-
-foreach ($rows as $i=>$row) {
-    try {
-        $filename=basename((string)$row['target_filename']);
-        if ($filename==='' || !preg_match('/\.pdf$/i',$filename)) throw new RuntimeException('target_filename non PDF');
-        $absolute=$targetRoot.'/'.$filename;
-        if (!is_file($absolute)) throw new RuntimeException('file locale assente: '.$filename.' (eseguire prima migrate_documents.php --download)');
-        $head=file_get_contents($absolute,false,null,0,5);
-        if ($head!=='%PDF-') throw new RuntimeException('firma PDF non valida: '.$filename);
-        $size=filesize($absolute);
-        if ($size===false || $size<5 || $size>50*1024*1024) throw new RuntimeException('dimensione PDF non valida: '.$filename);
-        $sha=hash_file('sha256',$absolute);
-        if (!is_string($sha) || strlen($sha)!==64) throw new RuntimeException('SHA-256 non calcolabile: '.$filename);
-
-        $typeStmt->execute([$row['type_slug']]);
-        $typeId=$typeStmt->fetchColumn();
-        if ($typeId===false) throw new RuntimeException('tipo documento inesistente: '.$row['type_slug']);
-
-        $categoryId=null;
-        $categorySlug=trim((string)($row['category_slug']??''));
-        if ($categorySlug!=='') {
-            $catStmt->execute([$categorySlug]);
-            $categoryId=$catStmt->fetchColumn();
-            if ($categoryId===false) throw new RuntimeException('categoria inesistente: '.$categorySlug);
-            $categoryId=(int)$categoryId;
-        }
-
-        $productIds=[];
-        $productSlugs=array_values(array_filter(array_map('trim',explode(';',(string)($row['product_slug']??'')))));
-        foreach ($productSlugs as $slug) {
-            $productStmt->execute([$slug]);
-            $id=$productStmt->fetchColumn();
-            if ($id===false) throw new RuntimeException('prodotto inesistente: '.$slug);
-            $productIds[$slug]=(int)$id;
-        }
-
-        $modelId=null;
-        $modelCode=trim((string)($row['model_code']??''));
-        if ($modelCode!=='') {
-            if (count($productIds)!==1) throw new RuntimeException('model_code richiede esattamente un product_slug');
-            $productId=(int)array_values($productIds)[0];
-            $modelStmt->execute([$productId,$modelCode]);
-            $modelId=$modelStmt->fetchColumn();
-            if ($modelId===false) throw new RuntimeException('modello inesistente: '.$modelCode);
-            $modelId=(int)$modelId;
-        }
-
-        $prepared[]=[
-            'row'=>$row,'filename'=>$filename,'relative_path'=>'/uploads/documents/migrated/'.$filename,
-            'sha256'=>$sha,'size'=>(int)$size,'type_id'=>(int)$typeId,'category_id'=>$categoryId,
-            'product_ids'=>$productIds,'model_id'=>$modelId,
-        ];
-    } catch (Throwable $e) {
-        $preflightErrors[]=['row'=>$i+2,'source_url'=>$row['source_url']??null,'error'=>$e->getMessage()];
-    }
-}
-
-$stem=preg_replace('/[^a-z0-9._-]+/i','-',pathinfo($manifest,PATHINFO_FILENAME)) ?: 'manifest';
-$reportPath=__DIR__.'/reports/document-db-import-'.$stem.'-latest.json';
-if ($preflightErrors!==[]) {
-    file_put_contents($reportPath,json_encode(['mode'=>'preflight','ok'=>false,'manifest'=>basename($manifest),'errors'=>$preflightErrors],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE));
-    fwrite(STDERR,"Preflight documenti FALLITO: nessuna scrittura DB. Report: {$reportPath}\n");
-    exit(2);
-}
-
-if (!$execute) {
-    file_put_contents($reportPath,json_encode(['mode'=>'preflight','ok'=>true,'manifest'=>basename($manifest),'documents'=>count($prepared)],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE));
-    echo "PREFLIGHT document DB import OK\nManifest: ".basename($manifest)."\nDocumenti verificati: ".count($prepared)."\nNessuna scrittura DB. Usa --execute per import transazionale.\n";
-    exit(0);
-}
-
-$stats=['rows'=>count($prepared),'inserted'=>0,'deduped'=>0,'aliases'=>0,'category_links'=>0,'product_links'=>0,'model_links'=>0,'editorial_links'=>0];
-try {
-    $pdo->beginTransaction();
-    $existingByHash=$pdo->prepare('SELECT id,file_path,filename FROM documents WHERE sha256=? LIMIT 1');
-    $insertDocument=$pdo->prepare('INSERT INTO documents(document_type_id,title,filename,file_path,sha256,file_size,mime_type,published,sort_order) VALUES(?,?,?,?,?,?,\'application/pdf\',1,0)');
-    $aliasStmt=$pdo->prepare('INSERT IGNORE INTO document_source_aliases(document_id,source_url,source_kind,source_page) VALUES(?,?,\'wordpress\',NULL)');
-    $cePage=$pdo->prepare('SELECT id FROM editorial_pages WHERE slug=? LIMIT 1');
-    $cePage->execute(['schede-tecniche/dichiarazioni-conformita-ce']);
-    $cePageId=$cePage->fetchColumn();
-
-    foreach ($prepared as $item) {
-        $row=$item['row'];
-        $existingByHash->execute([$item['sha256']]);
-        $existing=$existingByHash->fetch(PDO::FETCH_ASSOC);
-        if ($existing) {
-            $documentId=(int)$existing['id'];
-            $stats['deduped']++;
-        } else {
-            $insertDocument->execute([$item['type_id'],$row['title'],$item['filename'],$item['relative_path'],$item['sha256'],$item['size']]);
-            $documentId=(int)$pdo->lastInsertId();
-            $stats['inserted']++;
-        }
-
-        $aliasStmt->execute([$documentId,$row['source_url']]);
-        $stats['aliases']+=$aliasStmt->rowCount();
-
-        if ($item['category_id']!==null && ensureLink($pdo,$documentId,$item['category_id'],null,null)) $stats['category_links']++;
-        foreach ($item['product_ids'] as $productId) {
-            if (ensureLink($pdo,$documentId,null,$productId,$item['model_id'])) {
-                if ($item['model_id']!==null) $stats['model_links']++; else $stats['product_links']++;
-            }
-        }
-
-        if (($row['type_slug']??'')==='dichiarazione-ce') {
-            if ($cePageId===false) throw new RuntimeException('Pagina editoriale Dichiarazioni CE non trovata.');
-            $group=trim((string)($row['group_label']??'')) ?: null;
-            $check=$pdo->prepare('SELECT id FROM editorial_page_documents WHERE page_id=? AND document_id=? AND group_label <=> ? LIMIT 1');
-            $check->execute([(int)$cePageId,$documentId,$group]);
-            if ($check->fetchColumn()===false) {
-                $pdo->prepare('INSERT INTO editorial_page_documents(page_id,document_id,group_label,label,sort_order) VALUES(?,?,?,?,0)')->execute([(int)$cePageId,$documentId,$group,$row['title']]);
-                $stats['editorial_links']++;
-            }
-        }
-    }
-    $pdo->commit();
-} catch (Throwable $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
-    file_put_contents($reportPath,json_encode(['mode'=>'execute','ok'=>false,'manifest'=>basename($manifest),'stats'=>$stats,'error'=>$e->getMessage()],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE));
-    fwrite(STDERR,'Import DB annullato completamente: '.$e->getMessage()."\n");
-    exit(3);
-}
-
-file_put_contents($reportPath,json_encode(['mode'=>'execute','ok'=>true,'manifest'=>basename($manifest),'stats'=>$stats],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE));
-echo "EXECUTE document DB import completato in transazione\n";
-foreach ($stats as $k=>$v) echo str_pad($k,20).': '.$v."\n";
-echo 'Report: '.$reportPath."\n";
+$prepared=[];$preflightErrors=[];$pdo=Database::connection();$typeStmt=$pdo->prepare('SELECT id FROM document_types WHERE slug=? LIMIT 1');$catStmt=$pdo->prepare('SELECT id FROM product_categories WHERE slug=? LIMIT 1');$productStmt=$pdo->prepare('SELECT id FROM products WHERE slug=? LIMIT 1');$modelStmt=$pdo->prepare('SELECT id FROM product_models WHERE product_id=? AND LOWER(code)=LOWER(?) LIMIT 1');
+foreach($rows as $i=>$row){try{$local=resolveLocalPdf($targetRoot,$row,$downloadMap);$typeStmt->execute([$row['type_slug']]);$typeId=$typeStmt->fetchColumn();if($typeId===false)throw new RuntimeException('tipo documento inesistente: '.$row['type_slug']);$categoryId=null;$categorySlug=trim((string)($row['category_slug']??''));if($categorySlug!==''){$catStmt->execute([$categorySlug]);$categoryId=$catStmt->fetchColumn();if($categoryId===false)throw new RuntimeException('categoria inesistente: '.$categorySlug);$categoryId=(int)$categoryId;}$productIds=[];$productSlugs=array_values(array_filter(array_map('trim',explode(';',(string)($row['product_slug']??'')))));foreach($productSlugs as $slug){$productStmt->execute([$slug]);$id=$productStmt->fetchColumn();if($id===false)throw new RuntimeException('prodotto inesistente: '.$slug);$productIds[$slug]=(int)$id;}$modelId=null;$modelCode=trim((string)($row['model_code']??''));if($modelCode!==''){if(count($productIds)!==1)throw new RuntimeException('model_code richiede esattamente un product_slug');$productId=(int)array_values($productIds)[0];$modelStmt->execute([$productId,$modelCode]);$modelId=$modelStmt->fetchColumn();if($modelId===false)throw new RuntimeException('modello inesistente: '.$modelCode);$modelId=(int)$modelId;}$prepared[]=['row'=>$row,'filename'=>$local['filename'],'relative_path'=>$local['relative_path'],'sha256'=>$local['sha256'],'size'=>$local['size'],'type_id'=>(int)$typeId,'category_id'=>$categoryId,'product_ids'=>$productIds,'model_id'=>$modelId];}catch(Throwable $e){$preflightErrors[]=['row'=>$i+2,'source_url'=>$row['source_url']??null,'error'=>$e->getMessage()];}}
+$reportPath=__DIR__.'/reports/document-db-import-'.$stem.'-latest.json';if($preflightErrors!==[]){file_put_contents($reportPath,json_encode(['mode'=>'preflight','ok'=>false,'manifest'=>basename($manifest),'errors'=>$preflightErrors],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE));fwrite(STDERR,"Preflight documenti FALLITO: nessuna scrittura DB. Report: {$reportPath}\n");exit(2);}if(!$execute){file_put_contents($reportPath,json_encode(['mode'=>'preflight','ok'=>true,'manifest'=>basename($manifest),'documents'=>count($prepared)],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE));echo "PREFLIGHT document DB import OK\nManifest: ".basename($manifest)."\nDocumenti verificati: ".count($prepared)."\nNessuna scrittura DB. Usa --execute per import transazionale.\n";exit(0);}
+$stats=['rows'=>count($prepared),'inserted'=>0,'deduped'=>0,'aliases'=>0,'category_links'=>0,'product_links'=>0,'model_links'=>0,'editorial_links'=>0];try{$pdo->beginTransaction();$existingByHash=$pdo->prepare('SELECT id,file_path,filename FROM documents WHERE sha256=? LIMIT 1');$insertDocument=$pdo->prepare('INSERT INTO documents(document_type_id,title,filename,file_path,sha256,file_size,mime_type,published,sort_order) VALUES(?,?,?,?,?,?,\'application/pdf\',1,0)');$aliasStmt=$pdo->prepare('INSERT IGNORE INTO document_source_aliases(document_id,source_url,source_kind,source_page) VALUES(?,?,\'wordpress\',NULL)');$cePage=$pdo->prepare('SELECT id FROM editorial_pages WHERE slug=? LIMIT 1');$cePage->execute(['schede-tecniche/dichiarazioni-conformita-ce']);$cePageId=$cePage->fetchColumn();foreach($prepared as $item){$row=$item['row'];$existingByHash->execute([$item['sha256']]);$existing=$existingByHash->fetch(PDO::FETCH_ASSOC);if($existing){$documentId=(int)$existing['id'];$stats['deduped']++;}else{$insertDocument->execute([$item['type_id'],$row['title'],$item['filename'],$item['relative_path'],$item['sha256'],$item['size']]);$documentId=(int)$pdo->lastInsertId();$stats['inserted']++;}$aliasStmt->execute([$documentId,$row['source_url']]);$stats['aliases']+=$aliasStmt->rowCount();if($item['category_id']!==null&&ensureLink($pdo,$documentId,$item['category_id'],null,null))$stats['category_links']++;foreach($item['product_ids'] as $productId){if(ensureLink($pdo,$documentId,null,$productId,$item['model_id'])){if($item['model_id']!==null)$stats['model_links']++;else$stats['product_links']++;}}if(($row['type_slug']??'')==='dichiarazione-ce'){if($cePageId===false)throw new RuntimeException('Pagina editoriale Dichiarazioni CE non trovata.');$group=trim((string)($row['group_label']??''))?:null;$check=$pdo->prepare('SELECT id FROM editorial_page_documents WHERE page_id=? AND document_id=? AND group_label <=> ? LIMIT 1');$check->execute([(int)$cePageId,$documentId,$group]);if($check->fetchColumn()===false){$pdo->prepare('INSERT INTO editorial_page_documents(page_id,document_id,group_label,label,sort_order) VALUES(?,?,?,?,0)')->execute([(int)$cePageId,$documentId,$group,$row['title']]);$stats['editorial_links']++;}}}$pdo->commit();}catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();file_put_contents($reportPath,json_encode(['mode'=>'execute','ok'=>false,'manifest'=>basename($manifest),'stats'=>$stats,'error'=>$e->getMessage()],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE));fwrite(STDERR,'Import DB annullato completamente: '.$e->getMessage()."\n");exit(3);}file_put_contents($reportPath,json_encode(['mode'=>'execute','ok'=>true,'manifest'=>basename($manifest),'stats'=>$stats],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE));echo "EXECUTE document DB import completato in transazione\n";foreach($stats as $k=>$v)echo str_pad($k,20).': '.$v."\n";echo 'Report: '.$reportPath."\n";
