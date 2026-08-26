@@ -18,6 +18,7 @@ if command -v php >/dev/null 2>&1; then
   php "$ROOT/tests/seo_security_hardening_smoke.php"
   php "$ROOT/tests/staging_pipeline_hardening_smoke.php"
   php "$ROOT/tests/base_path_smoke.php"
+  php "$ROOT/tests/staging_deploy_package_smoke.php"
 fi
 
 if [ -x "$ROOT/tests/import_datasheets_smoke.sh" ]; then
