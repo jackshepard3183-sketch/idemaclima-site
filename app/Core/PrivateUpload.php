@@ -73,4 +73,16 @@ final class PrivateUpload
 
         return ['path' => $relative, 'filename' => $filename, 'mime' => $mime, 'size' => $size];
     }
+
+    public static function remove(?string $relativePath): void
+    {
+        if (!$relativePath || str_contains($relativePath, '..')) return;
+        $root = realpath(dirname(__DIR__, 2) . '/storage/private');
+        if ($root === false) return;
+        $candidate = dirname(__DIR__, 2) . '/storage/private/' . ltrim($relativePath, '/');
+        $real = realpath($candidate);
+        if ($real !== false && str_starts_with($real, $root . DIRECTORY_SEPARATOR) && is_file($real)) {
+            @unlink($real);
+        }
+    }
 }
