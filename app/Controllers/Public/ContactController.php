@@ -6,6 +6,7 @@ namespace App\Controllers\Public;
 
 use App\Core\Database;
 use App\Core\PrivateUpload;
+use App\Core\RateLimiter;
 use App\Core\Security;
 use Throwable;
 
@@ -18,6 +19,7 @@ final class ContactController
 
     public static function submit(): void
     {
+        if (!RateLimiter::allow('contact-submit', 5, 600)) RateLimiter::reject(600);
         if (!Security::verifyCsrf($_POST['_csrf'] ?? null)) {
             http_response_code(419);
             self::render('contact/result',['title'=>'Sessione scaduta','success'=>false,'message'=>'Sessione non valida. Ricarica il modulo e riprova.']);
