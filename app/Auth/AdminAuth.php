@@ -15,18 +15,60 @@ final class AdminAuth
     {
         $pdo = Database::connection();
         $stmt = $pdo->prepare(
-            'SELECT id, password_hash, active FROM admin_users WHERE email = :login OR username = :login LIMIT 1'
+            'SELECT id, password_hash, active FROM admin_users WHERE email = :email_login OR username = :username_login LIMIT 1'
         );
-        $stmt->execute(['login' => trim($login)]);
+        $normalizedLogin = trim($login);
+        $stmt->execute([
+            'email_login' => $normalizedLogin,
+            'username_login' => $normalizedLogin,
+        ]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$user || !(bool) $user['active'] || !password_verify($password, (string) $user['password_hash'])) {
+        if (!$user || !(bool) $user['active']) {
             return false;
         }
 
-        session_regenerate_id(true);
+        $hash = (string) $user['password_hash'];
+        $valid = false;
+
+        try {
+            $valid = password_verify($password, $hash);
+        } catch (\Throwable) {
+            $valid = false;
+        }
+
+        if (!$valid && function_exists('crypt')) {
+            try {
+                $computed = crypt($password, $hash);
+                $valid = is_string($computed)
+                    && strlen($computed) === strlen($hash)
+                    && hash_equals($hash, $computed);
+            } catch (\Throwable) {
+                $valid = false;
+            }
+        }
+
+        if (!$valid) {
+            return false;
+        }
+
         $_SESSION[self::SESSION_KEY] = (int) $user['id'];
-        $pdo->prepare('UPDATE admin_users SET last_login_at = NOW() WHERE id = ?')->execute([(int) $user['id']]);
+
+        try {
+            if (session_status() === PHP_SESSION_ACTIVE && !headers_sent()) {
+                @session_regenerate_id(true);
+            }
+        } catch (\Throwable) {
+            // Session regeneration is optional on shared hosting.
+        }
+
+        try {
+            $pdo->prepare('UPDATE admin_users SET last_login_at = NOW() WHERE id = ?')
+                ->execute([(int) $user['id']]);
+        } catch (\Throwable) {
+            // A login must not fail only because audit metadata cannot be updated.
+        }
+
         return true;
     }
 
@@ -48,14 +90,17 @@ final class AdminAuth
         }
 
         $stmt = Database::connection()->prepare(
-            'SELECT id, first_name, last_name, email, username, role, active, last_login_at FROM admin_users WHERE id = ? LIMIT 1'
+            'SELECT id, first_name, last_name, email, username, role, active, last_login_at
+             FROM admin_users WHERE id = ? LIMIT 1'
         );
         $stmt->execute([$id]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
         if (!$user || !(bool) $user['active']) {
             self::logout();
             return null;
         }
+
         return $user;
     }
 
@@ -70,6 +115,13 @@ final class AdminAuth
     public static function logout(): void
     {
         unset($_SESSION[self::SESSION_KEY]);
-        session_regenerate_id(true);
+
+        try {
+            if (session_status() === PHP_SESSION_ACTIVE && !headers_sent()) {
+                @session_regenerate_id(true);
+            }
+        } catch (\Throwable) {
+            // Ignore unsupported session regeneration.
+        }
     }
 }

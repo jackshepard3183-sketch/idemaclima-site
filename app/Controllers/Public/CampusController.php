@@ -8,6 +8,7 @@ use App\Auth\CatAuth;
 use App\Core\Database;
 use App\Core\RateLimiter;
 use App\Core\Security;
+use App\Services\WarrantyService;
 use PDO;
 
 final class CampusController
@@ -91,7 +92,17 @@ final class CampusController
             $status=(!empty($event['max_seats']) && $booked >= (int)$event['max_seats'])?'waitlist':'registered';
             $ins=$pdo->prepare('INSERT INTO event_registrations(event_id,cat_account_id,first_name,last_name,email,phone,company,role,notes,status,privacy_accepted_at) VALUES(?,?,?,?,?,?,?,?,?,?,NOW())');
             $ins->execute([(int)$event['id'],$catUser['id']??null,$first,$last,$email,$phone?:null,$company?:null,$role?:null,$notes?:null,$status]);
+            $registrationId=(int)$pdo->lastInsertId();
             $pdo->commit();
+            WarrantyService::notifyInternal(
+                'Nuova iscrizione Campus IDEMA #' . $registrationId,
+                [
+                    'Iscrizione' => '#' . $registrationId,
+                    'Evento' => (string)$event['title'],
+                    'Stato' => $status,
+                    'Pannello' => 'https://www.rappresentanzeguanzirolisas.it/idemaclima/admin/campus/registrations',
+                ]
+            );
             self::render('campus/result',['title'=>'Iscrizione ricevuta','message'=>$status==='waitlist'?'Posti esauriti: sei stato inserito in lista d’attesa.':'Iscrizione registrata correttamente.']);
         }catch(\PDOException $e){
             if($pdo->inTransaction())$pdo->rollBack();

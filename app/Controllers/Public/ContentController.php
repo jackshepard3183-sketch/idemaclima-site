@@ -5,26 +5,22 @@ declare(strict_types=1);
 namespace App\Controllers\Public;
 
 use App\Core\Database;
+use App\Services\GalleryContent;
 use PDO;
 
 final class ContentController
 {
     public static function catalogs(): void
     {
-        $rows=Database::connection()->query(
-            'SELECT c.*,d.published document_published
-             FROM catalogs c
-             LEFT JOIN documents d ON d.id=c.document_id
-             WHERE c.published=1 AND (c.document_id IS NULL OR d.published=1)
-             ORDER BY c.sort_order,c.title'
-        )->fetchAll(PDO::FETCH_ASSOC);
+        $rows=Database::connection()->query('SELECT c.*,d.published document_published FROM catalogs c LEFT JOIN documents d ON d.id=c.document_id WHERE c.published=1 AND (c.document_id IS NULL OR d.published=1) ORDER BY c.sort_order,c.title')->fetchAll(PDO::FETCH_ASSOC);
         self::render('content/catalogs',['title'=>'Cataloghi','catalogs'=>$rows]);
     }
 
     public static function gallery(): void
     {
         $rows=Database::connection()->query('SELECT a.*,COUNT(i.id) image_count FROM gallery_albums a LEFT JOIN gallery_images i ON i.album_id=a.id AND i.published=1 WHERE a.published=1 AND a.archived_at IS NULL GROUP BY a.id ORDER BY a.sort_order,a.title')->fetchAll(PDO::FETCH_ASSOC);
-        self::render('content/gallery',['title'=>'Galleria','albums'=>$rows]);
+        $sections=GalleryContent::publicSections();
+        self::render('content/gallery',['title'=>'Galleria','albums'=>$rows,'gallerySections'=>$sections]);
     }
 
     public static function galleryAlbum(string $slug): void

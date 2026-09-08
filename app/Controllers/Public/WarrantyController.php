@@ -50,7 +50,30 @@ final class WarrantyController
         unset($old['company_website']);
         $errors = [];
 
-        $modelId = (int)($old['model_id'] ?? 0);
+        $productType = (string)($old['product_type'] ?? '');
+        $outerUnit = $productType === 'multi' ? (string)($old['multi_outer'] ?? '') : '';
+        $combination = $productType === 'mono'
+            ? (string)($old['mono_combination'] ?? '')
+            : (string)($old['multi_combination'] ?? '');
+
+        if (!in_array($productType, ['mono', 'multi'], true)) $errors[] = 'Seleziona la tipologia di sistema.';
+        if ($combination === '' || mb_strlen($combination) > 255 || !preg_match('/^[A-Z0-9+ .\-x]+$/i', $combination)) {
+            $errors[] = 'Seleziona una combinazione valida.';
+        }
+        $allowedOuter = ['2MIT-50-R32','3MIT-78-R32','2MWTZ-50-R32','2MW-50-R32','3MWTZ-70-R32','3MW-70-R32'];
+        if ($productType === 'multi' && !in_array($outerUnit, $allowedOuter, true)) $errors[] = 'Seleziona un’unità esterna Multi Split valida.';
+        if ($productType === 'multi' && str_contains($outerUnit, 'MIT') && !str_contains($combination, 'ISPT')) $errors[] = 'La combinazione non è compatibile con l’unità esterna selezionata.';
+        if ($productType === 'multi' && !str_contains($outerUnit, 'MIT') && !preg_match('/WTZ|WTMC/', $combination)) $errors[] = 'La combinazione non è compatibile con l’unità esterna selezionata.';
+
+        $modelId = 0;
+        foreach ([
+            'WTMC-25UI-BLK' => 109, 'WTMC-35UI-BLK' => 110,
+            'ISPT-25UI' => 42, 'ISPT-35UI' => 43, 'ISPT-50UI' => 44,
+            'WTZ-25UI' => 104, 'WTZ-35UI' => 105, 'WTZ-50UI' => 14,
+            'WTMC-25UI' => 106, 'WTMC-35UI' => 107, 'WTMC-50UI' => 108, 'WTMC-70UI' => 18,
+        ] as $code => $id) {
+            if (str_contains($combination, $code)) { $modelId = $id; break; }
+        }
         $invoiceDate = (string)($old['invoice_date'] ?? '');
 
         $required = [
@@ -108,9 +131,28 @@ final class WarrantyController
             $errors[] = 'Il termine previsto per la registrazione della garanzia risulta superato.';
         }
 
-        $indoorSerials = preg_split('/\R+/', trim((string)($old['indoor_serials'] ?? ''))) ?: [];
-        $indoorSerials = array_values(array_filter(array_map('trim', $indoorSerials), static fn(string $v): bool => $v !== ''));
-        if (count($indoorSerials) > 20) $errors[] = 'Sono consentiti al massimo 20 seriali di unità interne.';
+        $indoorSerials = [];
+        for ($index = 1; $index <= 3; $index++) {
+            $serial = trim((string)($old['indoor_serial_' . $index] ?? ''));
+            if ($serial !== '') $indoorSerials[] = $serial;
+        }
+
+        $expectedIndoor = 1;
+        if ($productType === 'multi') {
+            $expectedIndoor = 0;
+            foreach (preg_split('/\s*\+\s*/', $combination) ?: [] as $unitPart) {
+                $quantity = 1;
+                if (preg_match('/^\s*(\d+)\s*x\b/i', $unitPart, $quantityMatch)) {
+                    $quantity = max(1, (int)$quantityMatch[1]);
+                }
+                $expectedIndoor += $quantity;
+            }
+            $expectedIndoor = max(1, min(3, $expectedIndoor));
+        }
+
+        if (count($indoorSerials) !== $expectedIndoor) {
+            $errors[] = 'Inserisci esattamente ' . $expectedIndoor . ' serial' . ($expectedIndoor === 1 ? 'e' : 'i') . ' per le unità interne.';
+        }
         foreach ($indoorSerials as $serial) {
             if (mb_strlen($serial) > 160) $errors[] = 'Uno o più seriali delle unità interne sono troppo lunghi.';
         }
@@ -146,6 +188,16 @@ final class WarrantyController
         }
 
         try {
+            $pdo->exec(
+                'CREATE TABLE IF NOT EXISTS warranty_registration_details (
+                    registration_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+                    product_type VARCHAR(20) NOT NULL,
+                    outer_unit VARCHAR(80) NULL,
+                    combination VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_warranty_details_type (product_type)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+            );
             $pdo->beginTransaction();
             $stmt = $pdo->prepare(
                 'INSERT INTO warranty_registrations
@@ -179,6 +231,11 @@ final class WarrantyController
             ]);
             $registrationId = (int)$pdo->lastInsertId();
 
+            $detail = $pdo->prepare(
+                'INSERT INTO warranty_registration_details (registration_id, product_type, outer_unit, combination) VALUES (?,?,?,?)'
+            );
+            $detail->execute([$registrationId, $productType, $outerUnit !== '' ? $outerUnit : null, $combination]);
+
             $unit = $pdo->prepare('INSERT INTO warranty_units (registration_id, model_id, unit_type, serial_number) VALUES (?,?,?,?)');
             $unit->execute([$registrationId, $modelId, 'outdoor', trim((string)$old['outdoor_serial'])]);
             foreach ($indoorSerials as $serial) {
@@ -186,6 +243,16 @@ final class WarrantyController
             }
 
             $pdo->commit();
+
+            WarrantyService::notifyInternal(
+                'Nuova registrazione garanzia IDEMA #' . $registrationId,
+                [
+                    'Pratica' => '#' . $registrationId,
+                    'Sistema' => ($productType === 'mono' ? 'Mono Split - ' : 'Multi Split - ' . $outerUnit . ' / ') . $combination,
+                    'Copertura' => (string)$rule['warranty_years'] . ' anni' . ($rule['extension_formula'] ? ' (' . $rule['extension_formula'] . ')' : ''),
+                    'Pannello' => 'https://www.rappresentanzeguanzirolisas.it/idemaclima/admin/warranties/registration?id=' . $registrationId,
+                ]
+            );
             self::render('warranty/result', [
                 'title' => 'Registrazione ricevuta',
                 'success' => true,

@@ -30,7 +30,7 @@ final class WarrantyService
     public static function eligibleModels(PDO $pdo): array
     {
         $stmt = $pdo->query(
-            'SELECT DISTINCT pm.id, pm.code, p.name AS product_name, c.name AS family_name
+            'SELECT DISTINCT pm.id, pm.code, pm.sort_order, p.name AS product_name, c.name AS family_name
              FROM product_models pm
              JOIN products p ON p.id = pm.product_id AND p.published = 1
              JOIN product_categories c ON c.id = p.category_id AND c.published = 1
@@ -62,4 +62,40 @@ final class WarrantyService
             && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))
             && $date->format('Y-m-d') === $value;
     }
+
+    public static function notificationRecipient(): string
+    {
+        return 'commerciale.tre@idemaclima.it';
+    }
+
+    public static function notifyInternal(string $subject, array $rows, ?string $replyTo = null): bool
+    {
+        $subject = trim(preg_replace('/[\r\n]+/', ' ', $subject) ?? '');
+        if ($subject === '') $subject = 'Nuova richiesta dal sito IDEMA';
+
+        $body = "È stata ricevuta una nuova richiesta dal sito IDEMA.\n\n";
+        foreach ($rows as $label => $value) {
+            $label = trim(preg_replace('/[\r\n]+/', ' ', (string)$label) ?? '');
+            $value = trim((string)$value);
+            if ($value !== '') $body .= $label . ': ' . $value . "\n";
+        }
+        $body .= "\nAccedi al pannello amministrativo IDEMA per verificare i dati e gli eventuali allegati.\n";
+
+        $headers = [
+            'From: IDEMA sito web <no-reply@rappresentanzeguanzirolisas.it>',
+            'Content-Type: text/plain; charset=UTF-8',
+            'X-Mailer: IDEMA Website',
+        ];
+        if ($replyTo !== null && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+            $headers[] = 'Reply-To: ' . $replyTo;
+        }
+
+        $encodedSubject = function_exists('mb_encode_mimeheader')
+            ? mb_encode_mimeheader($subject, 'UTF-8')
+            : $subject;
+        $sent = @mail(self::notificationRecipient(), $encodedSubject, $body, implode("\r\n", $headers));
+        if (!$sent) error_log('IDEMA notification email not sent: ' . $subject);
+        return $sent;
+    }
+
 }

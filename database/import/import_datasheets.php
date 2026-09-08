@@ -23,20 +23,26 @@ const ROOT_CATEGORY_NAMES = [
     'altri-prodotti' => 'Altri Prodotti',
 ];
 
-$options = getopt('', ['source:', 'execute', 'report::', 'help']);
-if (isset($options['help']) || empty($options['source'])) {
-    fwrite(STDOUT, "Import IDEMA datasheets.ts -> MySQL\n\n");
-    fwrite(STDOUT, "Uso:\n");
-    fwrite(STDOUT, "  php database/import/import_datasheets.php --source=/path/datasheets.ts [--execute] [--report=/path/report.json]\n\n");
-    fwrite(STDOUT, "Senza --execute viene eseguito solo un dry-run.\n");
-    exit(isset($options['help']) ? 0 : 1);
-}
+if (defined('IDEMA_IMPORT_WEB') && IDEMA_IMPORT_WEB === true) {
+    $sourcePath = __DIR__ . '/datasheets.ts';
+    $execute = defined('IDEMA_IMPORT_EXECUTE') && IDEMA_IMPORT_EXECUTE === true;
+    $reportPath = dirname(__DIR__, 2) . '/storage/logs/datasheets-import-' . ($execute ? 'execute' : 'dry-run') . '.json';
+} else {
+    $options = getopt('', ['source:', 'execute', 'report::', 'help']);
+    if (isset($options['help']) || empty($options['source'])) {
+        fwrite(STDOUT, "Import IDEMA datasheets.ts -> MySQL\n\n");
+        fwrite(STDOUT, "Uso:\n");
+        fwrite(STDOUT, "  php database/import/import_datasheets.php --source=/path/datasheets.ts [--execute] [--report=/path/report.json]\n\n");
+        fwrite(STDOUT, "Senza --execute viene eseguito solo un dry-run.\n");
+        exit(isset($options['help']) ? 0 : 1);
+    }
 
-$sourcePath = (string) $options['source'];
-$execute = array_key_exists('execute', $options);
-$reportPath = isset($options['report']) && is_string($options['report']) && $options['report'] !== ''
-    ? $options['report']
-    : dirname(__DIR__, 2) . '/storage/logs/datasheets-import-report.json';
+    $sourcePath = (string) $options['source'];
+    $execute = array_key_exists('execute', $options);
+    $reportPath = isset($options['report']) && is_string($options['report']) && $options['report'] !== ''
+        ? $options['report']
+        : dirname(__DIR__, 2) . '/storage/logs/datasheets-import-report.json';
+}
 
 if (!is_file($sourcePath) || !is_readable($sourcePath)) {
     fail("File sorgente non leggibile: {$sourcePath}");
@@ -195,6 +201,13 @@ try {
 
                         $label = trim((string) ($file['model'] ?? ''));
                         $url = trim((string) ($file['url'] ?? ''));
+                        if (str_starts_with($url, '/__l5e/assets-v1/')) {
+                            $path = (string) parse_url($url, PHP_URL_PATH);
+                            $filename = basename($path);
+                            if ($filename !== '' && $filename !== '.' && $filename !== '/') {
+                                $url = 'https://www.idemaclima.it/wp-content/uploads/schede/' . $filename;
+                            }
+                        }
                         if ($url === '') {
                             $warnings[] = [
                                 'type' => 'document_without_url',
@@ -325,6 +338,10 @@ file_put_contents(
     $reportPath,
     json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
 );
+
+if (defined('IDEMA_IMPORT_WEB') && IDEMA_IMPORT_WEB === true) {
+    return $report;
+}
 
 fwrite(STDOUT, ($execute ? 'IMPORT COMPLETATO' : 'DRY-RUN COMPLETATO') . "\n");
 fwrite(STDOUT, "Categorie root: {$stats['root_categories']}\n");

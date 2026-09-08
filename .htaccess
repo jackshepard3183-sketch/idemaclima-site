@@ -2,6 +2,8 @@ Options -Indexes
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
+RewriteRule ^$ public/index.php [L,QSA]
+
 # Public files live under /public while the project root is the web directory.
 RewriteRule ^(uploads|assets)/(.*)$ public/$1/$2 [L]
 

@@ -14,6 +14,7 @@ final class ContactController
 {
     public static function form(): void
     {
+        self::ensurePostalCodeColumn();
         self::render('contact/form', ['title'=>'Contatti','csrf'=>Security::csrfToken(),'errors'=>[],'old'=>[]]);
     }
 
@@ -32,7 +33,7 @@ final class ContactController
             return;
         }
 
-        foreach(['first_name','last_name','region','province','city','email','email_confirm','subject','message'] as $f) {
+        foreach(['first_name','last_name','region','province','city','postal_code','phone','email','email_confirm','subject','message'] as $f) {
             if(trim((string)($old[$f]??''))==='')$errors[]='Compila tutti i campi obbligatori.';
         }
 
@@ -41,6 +42,7 @@ final class ContactController
         self::maxLen($old,'region',120,'Regione',$errors);
         self::maxLen($old,'province',8,'Provincia',$errors);
         self::maxLen($old,'city',120,'Città',$errors);
+        self::maxLen($old,'postal_code',12,'CAP',$errors);
         self::maxLen($old,'email',190,'Email',$errors);
         self::maxLen($old,'phone',50,'Telefono',$errors);
         self::maxLen($old,'subject',220,'Oggetto',$errors);
@@ -56,16 +58,27 @@ final class ContactController
         if($errors){if($attachment)PrivateUpload::remove($attachment['path']);self::render('contact/form',['title'=>'Contatti','csrf'=>Security::csrfToken(),'errors'=>array_values(array_unique($errors)),'old'=>$old]);return;}
 
         try {
-            $s=Database::connection()->prepare('INSERT INTO contact_submissions(first_name,last_name,region,province,city,email,phone,subject,message,attachment_path,attachment_name,attachment_mime,privacy_accepted_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NOW())');
+            self::ensurePostalCodeColumn();
+            $pdo=Database::connection();
+            $s=$pdo->prepare('INSERT INTO contact_submissions(first_name,last_name,region,province,city,postal_code,email,phone,subject,message,attachment_path,attachment_name,attachment_mime,privacy_accepted_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())');
             $s->execute([
-                $old['first_name'],$old['last_name'],$old['region'],strtoupper((string)$old['province']),strtoupper((string)$old['city']),
-                strtolower((string)$old['email']),$old['phone']?:null,$old['subject'],$old['message'],
+                $old['first_name'],$old['last_name'],$old['region'],strtoupper((string)$old['province']),strtoupper((string)$old['city']),(string)$old['postal_code'],
+                strtolower((string)$old['email']),(string)$old['phone'],$old['subject'],$old['message'],
                 $attachment['path']??null,$attachment['original_name']??null,$attachment['mime']??null
             ]);
             self::render('contact/result',['title'=>'Messaggio ricevuto','success'=>true,'message'=>'La richiesta è stata inviata correttamente.']);
         } catch(Throwable $e) {
             if($attachment)PrivateUpload::remove($attachment['path']);
             http_response_code(500);self::render('contact/result',['title'=>'Errore','success'=>false,'message'=>'Non è stato possibile inviare la richiesta.']);
+        }
+    }
+
+    private static function ensurePostalCodeColumn(): void
+    {
+        $pdo=Database::connection();
+        $check=$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='contact_submissions' AND COLUMN_NAME='postal_code'");
+        if ((int)$check->fetchColumn() === 0) {
+            $pdo->exec("ALTER TABLE contact_submissions ADD COLUMN postal_code VARCHAR(12) NULL AFTER city");
         }
     }
 

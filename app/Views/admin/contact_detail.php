@@ -2,7 +2,7 @@
 <div class="toolbar"><h1>Richiesta contatto</h1><a class="btnlink" href="/admin/contacts">Torna all'elenco</a></div>
 <div class="panel">
 <p><strong><?= htmlspecialchars($row['first_name'].' '.$row['last_name']) ?></strong><br><?= htmlspecialchars($row['email']) ?><?= !empty($row['phone'])?' · '.htmlspecialchars($row['phone']):'' ?></p>
-<p><?= htmlspecialchars($row['city']) ?> (<?= htmlspecialchars($row['province']) ?>) · <?= htmlspecialchars($row['region']) ?></p>
+<p><?= htmlspecialchars($row['city']) ?> (<?= htmlspecialchars($row['province']) ?>) · CAP <?= htmlspecialchars((string)($row['postal_code']??'')) ?> · <?= htmlspecialchars($row['region']) ?></p>
 <h3><?= htmlspecialchars($row['subject']) ?></h3><p style="white-space:pre-wrap"><?= htmlspecialchars($row['message']) ?></p>
 <?php if(!empty($row['attachment_path'])): ?><p><a class="btnlink" href="/admin/contacts/file/<?= (int)$row['id'] ?>">Scarica allegato</a> <span class="muted"><?= htmlspecialchars((string)$row['attachment_name']) ?></span></p><?php endif; ?>
 <form method="post" action="/admin/contacts/update"><input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>"><input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
