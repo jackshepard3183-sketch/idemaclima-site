@@ -48,7 +48,6 @@ jobs:
           retention-days: 7
 
       - name: Deploy to Aruba /idemaclima
-        if: github.event_name == 'workflow_dispatch'
         env:
           FTP_SERVER: ${{ secrets.ARUBA_FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.ARUBA_FTP_USERNAME }}
@@ -66,12 +65,13 @@ jobs:
           set net:timeout 20
           mkdir -p /idemaclima
           cd /idemaclima
-          mirror -R --delete --verbose --parallel=3 build/idemaclima-staging/ ./
+          mirror -R --delete --verbose --parallel=3 \
+            --exclude-rx '(^|/)\.env$|^storage/private/|^public/uploads/' \
+            build/idemaclima-staging/ ./
           bye
           EOF
 
       - name: Verify public staging endpoint
-        if: github.event_name == 'workflow_dispatch'
         run: |
           curl --fail --silent --show-error --location \
             --retry 3 --retry-delay 3 \
