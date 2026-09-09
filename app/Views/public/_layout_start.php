@@ -4,12 +4,12 @@ function e(string $value): string { return htmlspecialchars($value, ENT_QUOTES |
 $seo = $seo ?? \App\Core\Seo::meta($title ?? 'IDEMA Clima');
 $ga4 = null;
 try {
-    $ga4 = \App\Core\Database::connection()->query('SELECT ga4_measurement_id,analytics_enabled,consent_required FROM analytics_settings WHERE id=1')->fetch(\PDO::FETCH_ASSOC) ?: null;
+    $ga4 = \App\Core\Database::connection()->query('SELECT ga4_measurement_id,analytics_enabled,consent_required,gtm_container_id,search_console_verification,meta_pixel_id,iubenda_enabled,iubenda_site_id,iubenda_cookie_policy_id FROM analytics_settings WHERE id=1')->fetch(\PDO::FETCH_ASSOC) ?: null;
 } catch (\Throwable $e) {
     $ga4 = null;
 }
-$gaConsentGranted = (string)($_COOKIE['idema_analytics_consent'] ?? '') === 'granted';
-$gaAllowed = $ga4 && !empty($ga4['analytics_enabled']) && !empty($ga4['ga4_measurement_id']) && (empty($ga4['consent_required']) || $gaConsentGranted);
+$iubendaActive=$ga4&&!empty($ga4['iubenda_enabled'])&&!empty($ga4['iubenda_site_id'])&&!empty($ga4['iubenda_cookie_policy_id']);
+$trackingActive=$ga4&&!empty($ga4['analytics_enabled']);
 $base = '/idemaclima';
 ?><!doctype html>
 <html lang="it">
@@ -24,12 +24,20 @@ $base = '/idemaclima';
 <meta property="og:description" content="<?= e((string)$seo['description']) ?>">
 <meta property="og:url" content="<?= e((string)$seo['canonical']) ?>">
 <meta property="og:type" content="website">
+<?php if(!empty($ga4['search_console_verification'])): ?><meta name="google-site-verification" content="<?= e((string)$ga4['search_console_verification']) ?>"><?php endif; ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
-<?php if ($gaAllowed): $mid=e((string)$ga4['ga4_measurement_id']); ?>
-<script async src="https://www.googletagmanager.com/gtag/js?id=<?= $mid ?>"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','<?= $mid ?>',{'anonymize_ip':true});</script>
+<?php if($iubendaActive): ?>
+<script>var _iub=_iub||[];_iub.csConfiguration={siteId:<?= json_encode((int)$ga4['iubenda_site_id']) ?>,cookiePolicyId:<?= json_encode((int)$ga4['iubenda_cookie_policy_id']) ?>,lang:"it",storage:{useSiteId:true},banner:{acceptButtonDisplay:true,rejectButtonDisplay:true,customizeButtonDisplay:true,closeButtonDisplay:false,position:"float-top-center"}};</script>
+<script src="https://cdn.iubenda.com/cs/gpp/stub.js"></script><script src="https://cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" async></script>
+<?php endif; ?>
+<?php if($trackingActive&&!empty($ga4['ga4_measurement_id'])):$mid=e((string)$ga4['ga4_measurement_id']);$blocked=$iubendaActive&&!empty($ga4['consent_required']); ?>
+<script <?= $blocked?'type="text/plain" class="_iub_cs_activate" data-iub-purposes="5"':'' ?> async src="https://www.googletagmanager.com/gtag/js?id=<?= $mid ?>"></script>
+<script <?= $blocked?'type="text/plain" class="_iub_cs_activate" data-iub-purposes="5"':'' ?>>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','<?= $mid ?>',{'anonymize_ip':true});</script>
+<?php endif; ?>
+<?php if($trackingActive&&!empty($ga4['gtm_container_id'])):$gtm=e((string)$ga4['gtm_container_id']);$blocked=$iubendaActive&&!empty($ga4['consent_required']); ?>
+<script <?= $blocked?'type="text/plain" class="_iub_cs_activate" data-iub-purposes="5"':'' ?>>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f)})(window,document,'script','dataLayer','<?= $gtm ?>');</script>
 <?php endif; ?>
 <style>
 :root{--background:#fff;--foreground:#15271f;--card:#fff;--primary:#91d025;--primary-deep:#6cad12;--primary-ink:#183219;--secondary:#1ba1bb;--muted:#f1f6f3;--muted-foreground:#52645d;--accent:#daf3f5;--border:#dce7e1;--danger:#dc4141;--radius:14px;--gradient-hero:linear-gradient(135deg,#0e3a2b 0%,#115267 60%,#4c7a1f 100%);--gradient-primary:linear-gradient(135deg,#91d025 0%,#b7f24b 100%);--gradient-cool:linear-gradient(180deg,#edfafa 0%,#fff 100%);--gradient-dark:linear-gradient(135deg,#102a20 0%,#12343b 100%);--shadow-soft:0 4px 20px -4px rgba(24,64,45,.08);--shadow-elegant:0 18px 40px -16px rgba(20,66,46,.2);--ease:cubic-bezier(.22,1,.36,1)}
