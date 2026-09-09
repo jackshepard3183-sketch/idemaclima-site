@@ -45,7 +45,7 @@ final class ContactsAnalyticsController
 
     public static function analytics(): void
     {
-        AdminAuth::requireLogin();$pdo=Database::connection();
+        AdminAuth::requireLogin();$pdo=Database::connection();self::ensureIntegrationColumns($pdo);
         $totals=$pdo->query("SELECT event_type,COUNT(*) total FROM document_events GROUP BY event_type")->fetchAll(PDO::FETCH_KEY_PAIR);
         $top=$pdo->query("SELECT d.id,d.title,COUNT(*) downloads FROM document_events e JOIN documents d ON d.id=e.document_id WHERE e.event_type='download' GROUP BY d.id,d.title ORDER BY downloads DESC LIMIT 25")->fetchAll(PDO::FETCH_ASSOC);
         $settings=$pdo->query('SELECT * FROM analytics_settings WHERE id=1')->fetch(PDO::FETCH_ASSOC)?:[];
@@ -54,6 +54,8 @@ final class ContactsAnalyticsController
 
     public static function saveAnalytics(): void
     {
+        AdminAuth::requireLogin();
+        self::ensureIntegrationColumns(Database::connection());
         AdminAuth::requireLogin();self::csrf();$measurement=strtoupper(trim((string)($_POST['ga4_measurement_id']??'')));$property=trim((string)($_POST['ga4_property_id']??''));$gtm=strtoupper(trim((string)($_POST['gtm_container_id']??'')));$searchConsole=trim((string)($_POST['search_console_verification']??''));$metaPixel=trim((string)($_POST['meta_pixel_id']??''));$iubendaSite=trim((string)($_POST['iubenda_site_id']??''));$iubendaPolicy=trim((string)($_POST['iubenda_cookie_policy_id']??'38092343'));$iubendaEnabled=isset($_POST['iubenda_enabled'])?1:0;$enabled=isset($_POST['analytics_enabled'])?1:0;$consent=isset($_POST['consent_required'])?1:0;$pdf=isset($_POST['pdf_tracking_enabled'])?1:0;$retention=(int)($_POST['internal_tracking_retention_days']??180);
         $errors=[];
         if($measurement!==''&&!preg_match('/^G-[A-Z0-9]{6,20}$/',$measurement))$errors[]='Measurement ID GA4 non valido.';
@@ -70,6 +72,13 @@ final class ContactsAnalyticsController
         Database::connection()->prepare('UPDATE analytics_settings SET ga4_measurement_id=?,ga4_property_id=?,gtm_container_id=?,search_console_verification=?,meta_pixel_id=?,iubenda_enabled=?,iubenda_site_id=?,iubenda_cookie_policy_id=?,analytics_enabled=?,consent_required=?,pdf_tracking_enabled=?,internal_tracking_retention_days=? WHERE id=1')->execute([$measurement?:null,$property?:null,$gtm?:null,$searchConsole?:null,$metaPixel?:null,$iubendaEnabled,$iubendaSite?:null,$iubendaPolicy,$enabled,$consent,$pdf,$retention]);
         Audit::log('analytics.settings','analytics_settings',1,['analytics_enabled'=>$enabled,'iubenda_enabled'=>$iubendaEnabled,'consent_required'=>$consent,'pdf_tracking_enabled'=>$pdf,'retention_days'=>$retention]);
         header('Location:/admin/analytics');exit;
+    }
+
+    private static function ensureIntegrationColumns(PDO $pdo):void
+    {
+        $columns=['gtm_container_id'=>'VARCHAR(32) NULL','search_console_verification'=>'VARCHAR(255) NULL','meta_pixel_id'=>'VARCHAR(32) NULL','iubenda_enabled'=>'TINYINT(1) NOT NULL DEFAULT 0','iubenda_site_id'=>'VARCHAR(32) NULL','iubenda_cookie_policy_id'=>"VARCHAR(32) NOT NULL DEFAULT '38092343'"];
+        $existing=array_map('strval',$pdo->query('SHOW COLUMNS FROM analytics_settings')->fetchAll(PDO::FETCH_COLUMN));
+        foreach($columns as $name=>$definition)if(!in_array($name,$existing,true))$pdo->exec('ALTER TABLE analytics_settings ADD COLUMN '.$name.' '.$definition);
     }
 
     private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/'.$file.'.php';}
