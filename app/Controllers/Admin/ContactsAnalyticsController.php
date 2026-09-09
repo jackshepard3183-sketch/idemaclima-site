@@ -54,15 +54,21 @@ final class ContactsAnalyticsController
 
     public static function saveAnalytics(): void
     {
-        AdminAuth::requireLogin();self::csrf();$measurement=strtoupper(trim((string)($_POST['ga4_measurement_id']??'')));$property=trim((string)($_POST['ga4_property_id']??''));$enabled=isset($_POST['analytics_enabled'])?1:0;$consent=isset($_POST['consent_required'])?1:0;$pdf=isset($_POST['pdf_tracking_enabled'])?1:0;$retention=(int)($_POST['internal_tracking_retention_days']??180);
+        AdminAuth::requireLogin();self::csrf();$measurement=strtoupper(trim((string)($_POST['ga4_measurement_id']??'')));$property=trim((string)($_POST['ga4_property_id']??''));$gtm=strtoupper(trim((string)($_POST['gtm_container_id']??'')));$searchConsole=trim((string)($_POST['search_console_verification']??''));$metaPixel=trim((string)($_POST['meta_pixel_id']??''));$iubendaSite=trim((string)($_POST['iubenda_site_id']??''));$iubendaPolicy=trim((string)($_POST['iubenda_cookie_policy_id']??'38092343'));$iubendaEnabled=isset($_POST['iubenda_enabled'])?1:0;$enabled=isset($_POST['analytics_enabled'])?1:0;$consent=isset($_POST['consent_required'])?1:0;$pdf=isset($_POST['pdf_tracking_enabled'])?1:0;$retention=(int)($_POST['internal_tracking_retention_days']??180);
         $errors=[];
         if($measurement!==''&&!preg_match('/^G-[A-Z0-9]{6,20}$/',$measurement))$errors[]='Measurement ID GA4 non valido.';
         if($property!==''&&!preg_match('/^[0-9]{4,20}$/',$property))$errors[]='Property ID GA4 non valido.';
+        if($gtm!==''&&!preg_match('/^GTM-[A-Z0-9]{4,20}$/',$gtm))$errors[]='Container ID Google Tag Manager non valido.';
+        if($searchConsole!==''&&!preg_match('/^[A-Za-z0-9_-]{8,255}$/',$searchConsole))$errors[]='Codice di verifica Search Console non valido.';
+        if($metaPixel!==''&&!preg_match('/^[0-9]{5,32}$/',$metaPixel))$errors[]='ID Meta Pixel non valido.';
+        if($iubendaSite!==''&&!preg_match('/^[0-9]{3,32}$/',$iubendaSite))$errors[]='Site ID iubenda non valido.';
+        if(!preg_match('/^[0-9]{3,32}$/',$iubendaPolicy))$errors[]='Cookie Policy ID iubenda non valido.';
         if($retention<1||$retention>3650)$errors[]='Conservazione statistiche: inserisci un valore tra 1 e 3650 giorni.';
-        if($enabled&&$measurement==='')$errors[]='Inserisci il Measurement ID prima di attivare GA4.';
+        if($enabled&&$measurement===''&&$gtm==='')$errors[]='Inserisci il Measurement ID GA4 o il Container ID GTM prima di attivare il tracking.';
+        if($iubendaEnabled&&$iubendaSite==='')$errors[]='Inserisci il Site ID prima di attivare iubenda CMP.';
         if($errors){http_response_code(422);exit(implode("\n",$errors));}
-        Database::connection()->prepare('UPDATE analytics_settings SET ga4_measurement_id=?,ga4_property_id=?,analytics_enabled=?,consent_required=?,pdf_tracking_enabled=?,internal_tracking_retention_days=? WHERE id=1')->execute([$measurement?:null,$property?:null,$enabled,$consent,$pdf,$retention]);
-        Audit::log('analytics.settings','analytics_settings',1,['analytics_enabled'=>$enabled,'consent_required'=>$consent,'pdf_tracking_enabled'=>$pdf,'retention_days'=>$retention]);
+        Database::connection()->prepare('UPDATE analytics_settings SET ga4_measurement_id=?,ga4_property_id=?,gtm_container_id=?,search_console_verification=?,meta_pixel_id=?,iubenda_enabled=?,iubenda_site_id=?,iubenda_cookie_policy_id=?,analytics_enabled=?,consent_required=?,pdf_tracking_enabled=?,internal_tracking_retention_days=? WHERE id=1')->execute([$measurement?:null,$property?:null,$gtm?:null,$searchConsole?:null,$metaPixel?:null,$iubendaEnabled,$iubendaSite?:null,$iubendaPolicy,$enabled,$consent,$pdf,$retention]);
+        Audit::log('analytics.settings','analytics_settings',1,['analytics_enabled'=>$enabled,'iubenda_enabled'=>$iubendaEnabled,'consent_required'=>$consent,'pdf_tracking_enabled'=>$pdf,'retention_days'=>$retention]);
         header('Location:/admin/analytics');exit;
     }
 
