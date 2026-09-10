@@ -60,7 +60,11 @@ final class RateLimiter
 
     private static function clientHash(): string
     {
-        $ip = trim((string)($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+        // Use the original client address only when the forwarding proxy is
+        // explicitly trusted by Security. This prevents every visitor behind
+        // the Aruba proxy from sharing the same rate-limit bucket.
+        $ip = Security::clientIp();
+        if ($ip === '') $ip = 'unknown';
         $ua = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''),0,200);
         $salt = (string)(getenv('APP_KEY') ?: 'idemaclima-rate-limit');
         return hash('sha256',$ip.'|'.$ua.'|'.$salt);
