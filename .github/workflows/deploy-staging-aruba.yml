@@ -70,13 +70,17 @@ jobs:
           mkdir -p /www.rappresentanzeguanzirolisas.it/idemaclima
           cd /www.rappresentanzeguanzirolisas.it/idemaclima
           mirror -R --delete --verbose --parallel=3 \
-            --exclude='(^|/)\.env
-          EOF
-
- \
+            --exclude='(^|/)\.env$' \
             --exclude='^storage/private(/|$)' \
             --exclude='^public/uploads(/|$)' \
             build/idemaclima-staging/ ./
           bye
           EOF
 
+      - name: Verify public staging endpoint
+        run: |
+          curl --fail --silent --show-error --location \
+            --retry 3 --retry-delay 3 \
+            https://www.rappresentanzeguanzirolisas.it/idemaclima/ \
+            -o /tmp/idemaclima-home.html
+          test -s /tmp/idemaclima-home.html
