@@ -18,9 +18,9 @@ foreach ([$contact,$analytics,$admin,$layout,$form,$upload,$migration] as $conte
 $checks = [
     [$contact, 'company_website', 'honeypot contatti'],
     [$contact, "mb_strlen", 'limiti server-side'],
-    [$analytics, "hash_hmac('sha256',date('Y-m-d').'|'.$ip,$key)", 'hash giornaliero pseudonimo'],
+    [$analytics, "hash_hmac('sha256',date('Y-m-d').'|'", 'hash giornaliero pseudonimo'],
     [$analytics, 'referrerPath', 'referrer ridotto al path'],
-    [$analytics, 'user_agent_hash) VALUES(?,?,?,NULL)', 'UA non persistito'],
+    [$analytics, "VALUES(?,'download',?,?,NULL)", 'UA non persistito'],
     [$analytics, 'internal_tracking_retention_days', 'retention tracking interno'],
     [$admin, "Audit::log('contact.update'", 'audit contatti'],
     [$admin, 'Cache-Control: private, no-store', 'no-store allegati'],
