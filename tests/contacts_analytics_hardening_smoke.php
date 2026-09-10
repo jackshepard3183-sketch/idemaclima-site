@@ -25,7 +25,7 @@ $checks = [
     [$admin, "Audit::log('contact.update'", 'audit contatti'],
     [$admin, 'Cache-Control: private, no-store', 'no-store allegati'],
     [$admin, 'consent_required', 'consenso analytics amministrabile'],
-    [$layout, 'idema_analytics_consent', 'gate consenso GA4'],
+    [$layout, 'class="_iub_cs_activate" data-iub-purposes="5"', 'gate consenso GA4 tramite iubenda'],
     [$form, 'company_website', 'honeypot nel form'],
     [$upload, 'allowOfficeZipDetection', 'riconoscimento OpenXML'],
     [$migration, 'internal_tracking_retention_days', 'schema retention'],
