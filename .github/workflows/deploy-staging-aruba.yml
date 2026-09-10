@@ -67,9 +67,16 @@ jobs:
           set ssl:check-hostname no
           set net:max-retries 2
           set net:timeout 20
-          # Read-only diagnostic: show the FTP virtual root assigned by Aruba.
-          pwd
-          cls -1
+          mkdir -p /www.rappresentanzeguanzirolisas.it/idemaclima
+          cd /www.rappresentanzeguanzirolisas.it/idemaclima
+          mirror -R --delete --verbose --parallel=3 \
+            --exclude='(^|/)\.env
+          EOF
+
+ \
+            --exclude='^storage/private(/|$)' \
+            --exclude='^public/uploads(/|$)' \
+            build/idemaclima-staging/ ./
           bye
           EOF
 
