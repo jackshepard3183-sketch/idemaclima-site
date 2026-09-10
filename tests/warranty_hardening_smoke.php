@@ -14,8 +14,9 @@ $form = implode("\n", array_map(
     ['form.php', 'form_fields.php']
 ));
 $migration = file_get_contents($root . '/database/migrations/018_warranty_hardening.sql');
+$routes = file_get_contents($root . '/public/index.php');
 
-foreach ([$public,$admin,$service,$form,$migration] as $content) {
+foreach ([$public,$admin,$service,$form,$migration,$routes] as $content) {
     if (!is_string($content) || $content === '') throw new RuntimeException('File garanzia non leggibile.');
 }
 
@@ -25,13 +26,21 @@ $checks = [
     [$public, 'invoice_required_snapshot', 'snapshot fattura'],
     [$public, 'fgas_required_snapshot', 'snapshot F-GAS'],
     [$public, 'min(3, $expectedIndoor)', 'limite seriali interni'],
+    [$public, 'WarrantyService::modelIdFromCombination', 'modello risolto dal database'],
     [$admin, 'Il modello selezionato non appartiene al prodotto indicato', 'coerenza prodotto/modello'],
     [$admin, 'warranty_generated_certificates', 'vincolo certificato prima di issued'],
     [$admin, 'reviewed_at', 'timestamp revisione'],
     [$admin, 'Cache-Control: private, no-store', 'no-store file privati'],
     [$service, 'isIsoDate', 'validazione date ISO'],
+    [$service, 'modelIdFromCombination', 'risoluzione dinamica modello'],
+    [$admin, 'mb_strimwidth', 'contenuti PDF lunghi contenuti nei riquadri'],
     [$form, 'L’obbligatorietà dipende dalla regola', 'fattura dinamica'],
     [$migration, 'MODIFY COLUMN invoice_file VARCHAR(500) NULL', 'fattura opzionale DB'],
+    [$routes, "/admin/warranties/certificate/generate", 'rotta generazione certificato'],
+    [$routes, "/admin/warranties/certificate/{id}", 'rotta visualizzazione certificato'],
+    [$routes, "/admin/warranties/certificate/send", 'rotta invio certificato'],
+    [$routes, "/admin/warranties/update", 'rotta correzione pratica'],
+    [$routes, "/admin/warranties/delete", 'rotta eliminazione pratica'],
 ];
 
 foreach ($checks as [$haystack,$needle,$label]) {

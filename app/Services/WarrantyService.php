@@ -43,6 +43,21 @@ final class WarrantyService
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public static function modelIdFromCombination(PDO $pdo, string $combination): int
+    {
+        $combination = strtoupper(trim($combination));
+        if ($combination === '') return 0;
+        $models = self::eligibleModels($pdo);
+        usort($models, static fn(array $a,array $b):int => strlen((string)$b['code']) <=> strlen((string)$a['code']));
+        foreach ($models as $model) {
+            $code = strtoupper(trim((string)$model['code']));
+            if ($code === '') continue;
+            $base = preg_replace('/-R32$/', '', $code) ?: $code;
+            if (str_contains($combination, $code) || str_contains($combination, $base)) return (int)$model['id'];
+        }
+        return 0;
+    }
+
     public static function registrationWithinLimit(array $rule, string $invoiceDate): bool
     {
         $limit = isset($rule['registration_days_limit']) ? (int)$rule['registration_days_limit'] : 0;

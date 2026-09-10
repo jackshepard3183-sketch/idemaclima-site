@@ -28,15 +28,25 @@ trait WarrantyCertificatePdfTrait
             $width=strlen($raw)*$size*($bold?0.56:0.52);
             $commands[]=sprintf('BT /%s %.1F Tf %.3F %.3F %.3F rg %.1F %.1F Td (%s) Tj ET',$font,$size,$color[0],$color[1],$color[2],$center-($width/2),$y,$enc($value));
         };
+        $fitText = static function (float $x,float $right,float $y,float $maxSize,float $minSize,string $value,bool $bold=false,array $color=[0.08,0.10,0.15]) use ($text): void {
+            $factor=$bold?0.56:0.52;$size=$maxSize;
+            $encoded=iconv('UTF-8','Windows-1252//TRANSLIT',$value) ?: $value;
+            while($size>$minSize && strlen($encoded)*$size*$factor>($right-$x))$size-=0.2;
+            if(strlen($encoded)*$size*$factor>($right-$x)){
+                $maxChars=max(4,(int)floor(($right-$x)/($size*$factor)));
+                $value=mb_strimwidth($value,0,$maxChars-3,'...','UTF-8');
+            }
+            $text($x,$y,$size,$value,$bold,$color);
+        };
         $rect = static function (float $x,float $y,float $w,float $h,bool $fill=false,array $color=[0.82,0.85,0.88]) use (&$commands): void {
             $commands[]=sprintf('%.3F %.3F %.3F %s %.1F %.1F %.1F %.1F re %s',$color[0],$color[1],$color[2],$fill?'rg':'RG',$x,$y,$w,$h,$fill?'f':'S');
         };
         $line = static function (float $x1,float $y1,float $x2,float $y2,array $color=[0.82,0.85,0.88]) use (&$commands): void {
             $commands[]=sprintf('%.3F %.3F %.3F RG %.1F %.1F m %.1F %.1F l S',$color[0],$color[1],$color[2],$x1,$y1,$x2,$y2);
         };
-        $row = static function (float $y,string $label,string $value) use ($text): void {
+        $row = static function (float $y,string $label,string $value) use ($text,$fitText): void {
             $text(72,$y,8.2,strtoupper($label),false,[0.38,0.43,0.52]);
-            $text(220,$y,10.2,mb_strtoupper($value,'UTF-8'),true);
+            $fitText(220,519,$y,10.2,7.2,mb_strtoupper($value,'UTF-8'),true);
         };
         $wrap = static function (string $value,int $width): array {
             return explode("\n",wordwrap($value,$width,"\n",true));
@@ -95,7 +105,7 @@ trait WarrantyCertificatePdfTrait
         $combination=(string)($r['combination'] ?? $r['code']);
         $series=str_contains($combination,'ISPT')?'Serie ISPT-R32':(str_contains($combination,'WTMC')?(str_contains($combination,'BLK')?'Serie WTMC-R32 COLOR':'Serie WTMC-R32'):'Serie WTZ-R32');
         $row(327,'Tipologia',$type); $row(306,'Serie',$series);
-        $text(72,285,8.2,'COMBINAZIONE',false,[0.38,0.43,0.52]); $text(220,285,8.2,mb_strtoupper((($r['outer_unit'] ?? '')!==''?(string)$r['outer_unit'].' + ':'').$combination,'UTF-8'),true);
+        $text(72,285,8.2,'COMBINAZIONE',false,[0.38,0.43,0.52]); $fitText(220,519,285,8.2,6.8,mb_strtoupper((($r['outer_unit'] ?? '')!==''?(string)$r['outer_unit'].' + ':'').$combination,'UTF-8'),true);
         $row(264,'Data fattura',date('d/m/Y',strtotime((string)$r['invoice_date'])));
         $line(76,244,519,244); $text(76,225,8,'NUMERI DI SERIE',true,$green);
         $sy=204; foreach($units as $unit){$row($sy,$unit['unit_type']==='outdoor'?'Unita esterna':'Unita interna',(string)$unit['serial_number']);$sy-=14;if($sy<160)break;}
@@ -134,4 +144,3 @@ trait WarrantyCertificatePdfTrait
     }
 
 }
-

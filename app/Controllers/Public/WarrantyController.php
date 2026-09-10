@@ -65,15 +65,7 @@ final class WarrantyController
         if ($productType === 'multi' && str_contains($outerUnit, 'MIT') && !str_contains($combination, 'ISPT')) $errors[] = 'La combinazione non è compatibile con l’unità esterna selezionata.';
         if ($productType === 'multi' && !str_contains($outerUnit, 'MIT') && !preg_match('/WTZ|WTMC/', $combination)) $errors[] = 'La combinazione non è compatibile con l’unità esterna selezionata.';
 
-        $modelId = 0;
-        foreach ([
-            'WTMC-25UI-BLK' => 109, 'WTMC-35UI-BLK' => 110,
-            'ISPT-25UI' => 42, 'ISPT-35UI' => 43, 'ISPT-50UI' => 44,
-            'WTZ-25UI' => 104, 'WTZ-35UI' => 105, 'WTZ-50UI' => 14,
-            'WTMC-25UI' => 106, 'WTMC-35UI' => 107, 'WTMC-50UI' => 108, 'WTMC-70UI' => 18,
-        ] as $code => $id) {
-            if (str_contains($combination, $code)) { $modelId = $id; break; }
-        }
+        $modelId = WarrantyService::modelIdFromCombination($pdo, $combination);
         $invoiceDate = (string)($old['invoice_date'] ?? '');
 
         $required = [

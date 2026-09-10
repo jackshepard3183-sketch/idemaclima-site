@@ -30,6 +30,14 @@ jobs:
       - name: Run smoke tests
         run: bash tests/run_all.sh
 
+      - name: Upload warranty certificate sample
+        uses: actions/upload-artifact@v4
+        with:
+          name: warranty-certificate-sample
+          path: /tmp/idemaclima-warranty-certificate-sample.pdf
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Build staging package
         run: bash scripts/build_staging_package.sh
 
