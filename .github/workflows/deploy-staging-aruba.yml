@@ -69,13 +69,16 @@ jobs:
           set net:timeout 20
           mkdir -p /www.rappresentanzeguanzirolisas.it/idemaclima
           cd /www.rappresentanzeguanzirolisas.it/idemaclima
-          mirror -R --delete --verbose --parallel=3 \
+          mirror -R --delete --verbose --parallel=1 \
             --exclude='(^|/)\.env$' \
             --exclude='^storage/private(/|$)' \
             --exclude='^public/uploads(/|$)' \
             build/idemaclima-staging/ ./
+          put -o app/Controllers/Admin/WarrantyController.php build/idemaclima-staging/app/Controllers/Admin/WarrantyController.php
+          get app/Controllers/Admin/WarrantyController.php -o /tmp/idemaclima-warranty-controller.php
           bye
           EOF
+          cmp build/idemaclima-staging/app/Controllers/Admin/WarrantyController.php /tmp/idemaclima-warranty-controller.php
 
       - name: Verify public staging endpoint
         run: |
