@@ -144,7 +144,7 @@ jobs:
               "ini_set(\x27display_errors\x27, \x271\x27); error_reporting(E_ALL);\n" .
               "if ((\$_SERVER[\x27REQUEST_METHOD\x27] ?? \x27\x27) !== \x27POST\x27 || !hash_equals(\x27" . $token . "\x27, (string)(\$_SERVER[\x27HTTP_X_IDEMA_MIGRATION_TOKEN\x27] ?? \x27\x27))) { http_response_code(404); exit; }\n" .
               "define(\x27IDEMA_INTERNAL_MIGRATION_RUN\x27, true);\n" .
-              "\$argv = [__FILE__, \x27--execute\x27]; \$_SERVER[\x27argv\x27] = \$argv; \$_SERVER[\x27argc\x27] = 2;\n" .
+              "\$argv = [__FILE__, \x27--execute\x27, \x27--accept-legacy-baseline\x27]; \$_SERVER[\x27argv\x27] = \$argv; \$_SERVER[\x27argc\x27] = 3;\n" .
               "require __DIR__ . \x27/scripts/migrate.php\x27;\n";
             file_put_contents("/tmp/" . getenv("MIGRATION_FILE"), $source);
           '

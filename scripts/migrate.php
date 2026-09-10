@@ -22,6 +22,9 @@ $writeError = static function (string $message): void {
 
 $execute = in_array('--execute', $argv, true);
 $statusOnly = in_array('--status', $argv, true) || !$execute;
+$acceptLegacyBaseline = defined('IDEMA_INTERNAL_MIGRATION_RUN')
+    && IDEMA_INTERNAL_MIGRATION_RUN === true
+    && in_array('--accept-legacy-baseline', $argv, true);
 $pdo = Database::connection();
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $root = dirname(__DIR__);
@@ -68,6 +71,16 @@ foreach ($files as $file) {
         continue;
     }
     $pending[] = ['name'=>$name,'sql'=>$sql,'checksum'=>$checksum];
+}
+
+if ($acceptLegacyBaseline && $checksumErrors !== []) {
+    $legacyChecksumErrors = array_values(array_filter($checksumErrors, static function (string $name): bool {
+        return preg_match('/^(\d{3})_/', $name, $match) === 1 && (int)$match[1] <= 22;
+    }));
+    $checksumErrors = array_values(array_diff($checksumErrors, $legacyChecksumErrors));
+    if ($legacyChecksumErrors !== []) {
+        echo "Baseline legacy 001-022 già applicato: checksum storici conservati.\n";
+    }
 }
 
 if ($checksumErrors !== []) {
