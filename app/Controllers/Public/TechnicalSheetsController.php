@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Public;
 
 use App\Core\Database;
+use App\Core\Url;
 use PDO;
 
 final class TechnicalSheetsController
@@ -44,7 +45,7 @@ final class TechnicalSheetsController
             $like = '%' . $query . '%';
             $stmt = $pdo->prepare(
                 'SELECT DISTINCT p.id, p.name, p.slug, p.status, p.refrigerant,
-                        c.name AS family_name, parent.name AS category_name,
+                        c.name AS family_name, c.slug AS family_slug, parent.name AS category_name, parent.slug AS category_slug,
                         GROUP_CONCAT(DISTINCT m.code ORDER BY m.code SEPARATOR ", ") AS matched_models,
                         GROUP_CONCAT(DISTINCT d.title ORDER BY d.title SEPARATOR " | ") AS matched_documents
                  FROM products p
@@ -134,11 +135,13 @@ final class TechnicalSheetsController
         );
         $stmt->execute([(int)$family['id'], (int)$family['id']]);
         $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $productDetails = self::productDetails($pdo, array_map(static fn(array $row): int => (int)$row['id'], $products));
 
         self::render('technical_sheets/family', [
             'title' => $family['name'] . ' - Schede tecniche',
             'family' => $family,
             'products' => $products,
+            'productDetails' => $productDetails,
         ]);
     }
 
@@ -157,6 +160,10 @@ final class TechnicalSheetsController
         $product = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$product) {
             self::notFound();
+            return;
+        }
+        if (!self::hasDedicatedPage($product)) {
+            header('Location: ' . Url::to('/schede-tecniche/famiglia/' . rawurlencode((string)$product['family_slug'])) . '#prodotto-' . rawurlencode((string)$product['slug']), true, 302);
             return;
         }
 
@@ -214,6 +221,31 @@ final class TechnicalSheetsController
             'accessories' => $accessories,
             'documentGroups' => $grouped,
         ]);
+    }
+
+    public static function hasDedicatedPage(array $product): bool
+    {
+        static $names=['ISPT-R32','ISAX-R32','ISZZ-R32','WTZ-R32','WTMC-R32','WTMC-R32 COLOR'];
+        return ($product['category_slug']??'')==='linea-residenziale-r32'
+            && ($product['family_name']??'')==='Mono Split'
+            && in_array((string)($product['name']??''),$names,true);
+    }
+
+    private static function productDetails(PDO $pdo,array $ids): array
+    {
+        if(!$ids)return [];
+        $ids=array_values(array_unique(array_map('intval',$ids)));$in=implode(',',$ids);$details=[];
+        foreach($ids as $id)$details[$id]=['models'=>[],'features'=>[],'specifications'=>[],'accessories'=>[],'documentGroups'=>[]];
+        $queries=[
+            'models'=>"SELECT product_id,code,name FROM product_models WHERE published=1 AND product_id IN ($in) ORDER BY sort_order,code",
+            'features'=>"SELECT product_id,label FROM product_features WHERE product_id IN ($in) ORDER BY sort_order,id",
+            'specifications'=>"SELECT product_id,specification_key,specification_value FROM product_specifications WHERE product_id IN ($in) ORDER BY sort_order,id",
+            'accessories'=>"SELECT product_id,code,name,description FROM product_accessories WHERE published=1 AND product_id IN ($in) ORDER BY sort_order,id",
+        ];
+        foreach($queries as $key=>$sql)foreach($pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row)$details[(int)$row['product_id']][$key][]=$row;
+        $sql="SELECT dl.product_id,d.id,d.title,d.filename,dt.name type_name FROM document_links dl JOIN documents d ON d.id=dl.document_id AND d.published=1 JOIN document_types dt ON dt.id=d.document_type_id AND dt.active=1 WHERE dl.product_id IN ($in) ORDER BY dt.sort_order,dt.name,d.sort_order,d.title";
+        foreach($pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row)$details[(int)$row['product_id']]['documentGroups'][(string)$row['type_name']][]=$row;
+        return $details;
     }
 
     private static function render(string $view, array $data): void
