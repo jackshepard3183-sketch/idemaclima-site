@@ -32,6 +32,7 @@ $checks=[
     [$migrate,'GET_LOCK','migration lock'],
     [$migrate,'checksum','migration checksum'],
     [$migrate,'IDEMA_INTERNAL_MIGRATION_RUN','migration web solo da wrapper interno'],
+    [$migrate,"PHP_SAPI === 'cli' && defined('STDERR')",'errori migration compatibili con CLI e web'],
     [$stagingPreflight,'php scripts/migrate.php --status','one command migration status'],
     [$stagingPreflight,'bash tests/run_all.sh','one command test suite'],
     [$bootstrap,'date_default_timezone_set','bootstrap timezone'],

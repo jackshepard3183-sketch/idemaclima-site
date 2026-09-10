@@ -5,14 +5,20 @@ declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 
 use App\Core\Database;
-use PDO;
-use RuntimeException;
-use Throwable;
 
 if (PHP_SAPI !== 'cli' && (!defined('IDEMA_INTERNAL_MIGRATION_RUN') || IDEMA_INTERNAL_MIGRATION_RUN !== true)) {
     http_response_code(404);
     exit;
 }
+
+$writeError = static function (string $message): void {
+    if (PHP_SAPI === 'cli' && defined('STDERR')) {
+        fwrite(STDERR, $message);
+        return;
+    }
+
+    echo $message;
+};
 
 $execute = in_array('--execute', $argv, true);
 $statusOnly = in_array('--status', $argv, true) || !$execute;
@@ -24,13 +30,13 @@ $files = glob($dir . '/*.sql') ?: [];
 sort($files, SORT_NATURAL);
 
 if ($files === [] || basename($files[0]) !== '000_migrations_table.sql') {
-    fwrite(STDERR, "Migration bootstrap 000_migrations_table.sql mancante o fuori ordine.\n");
+    $writeError("Migration bootstrap 000_migrations_table.sql mancante o fuori ordine.\n");
     exit(1);
 }
 
 $bootstrapSql = file_get_contents($files[0]);
 if (!is_string($bootstrapSql) || trim($bootstrapSql) === '') {
-    fwrite(STDERR, "Migration bootstrap non leggibile.\n");
+    $writeError("Migration bootstrap non leggibile.\n");
     exit(1);
 }
 
@@ -65,7 +71,7 @@ foreach ($files as $file) {
 }
 
 if ($checksumErrors !== []) {
-    fwrite(STDERR, "ERRORE: migration già applicate sono state modificate:\n - " . implode("\n - ", $checksumErrors) . "\n");
+    $writeError("ERRORE: migration già applicate sono state modificate:\n - " . implode("\n - ", $checksumErrors) . "\n");
     exit(2);
 }
 
@@ -84,7 +90,7 @@ $lockName = 'idemaclima_schema_migrations';
 $lock = $pdo->prepare('SELECT GET_LOCK(?,10)');
 $lock->execute([$lockName]);
 if ((int)$lock->fetchColumn() !== 1) {
-    fwrite(STDERR, "Impossibile ottenere il lock esclusivo delle migration.\n");
+    $writeError("Impossibile ottenere il lock esclusivo delle migration.\n");
     exit(3);
 }
 
@@ -99,8 +105,8 @@ try {
             $applied++;
             echo "OK    {$item['name']}\n";
         } catch (Throwable $e) {
-            fwrite(STDERR, 'FAIL  ' . $item['name'] . ': ' . $e->getMessage() . "\n");
-            fwrite(STDERR, "Nota: MySQL/MariaDB esegue implicit commit per molte istruzioni DDL; correggere la migration prima di ripetere.\n");
+            $writeError('FAIL  ' . $item['name'] . ': ' . $e->getMessage() . "\n");
+            $writeError("Nota: MySQL/MariaDB esegue implicit commit per molte istruzioni DDL; correggere la migration prima di ripetere.\n");
             exit(4);
         }
     }
