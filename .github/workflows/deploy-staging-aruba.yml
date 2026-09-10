@@ -135,7 +135,7 @@ jobs:
           # Aruba does not expose SSH. Run pending migrations through a
           # short-lived, randomly named and signed wrapper, then remove it.
           MIGRATION_TOKEN="$(openssl rand -hex 32)"
-          MIGRATION_FILE=".idemaclima-migrate-$(openssl rand -hex 24).php"
+          MIGRATION_FILE="idemaclima-migrate-$(openssl rand -hex 24).php"
           export MIGRATION_TOKEN MIGRATION_FILE
           umask 077
           php -r '
@@ -173,7 +173,11 @@ jobs:
             --output /tmp/idemaclima-migration-output.txt \
             --write-out '%{http_code}' \
             "https://www.rappresentanzeguanzirolisas.it/idemaclima/$MIGRATION_FILE")"
-          test "$HTTP_CODE" = "200"
+          if [[ "$HTTP_CODE" != "200" ]]; then
+            echo "Migration wrapper returned HTTP $HTTP_CODE." >&2
+            cat /tmp/idemaclima-migration-output.txt >&2
+            exit 1
+          fi
           grep -q 'Completato. Migration applicate:' /tmp/idemaclima-migration-output.txt
           cleanup_migration_wrapper
           trap - EXIT

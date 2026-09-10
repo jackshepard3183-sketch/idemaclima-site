@@ -39,6 +39,7 @@ $checks=[
     [$pipeline,'migrate_documents.php --execute` è disabilitato','documentazione execute disabilitato'],
     [$pipeline,'php scripts/migrate.php --execute','documentazione migration runner'],
     [$workflow,'MIGRATION_TOKEN="$(openssl rand -hex 32)"','token migration casuale'],
+    [$workflow,'MIGRATION_FILE="idemaclima-migrate-','wrapper eseguibile da Apache'],
     [$workflow,'cleanup_migration_wrapper','rimozione wrapper migration'],
     [$workflow,"grep -q 'Completato. Migration applicate:'",'verifica esecuzione migration'],
     [$workflow,'verify_deploy_integrity','verifica integrita con retry'],
