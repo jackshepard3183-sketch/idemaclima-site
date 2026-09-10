@@ -97,6 +97,52 @@ jobs:
             ! -path '*/storage/private/*' \
             ! -path '*/public/uploads/*' -print0)
 
+          # Aruba does not expose SSH. Run pending migrations through a
+          # short-lived, randomly named and signed wrapper, then remove it.
+          MIGRATION_TOKEN="$(openssl rand -hex 32)"
+          MIGRATION_FILE=".idemaclima-migrate-$(openssl rand -hex 24).php"
+          export MIGRATION_TOKEN MIGRATION_FILE
+          umask 077
+          php -r '
+            $token = getenv("MIGRATION_TOKEN");
+            $source = "<?php\ndeclare(strict_types=1);\n" .
+              "if ((\$_SERVER[\x27REQUEST_METHOD\x27] ?? \x27\x27) !== \x27POST\x27 || !hash_equals(\x27" . $token . "\x27, (string)(\$_SERVER[\x27HTTP_X_IDEMA_MIGRATION_TOKEN\x27] ?? \x27\x27))) { http_response_code(404); exit; }\n" .
+              "define(\x27IDEMA_INTERNAL_MIGRATION_RUN\x27, true);\n" .
+              "\$argv = [__FILE__, \x27--execute\x27]; \$_SERVER[\x27argv\x27] = \$argv; \$_SERVER[\x27argc\x27] = 2;\n" .
+              "require __DIR__ . \x27/scripts/migrate.php\x27;\n";
+            file_put_contents("/tmp/" . getenv("MIGRATION_FILE"), $source);
+          '
+
+          cleanup_migration_wrapper() {
+            lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF || true
+            set ftp:ssl-allow yes
+            set ssl:verify-certificate yes
+            set ssl:check-hostname no
+            rm -f /www.rappresentanzeguanzirolisas.it/idemaclima/$MIGRATION_FILE
+            bye
+          EOF
+            rm -f "/tmp/$MIGRATION_FILE"
+          }
+          trap cleanup_migration_wrapper EXIT
+
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
+          set ftp:ssl-allow yes
+          set ssl:verify-certificate yes
+          set ssl:check-hostname no
+          put /tmp/$MIGRATION_FILE -o /www.rappresentanzeguanzirolisas.it/idemaclima/$MIGRATION_FILE
+          bye
+          EOF
+
+          HTTP_CODE="$(curl --silent --show-error --request POST \
+            --header "X-IDEMA-MIGRATION-TOKEN: $MIGRATION_TOKEN" \
+            --output /tmp/idemaclima-migration-output.txt \
+            --write-out '%{http_code}' \
+            "https://www.rappresentanzeguanzirolisas.it/idemaclima/$MIGRATION_FILE")"
+          test "$HTTP_CODE" = "200"
+          grep -q 'Completato. Migration applicate:' /tmp/idemaclima-migration-output.txt
+          cleanup_migration_wrapper
+          trap - EXIT
+
       - name: Verify public staging endpoint
         run: |
           curl --fail --silent --show-error --location \

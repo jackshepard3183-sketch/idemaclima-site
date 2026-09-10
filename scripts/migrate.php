@@ -9,7 +9,7 @@ use PDO;
 use RuntimeException;
 use Throwable;
 
-if (PHP_SAPI !== 'cli') {
+if (PHP_SAPI !== 'cli' && (!defined('IDEMA_INTERNAL_MIGRATION_RUN') || IDEMA_INTERNAL_MIGRATION_RUN !== true)) {
     http_response_code(404);
     exit;
 }

@@ -13,7 +13,8 @@ $bootstrap=file_get_contents($root.'/scripts/bootstrap.php');
 $appConfig=file_get_contents($root.'/config/app.php');
 $pipeline=file_get_contents($root.'/database/import/SAFETY_PIPELINE.md');
 $warrantyMigration=file_get_contents($root.'/database/migrations/018_warranty_hardening.sql');
-foreach([$downloader,$dbImporter,$preflight,$readiness,$migrate,$stagingPreflight,$bootstrap,$appConfig,$pipeline,$warrantyMigration] as $content){if(!is_string($content)||$content==='')throw new RuntimeException('File staging pipeline non leggibile.');}
+$workflow=file_get_contents($root.'/.github/workflows/deploy-staging-aruba.yml');
+foreach([$downloader,$dbImporter,$preflight,$readiness,$migrate,$stagingPreflight,$bootstrap,$appConfig,$pipeline,$warrantyMigration,$workflow] as $content){if(!is_string($content)||$content==='')throw new RuntimeException('File staging pipeline non leggibile.');}
 $checks=[
     [$downloader,'Modalita --execute disabilitata','legacy execute disabilitato'],
     [$downloader,"'actual_filename'",'mapping filename deduplicato'],
@@ -30,12 +31,16 @@ $checks=[
     [$migrate,'information_schema.tables','migration status read only'],
     [$migrate,'GET_LOCK','migration lock'],
     [$migrate,'checksum','migration checksum'],
+    [$migrate,'IDEMA_INTERNAL_MIGRATION_RUN','migration web solo da wrapper interno'],
     [$stagingPreflight,'php scripts/migrate.php --status','one command migration status'],
     [$stagingPreflight,'bash tests/run_all.sh','one command test suite'],
     [$bootstrap,'date_default_timezone_set','bootstrap timezone'],
     [$appConfig,"'timezone'",'timezone configuration'],
     [$pipeline,'migrate_documents.php --execute` è disabilitato','documentazione execute disabilitato'],
     [$pipeline,'php scripts/migrate.php --execute','documentazione migration runner'],
+    [$workflow,'MIGRATION_TOKEN="$(openssl rand -hex 32)"','token migration casuale'],
+    [$workflow,'cleanup_migration_wrapper','rimozione wrapper migration'],
+    [$workflow,"grep -q 'Completato. Migration applicate:'",'verifica esecuzione migration'],
 ];
 foreach($checks as [$haystack,$needle,$label]){if(!str_contains($haystack,$needle))throw new RuntimeException('Check staging pipeline fallito: '.$label);}
 if(str_contains($warrantyMigration,'idx_warranty_registrations_certificate'))throw new RuntimeException('Indice warranty certificate ridondante ancora presente.');
