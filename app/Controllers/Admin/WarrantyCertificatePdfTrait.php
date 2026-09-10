@@ -60,7 +60,7 @@ trait WarrantyCertificatePdfTrait
                 if ($word==='') continue;
                 $candidate=$line===''?$word:$line.' '.$word;
                 $encoded=iconv('UTF-8','Windows-1252//TRANSLIT',$candidate) ?: $candidate;
-                if ($line!=='' && strlen($encoded)*$size*0.49>($right-$left)) {
+                if ($line!=='' && strlen($encoded)*$size*0.56>($right-$left)) {
                     $text($left,$y,$size,$line);
                     $y-=$leading;
                     $line=$word;
