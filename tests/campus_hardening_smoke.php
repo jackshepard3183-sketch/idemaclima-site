@@ -11,10 +11,11 @@ $catForm = file_get_contents($root . '/app/Views/admin/cat_user_form.php');
 $eventView = file_get_contents($root . '/app/Views/public/campus/event.php');
 $migration = file_get_contents($root . '/database/migrations/019_campus_security.sql');
 $completeMigration = file_get_contents($root . '/database/migrations/027_campus_complete.sql');
+$eventsMigration = file_get_contents($root . '/database/migrations/028_seed_campus_events.sql');
 $actions = file_get_contents($root . '/app/Controllers/Admin/CampusActionsController.php');
 $indexView = file_get_contents($root . '/app/Views/public/campus/index.php');
 
-foreach ([$admin,$public,$auth,$eventForm,$catForm,$eventView,$migration,$completeMigration,$actions,$indexView] as $content) {
+foreach ([$admin,$public,$auth,$eventForm,$catForm,$eventView,$migration,$completeMigration,$eventsMigration,$actions,$indexView] as $content) {
     if (!is_string($content) || $content === '') throw new RuntimeException('File Campus/CAT non leggibile.');
 }
 
@@ -41,6 +42,10 @@ $checks = [
     [$migration, "password_changed_at", 'schema password tracking'],
     [$migration, "chk_events_dates", 'vincolo date evento'],
     [$completeMigration, "waitlist_enabled", 'schema lista attesa'],
+    [$eventsMigration, "pdc-idronici-residenziali-acs-pre-vendita-14-11-2025", 'primo evento Lovable'],
+    [$eventsMigration, "sistemi-pdc-idronici-vertemate-30-04-2026", 'ultimo evento Lovable'],
+    [$eventsMigration, "ON DUPLICATE KEY UPDATE", 'import eventi idempotente'],
+    [$eventsMigration, "registration_open = VALUES(registration_open)", 'iscrizioni storiche chiuse'],
 ];
 
 foreach ($checks as [$haystack,$needle,$label]) {
