@@ -112,15 +112,17 @@ final class CampusController
     {
         AdminAuth::requireLogin();
         $eventId=Validator::int($_GET['event_id']??0);
+        $catAccountId=Validator::int($_GET['cat_account_id']??0);
         $status=in_array($_GET['status']??'', ['registered','confirmed','waitlist','cancelled'],true)?(string)$_GET['status']:'';
         $where=[];$params=[];
         if($eventId){$where[]='r.event_id=?';$params[]=$eventId;}
+        if($catAccountId){$where[]='r.cat_account_id=?';$params[]=$catAccountId;}
         if($status!==''){$where[]='r.status=?';$params[]=$status;}
         $pdo=Database::connection();
         $sql='SELECT r.*,e.title event_title,e.audience,c.company_name cat_company FROM event_registrations r JOIN events e ON e.id=r.event_id LEFT JOIN cat_accounts c ON c.id=r.cat_account_id'.($where?' WHERE '.implode(' AND ',$where):'').' ORDER BY r.created_at DESC';
         $stmt=$pdo->prepare($sql);$stmt->execute($params);
         $events=$pdo->query('SELECT id,title,starts_at FROM events ORDER BY starts_at DESC')->fetchAll(PDO::FETCH_ASSOC);
-        self::view('campus_registrations',['title'=>'Campus - Iscrizioni','rows'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'events'=>$events,'filters'=>['event_id'=>$eventId,'status'=>$status]]);
+        self::view('campus_registrations',['title'=>'Campus - Iscrizioni','rows'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'events'=>$events,'filters'=>['event_id'=>$eventId,'cat_account_id'=>$catAccountId,'status'=>$status]]);
     }
 
     public static function updateRegistration(): void
