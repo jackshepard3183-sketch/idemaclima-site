@@ -210,6 +210,7 @@ final class TechnicalSheetsController
         foreach ($documents as $document) {
             $grouped[$document['type_name']][] = $document;
         }
+        $grouped = self::normalizeDocumentGroups($grouped);
 
         self::render('technical_sheets/product', [
             'title' => $product['name'] . ' - Schede tecniche',
@@ -245,7 +246,27 @@ final class TechnicalSheetsController
         foreach($queries as $key=>$sql)foreach($pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row)$details[(int)$row['product_id']][$key][]=$row;
         $sql="SELECT dl.product_id,d.id,d.title,d.filename,dt.name type_name FROM document_links dl JOIN documents d ON d.id=dl.document_id AND d.published=1 JOIN document_types dt ON dt.id=d.document_type_id AND dt.active=1 WHERE dl.product_id IN ($in) ORDER BY dt.sort_order,dt.name,d.sort_order,d.title";
         foreach($pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row)$details[(int)$row['product_id']]['documentGroups'][(string)$row['type_name']][]=$row;
+        foreach($details as &$detail)$detail['documentGroups']=self::normalizeDocumentGroups($detail['documentGroups']);
+        unset($detail);
         return $details;
+    }
+
+    private static function normalizeDocumentGroups(array $groups): array
+    {
+        $normalized=[];
+        foreach($groups as $name=>$documents){
+            $key=match(true){
+                stripos($name,'scheda')!==false=>'Schede tecniche',
+                stripos($name,'resa')!==false=>'Tabelle rese',
+                stripos($name,'detraz')!==false=>'Detrazioni fiscali',
+                stripos($name,'conto')!==false=>'Conto termico',
+                stripos($name,'manual')!==false=>'Manuali',
+                default=>$name,
+            };
+            $normalized[$key]=array_merge($normalized[$key]??[],$documents);
+        }
+        $ordered=[];foreach(['Schede tecniche','Tabelle rese','Detrazioni fiscali','Conto termico','Manuali'] as $key)if(isset($normalized[$key])){$ordered[$key]=$normalized[$key];unset($normalized[$key]);}
+        return $ordered+$normalized;
     }
 
     private static function render(string $view, array $data): void
