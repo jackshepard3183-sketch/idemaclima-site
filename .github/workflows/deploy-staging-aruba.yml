@@ -61,6 +61,10 @@ jobs:
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<'EOF'
           set ftp:ssl-allow yes
           set ssl:verify-certificate yes
+          # Aruba presents a valid shared certificate whose CN differs from
+          # the customer FTP alias. Keep CA verification enabled and relax
+          # only the hostname comparison for this FTPS endpoint.
+          set ssl:check-hostname no
           set net:max-retries 2
           set net:timeout 20
           mkdir -p /idemaclima
