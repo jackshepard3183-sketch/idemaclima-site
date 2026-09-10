@@ -1,7 +1,7 @@
 <?php require __DIR__.'/_layout_start.php'; ?>
 <h1><?= (int)$row['id']?'Modifica catalogo':'Nuovo catalogo' ?></h1>
 <?php foreach($errors as $er): ?><div class="error"><?= htmlspecialchars($er,ENT_QUOTES,'UTF-8') ?></div><?php endforeach; ?>
-<form method="post" enctype="multipart/form-data" action="/admin/content/catalogs/save" class="panel">
+<form method="post" enctype="multipart/form-data" action="/idemaclima/admin/content/catalogs/save" class="panel">
 <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf,ENT_QUOTES,'UTF-8') ?>"><input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
 <div class="formgrid">
 <label>Titolo<input name="title" maxlength="220" value="<?= htmlspecialchars((string)$row['title'],ENT_QUOTES,'UTF-8') ?>" required></label>
@@ -15,3 +15,4 @@
 <label class="check"><input type="checkbox" name="published" value="1" <?= !empty($row['published'])?'checked':'' ?>> Pubblicato</label>
 </div><p><button class="btn" type="submit">Salva</button></p></form>
 <?php require __DIR__.'/_layout_end.php'; ?>
+

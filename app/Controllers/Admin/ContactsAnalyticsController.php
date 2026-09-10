@@ -72,7 +72,7 @@ final class ContactsAnalyticsController
         if($errors){http_response_code(422);exit(implode("\n",$errors));}
         Database::connection()->prepare('UPDATE analytics_settings SET ga4_measurement_id=?,ga4_property_id=?,gtm_container_id=?,search_console_verification=?,meta_pixel_id=?,iubenda_enabled=?,iubenda_site_id=?,iubenda_cookie_policy_id=?,analytics_enabled=?,consent_required=?,pdf_tracking_enabled=?,internal_tracking_retention_days=? WHERE id=1')->execute([$measurement?:null,$property?:null,$gtm?:null,$searchConsole?:null,$metaPixel?:null,$iubendaEnabled,$iubendaSite?:null,$iubendaPolicy,$enabled,$consent,$pdf,$retention]);
         Audit::log('analytics.settings','analytics_settings',1,['analytics_enabled'=>$enabled,'iubenda_enabled'=>$iubendaEnabled,'consent_required'=>$consent,'pdf_tracking_enabled'=>$pdf,'retention_days'=>$retention]);
-        header('Location:/admin/analytics');exit;
+        header('Location:/idemaclima/admin/analytics');exit;
     }
 
     private static function ensureIntegrationColumns(PDO $pdo):void
@@ -82,6 +82,6 @@ final class ContactsAnalyticsController
         foreach($columns as $name=>$definition)if(!in_array($name,$existing,true))$pdo->exec('ALTER TABLE analytics_settings ADD COLUMN '.$name.' '.$definition);
     }
 
-    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/'.$file.'.php';}
+    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/idemaclima/admin/'.$file.'.php';}
     private static function csrf():void{if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}}
 }

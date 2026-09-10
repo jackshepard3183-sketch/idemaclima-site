@@ -86,9 +86,9 @@ final class AssistanceController
             }
         }
 
-        if ($uploaded !== null && $external !== null) {
-            $errors[] = 'Con un nuovo PDF non inserire anche un URL esterno.';
-        } elseif ($uploaded === null && (($documentId === null) === ($external === null))) {
+        if ($uploaded !== null) {
+            $external = null;
+        } elseif (($documentId === null) === ($external === null)) {
             $errors[] = 'Seleziona esattamente una destinazione: un documento oppure un URL esterno.';
         }
 
@@ -149,7 +149,7 @@ final class AssistanceController
             'published'=>$published,
         ]);
 
-        header('Location:/admin/assistance');
+        header('Location:/idemaclima/admin/assistance');
         exit;
     }
 
@@ -172,7 +172,7 @@ final class AssistanceController
         }
 
         Audit::log('assistance_resource.archive', 'assistance_resource', $id, []);
-        header('Location:/admin/assistance');
+        header('Location:/idemaclima/admin/assistance');
         exit;
     }
 
@@ -181,7 +181,7 @@ final class AssistanceController
         extract($data, EXTR_SKIP);
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/admin/' . $file . '.php';
+        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/' . $file . '.php';
     }
 
     private static function csrf(): void

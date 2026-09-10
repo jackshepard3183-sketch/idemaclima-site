@@ -138,7 +138,7 @@ final class CatalogsController
         if ($pdf && !empty($existing['pdf_path']) && $existing['pdf_path'] !== $pdf['path']) Upload::removeManaged((string)$existing['pdf_path']);
         if ($documentId !== null && !empty($existing['pdf_path'])) Upload::removeManaged((string)$existing['pdf_path']);
 
-        header('Location:/admin/content/catalogs');
+        header('Location:/idemaclima/admin/content/catalogs');
         exit;
     }
 
@@ -154,7 +154,7 @@ final class CatalogsController
         $q=$pdo->prepare('INSERT INTO catalogs(title,slug,description,cover_image,document_id,pdf_path,document_year,published,sort_order) VALUES(?,?,?,?,?,?,?,?,?)');
         $q->execute(['Copia di '.$row['title'],$slug,$row['description'],$cover,$row['document_id'],$pdf,$row['document_year'],0,(int)$row['sort_order']+1]);
         $newId=(int)$pdo->lastInsertId();Audit::log('catalog.duplicate','catalog',$newId,['source_id'=>$id]);
-        header('Location:/admin/content/catalogs/form?id='.$newId);exit;
+        header('Location:/idemaclima/admin/content/catalogs/form?id='.$newId);exit;
     }
 
     private static function documents(PDO $pdo): array
@@ -167,7 +167,7 @@ final class CatalogsController
         extract($data,EXTR_SKIP);
         $user=AdminAuth::user();
         $csrf=Security::csrfToken();
-        require dirname(__DIR__,2).'/Views/admin/'.$file.'.php';
+        require dirname(__DIR__,2).'/Views/idemaclima/admin/'.$file.'.php';
     }
 
     private static function csrf(): void

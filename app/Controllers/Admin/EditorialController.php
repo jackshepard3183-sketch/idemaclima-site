@@ -36,12 +36,12 @@ final class EditorialController
         AdminAuth::requireLogin();self::csrf();$id=Validator::int($_POST['id']??0);$pdo=Database::connection();
         $s=$pdo->prepare('UPDATE editorial_pages SET title=?,eyebrow=?,intro=?,body=?,meta_title=?,meta_description=?,published=?,sort_order=? WHERE id=?');
         $s->execute([trim((string)$_POST['title']),trim((string)($_POST['eyebrow']??''))?:null,trim((string)($_POST['intro']??''))?:null,trim((string)($_POST['body']??''))?:null,trim((string)($_POST['meta_title']??''))?:null,trim((string)($_POST['meta_description']??''))?:null,Validator::bool($_POST['published']??0),Validator::int($_POST['sort_order']??0),$id]);
-        header('Location:/admin/editorial/form?id='.$id);exit;
+        header('Location:/idemaclima/admin/editorial/form?id='.$id);exit;
     }
 
     public static function addSection(): void
     {
-        AdminAuth::requireLogin();self::csrf();$pageId=Validator::int($_POST['page_id']??0);Database::connection()->prepare('INSERT INTO editorial_sections(page_id,title,anchor_slug,body,sort_order,published) VALUES(?,?,?,?,?,?)')->execute([$pageId,trim((string)$_POST['title']),Validator::slug((string)($_POST['anchor_slug']??''))?:null,trim((string)($_POST['body']??''))?:null,Validator::int($_POST['sort_order']??0),1]);header('Location:/admin/editorial/form?id='.$pageId);exit;
+        AdminAuth::requireLogin();self::csrf();$pageId=Validator::int($_POST['page_id']??0);Database::connection()->prepare('INSERT INTO editorial_sections(page_id,title,anchor_slug,body,sort_order,published) VALUES(?,?,?,?,?,?)')->execute([$pageId,trim((string)$_POST['title']),Validator::slug((string)($_POST['anchor_slug']??''))?:null,trim((string)($_POST['body']??''))?:null,Validator::int($_POST['sort_order']??0),1]);header('Location:/idemaclima/admin/editorial/form?id='.$pageId);exit;
     }
 
     public static function saveSection(): void
@@ -61,7 +61,7 @@ final class EditorialController
 
     public static function addFaq(): void
     {
-        AdminAuth::requireLogin();self::csrf();$pageId=Validator::int($_POST['page_id']??0);Database::connection()->prepare('INSERT INTO faq_items(page_id,question,answer,sort_order,published) VALUES(?,?,?,?,1)')->execute([$pageId,trim((string)$_POST['question']),trim((string)$_POST['answer']),Validator::int($_POST['sort_order']??0)]);header('Location:/admin/editorial/form?id='.$pageId);exit;
+        AdminAuth::requireLogin();self::csrf();$pageId=Validator::int($_POST['page_id']??0);Database::connection()->prepare('INSERT INTO faq_items(page_id,question,answer,sort_order,published) VALUES(?,?,?,?,1)')->execute([$pageId,trim((string)$_POST['question']),trim((string)$_POST['answer']),Validator::int($_POST['sort_order']??0)]);header('Location:/idemaclima/admin/editorial/form?id='.$pageId);exit;
     }
 
     public static function saveFaq(): void
@@ -82,7 +82,7 @@ final class EditorialController
 
     public static function addDocument(): void
     {
-        AdminAuth::requireLogin();self::csrf();$pageId=Validator::int($_POST['page_id']??0);$documentId=Validator::int($_POST['document_id']??0);Database::connection()->prepare('INSERT INTO editorial_page_documents(page_id,document_id,group_label,label,sort_order,published) VALUES(?,?,?,?,?,1)')->execute([$pageId,$documentId,trim((string)($_POST['group_label']??''))?:null,trim((string)($_POST['label']??''))?:null,Validator::int($_POST['sort_order']??0)]);header('Location:/admin/editorial/form?id='.$pageId);exit;
+        AdminAuth::requireLogin();self::csrf();$pageId=Validator::int($_POST['page_id']??0);$documentId=Validator::int($_POST['document_id']??0);Database::connection()->prepare('INSERT INTO editorial_page_documents(page_id,document_id,group_label,label,sort_order,published) VALUES(?,?,?,?,?,1)')->execute([$pageId,$documentId,trim((string)($_POST['group_label']??''))?:null,trim((string)($_POST['label']??''))?:null,Validator::int($_POST['sort_order']??0)]);header('Location:/idemaclima/admin/editorial/form?id='.$pageId);exit;
     }
 
     public static function deleteDocument(): void
@@ -92,8 +92,8 @@ final class EditorialController
         Audit::log('editorial.document.unlink','editorial_page_document',$id,['page_id'=>$pageId]);self::back($pageId);
     }
 
-    private static function back(int $pageId):void{header('Location:/admin/editorial/form?id='.$pageId);exit;}
+    private static function back(int $pageId):void{header('Location:/idemaclima/admin/editorial/form?id='.$pageId);exit;}
 
     private static function csrf():void{if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}}
-    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/'.$file.'.php';}
+    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/idemaclima/admin/'.$file.'.php';}
 }

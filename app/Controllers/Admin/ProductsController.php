@@ -22,7 +22,7 @@ final class ProductsController
         $products = Database::connection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/admin/products.php';
+        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/products.php';
     }
 
     public static function form(): void
@@ -57,7 +57,7 @@ final class ProductsController
         $errors = [];
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/admin/product_form.php';
+        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/product_form.php';
     }
 
     public static function save(): void
@@ -130,7 +130,7 @@ final class ProductsController
             }
             $user = AdminAuth::user();
             $csrf = Security::csrfToken();
-            require dirname(__DIR__, 2) . '/Views/admin/product_form.php';
+            require dirname(__DIR__, 2) . '/Views/idemaclima/admin/product_form.php';
             return;
         }
 
@@ -170,7 +170,7 @@ final class ProductsController
         }
 
         if ($uploaded && $existingImage && $existingImage !== $image) Upload::removeManaged($existingImage);
-        header('Location: /admin/products/form?id=' . $entityId);
+        header('Location: /idemaclima/admin/products/form?id=' . $entityId);
         exit;
     }
 
@@ -218,7 +218,7 @@ final class ProductsController
             http_response_code(422);
             exit('Codice modello già presente per questo prodotto.');
         }
-        header('Location: /admin/products/form?id=' . $productId);
+        header('Location: /idemaclima/admin/products/form?id=' . $productId);
         exit;
     }
 
@@ -240,7 +240,7 @@ final class ProductsController
             }
             Audit::log('product.duplicate','product',$newId,['source_id'=>$id]);$pdo->commit();
         } catch (\Throwable $e) { if($pdo->inTransaction())$pdo->rollBack(); throw $e; }
-        header('Location: /admin/products/form?id='.$newId); exit;
+        header('Location: /idemaclima/admin/products/form?id='.$newId); exit;
     }
 
     public static function delete(): void
@@ -251,7 +251,7 @@ final class ProductsController
         if ($image===false) { http_response_code(404); exit('Prodotto non trovato'); }
         try {$pdo->prepare('DELETE FROM products WHERE id=?')->execute([$id]);Audit::log('product.delete','product',$id);}
         catch (\PDOException) { http_response_code(409); exit('Il prodotto ha collegamenti che ne impediscono la cancellazione. Impostalo come Nascosto.'); }
-        if(is_string($image)&&$image!=='')Upload::removeManaged($image);header('Location: /admin/products');exit;
+        if(is_string($image)&&$image!=='')Upload::removeManaged($image);header('Location: /idemaclima/admin/products');exit;
     }
 
     private static function replaceDetails(PDO $pdo,int $productId,array $input):void

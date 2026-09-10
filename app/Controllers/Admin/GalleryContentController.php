@@ -65,8 +65,8 @@ final class GalleryContentController
         $s=Database::connection()->prepare('DELETE FROM gallery_content_items WHERE id=?');$s->execute([$id]);Audit::log('gallery.content.delete','gallery_content_item',$id,[]);self::redirect();
     }
 
-    private static function view(array $data): void { extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/content_gallery_manager.php'; }
+    private static function view(array $data): void { extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/idemaclima/admin/content_gallery_manager.php'; }
     private static function csrf(): void { if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');} }
-    private static function redirect(): never { header('Location:/admin/content/gallery/manage');exit; }
+    private static function redirect(): never { header('Location:/idemaclima/admin/content/gallery/manage');exit; }
     private static function slug(string $value): string { $ascii=iconv('UTF-8','ASCII//TRANSLIT//IGNORE',strtolower(trim($value)))?:$value;return trim((string)preg_replace('/[^a-z0-9]+/','-',$ascii),'-'); }
 }

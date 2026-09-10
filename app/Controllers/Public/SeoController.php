@@ -72,7 +72,7 @@ final class SeoController
         if ($env === 'staging') {
             echo "Disallow: /\n";
         } else {
-            echo 'Disallow: ' . Url::to('/admin/') . "\n";
+            echo 'Disallow: ' . Url::to('/idemaclima/admin/') . "\n";
             echo 'Disallow: ' . Url::to('/campus/cat/') . "\n";
         }
         echo 'Sitemap: ' . Seo::publicBaseUrl() . "/sitemap.xml\n";

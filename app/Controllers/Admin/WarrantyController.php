@@ -26,7 +26,7 @@ final class WarrantyController
                 ORDER BY wr.created_at DESC,wr.id DESC';
         $registrations = Database::connection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $title = 'Registrazioni garanzia'; $user = AdminAuth::user(); $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/admin/warranty_registrations.php';
+        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/warranty_registrations.php';
     }
 
     public static function registration(): void
@@ -50,7 +50,7 @@ final class WarrantyController
         $stmt->execute([$id]); $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $models = $pdo->query('SELECT pm.id,pm.code,p.name product_name FROM product_models pm JOIN products p ON p.id=pm.product_id WHERE pm.published=1 ORDER BY p.name,pm.code')->fetchAll(PDO::FETCH_ASSOC);
         $title = 'Garanzia #' . $id; $user = AdminAuth::user(); $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/admin/warranty_registration.php';
+        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/warranty_registration.php';
     }
 
     public static function updateStatus(): void
@@ -83,7 +83,7 @@ final class WarrantyController
         $stmt = $pdo->prepare('UPDATE warranty_registrations SET status=?,admin_notes=?,reviewed_at=? WHERE id=?');
         $stmt->execute([$status, $notes ?: null, $reviewedAt, $id]);
         Audit::log('warranty.status', 'warranty_registration', $id, ['from'=>$previous,'to'=>$status]);
-        header('Location: /admin/warranties/registration?id=' . $id); exit;
+        header('Location: /idemaclima/admin/warranties/registration?id=' . $id); exit;
     }
 
     public static function updateRegistration(): void

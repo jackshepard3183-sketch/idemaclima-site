@@ -25,7 +25,7 @@ final class CampusActionsController
         else{http_response_code(422);exit('Azione non valida');}
         $pdo->prepare($sql)->execute([$id]);Audit::log('cat_account.'.$action,'cat_account',$id,[]);
         if(in_array($action,['approve','reject'],true))CampusMailService::notifyParticipant((string)$cat['email'],$action==='approve'?'Accesso Campus CAT approvato':'Richiesta Campus CAT non approvata',$action==='approve'?"Ciao ".$cat['contact_first_name'].",\n\nla richiesta per ".$cat['company_name']." è stata approvata. Puoi accedere all’Area CAT con la tua email e la password scelta in registrazione.":"Ciao ".$cat['contact_first_name'].",\n\nla richiesta di accesso all’Area CAT non è stata approvata. Per chiarimenti contatta IDEMA Clima.");
-        header('Location:/admin/cat/users');exit;
+        header('Location:/idemaclima/admin/cat/users');exit;
     }
 
     public static function duplicate(): void
@@ -40,7 +40,7 @@ final class CampusActionsController
             $copy->execute([(string)$event['title'].' - Copia',$slug,$event['audience'],$event['category'],$event['location'],$event['address'],$event['starts_at'],$event['ends_at'],$event['short_description'],$event['speaker'],$event['description'],$event['program'],$cover,$event['max_seats'],$event['waitlist_enabled'],0,$event['registration_deadline'],0,0,$event['sort_order']]);
         }catch(\Throwable $e){if($cover && $cover!==($event['cover_image']??null))Upload::removeManaged($cover);throw $e;}
         $newId=(int)$pdo->lastInsertId();Audit::log('campus.event.duplicate','event',$newId,['source_id'=>$id]);
-        header('Location:/admin/campus/events/form?id='.$newId);exit;
+        header('Location:/idemaclima/admin/campus/events/form?id='.$newId);exit;
     }
 
     public static function export(): void

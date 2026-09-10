@@ -107,7 +107,7 @@ final class AdminAuth
     public static function requireLogin(): void
     {
         if (self::user() === null) {
-            header('Location: /admin/login', true, 302);
+            header('Location: /idemaclima/admin/login', true, 302);
             exit;
         }
     }

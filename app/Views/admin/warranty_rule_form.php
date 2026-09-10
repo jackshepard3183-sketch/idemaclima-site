@@ -1,7 +1,7 @@
 <?php require __DIR__.'/_layout_start.php'; ?>
-<div class="toolbar"><div><h1><?= (int)$rule['id'] ? 'Modifica regola' : 'Nuova regola' ?></h1><p class="muted">Le regole specifiche del modello hanno priorità su quelle del prodotto.</p></div><a class="btnlink" href="/admin/warranties/rules">Torna alle regole</a></div>
+<div class="toolbar"><div><h1><?= (int)$rule['id'] ? 'Modifica regola' : 'Nuova regola' ?></h1><p class="muted">Le regole specifiche del modello hanno priorità su quelle del prodotto.</p></div><a class="btnlink" href="/idemaclima/admin/warranties/rules">Torna alle regole</a></div>
 <?php foreach($errors as $error): ?><div class="error"><?= htmlspecialchars($error) ?></div><?php endforeach; ?>
-<form method="post" action="/admin/warranties/rules/save" class="panel"><input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>"><input type="hidden" name="id" value="<?= (int)$rule['id'] ?>"><div class="formgrid">
+<form method="post" action="/idemaclima/admin/warranties/rules/save" class="panel"><input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>"><input type="hidden" name="id" value="<?= (int)$rule['id'] ?>"><div class="formgrid">
 <label>Prodotto<select name="product_id"><option value="">—</option><?php foreach($products as $p): ?><option value="<?= (int)$p['id'] ?>" <?= (string)$rule['product_id']===(string)$p['id']?'selected':'' ?>><?= htmlspecialchars($p['name']) ?></option><?php endforeach; ?></select></label>
 <label>Modello<select name="model_id"><option value="">—</option><?php foreach($models as $m): ?><option value="<?= (int)$m['id'] ?>" <?= (string)$rule['model_id']===(string)$m['id']?'selected':'' ?>><?= htmlspecialchars($m['product_name'].' - '.$m['code']) ?></option><?php endforeach; ?></select></label>
 <label>Anni di garanzia<input type="number" name="warranty_years" min="1" max="30" value="<?= htmlspecialchars((string)$rule['warranty_years']) ?>" required></label>
@@ -11,3 +11,4 @@
 <label class="check"><input type="checkbox" name="enabled" value="1" <?= $rule['enabled']?'checked':'' ?>> Regola attiva</label><label class="check"><input type="checkbox" name="invoice_required" value="1" <?= $rule['invoice_required']?'checked':'' ?>> Fattura obbligatoria</label><label class="check"><input type="checkbox" name="fgas_required" value="1" <?= $rule['fgas_required']?'checked':'' ?>> F-GAS obbligatorio</label>
 <label class="full">Note<textarea name="notes" rows="4"><?= htmlspecialchars((string)$rule['notes']) ?></textarea></label></div><button class="btn" type="submit">Salva regola</button></form>
 <?php require __DIR__.'/_layout_end.php'; ?>
+

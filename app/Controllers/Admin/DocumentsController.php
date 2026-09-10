@@ -22,7 +22,7 @@ final class DocumentsController
         $documents = Database::connection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/admin/documents.php';
+        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/documents.php';
     }
 
     public static function form(): void
@@ -40,7 +40,7 @@ final class DocumentsController
         $errors = [];
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/admin/document_form.php';
+        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/document_form.php';
     }
 
     public static function save(): void
@@ -103,7 +103,7 @@ final class DocumentsController
             [$types,$categories,$products,$models] = self::formOptions($pdo);
             $user = AdminAuth::user();
             $csrf = Security::csrfToken();
-            require dirname(__DIR__, 2) . '/Views/admin/document_form.php';
+            require dirname(__DIR__, 2) . '/Views/idemaclima/admin/document_form.php';
             return;
         }
 
@@ -132,7 +132,7 @@ final class DocumentsController
             throw $e;
         }
 
-        header('Location: /admin/documents');
+        header('Location: /idemaclima/admin/documents');
         exit;
     }
 
@@ -147,3 +147,4 @@ final class DocumentsController
         ];
     }
 }
+

@@ -36,7 +36,7 @@ final class SettingsController
             }
             Audit::log('settings.update','site_settings',null,['group'=>$group]);$pdo->commit();
         }catch(\Throwable $e){if($pdo->inTransaction())$pdo->rollBack();http_response_code(422);exit(htmlspecialchars($e->getMessage(),ENT_QUOTES,'UTF-8'));}
-        header('Location:/admin/settings/'.$group.'?saved=1');exit;
+        header('Location:/idemaclima/admin/settings/'.$group.'?saved=1');exit;
     }
     public static function users():void
     {
@@ -94,6 +94,6 @@ final class SettingsController
         Database::connection()->exec("CREATE TABLE IF NOT EXISTS site_settings (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,setting_group VARCHAR(50) NOT NULL,setting_key VARCHAR(100) NOT NULL,setting_value TEXT NULL,updated_by BIGINT UNSIGNED NULL,updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,UNIQUE KEY uq_site_setting(setting_group,setting_key),KEY idx_site_settings_group(setting_group)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
     private static function title(string $group):string{return ['general'=>'Impostazioni generali','email'=>'Email e notifiche','site'=>'Impostazioni sito'][$group]??'Impostazioni';}
-    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/'.$file.'.php';}
+    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/idemaclima/admin/'.$file.'.php';}
     private static function csrf():void{if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}}
 }

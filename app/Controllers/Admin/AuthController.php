@@ -13,11 +13,11 @@ final class AuthController
     public static function loginForm(?string $error = null): void
     {
         if (AdminAuth::check()) {
-            header('Location: /admin', true, 302);
+            header('Location: /idemaclima/admin', true, 302);
             exit;
         }
         $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/admin/login.php';
+        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/login.php';
     }
 
     public static function login(): void
@@ -36,7 +36,7 @@ final class AuthController
             return;
         }
 
-        header('Location: /admin', true, 302);
+        header('Location: /idemaclima/admin', true, 302);
         exit;
     }
 
@@ -48,7 +48,8 @@ final class AuthController
             return;
         }
         AdminAuth::logout();
-        header('Location: /admin/login', true, 302);
+        header('Location: /idemaclima/admin/login', true, 302);
         exit;
     }
 }
+
