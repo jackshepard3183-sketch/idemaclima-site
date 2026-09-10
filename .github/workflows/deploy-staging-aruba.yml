@@ -164,17 +164,22 @@ jobs:
           WRAPPER_VERIFIED=0
           for attempt in 1 2 3; do
             rm -f "/tmp/$MIGRATION_FILE.remote"
-            lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
+            if lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
             set ftp:ssl-allow yes
             set ssl:verify-certificate yes
             set ssl:check-hostname no
+            set net:max-retries 2
+            set net:timeout 20
             put /tmp/$MIGRATION_FILE -o /www.rappresentanzeguanzirolisas.it/idemaclima/$MIGRATION_FILE
-            get /www.rappresentanzeguanzirolisas.it/idemaclima/$MIGRATION_FILE -o /tmp/$MIGRATION_FILE.remote
+            lcd /tmp
+            get /www.rappresentanzeguanzirolisas.it/idemaclima/$MIGRATION_FILE -o $MIGRATION_FILE.remote
             bye
           EOF
-            if cmp -s "/tmp/$MIGRATION_FILE" "/tmp/$MIGRATION_FILE.remote"; then
-              WRAPPER_VERIFIED=1
-              break
+            then
+              if cmp -s "/tmp/$MIGRATION_FILE" "/tmp/$MIGRATION_FILE.remote"; then
+                WRAPPER_VERIFIED=1
+                break
+              fi
             fi
             echo "Migration wrapper integrity retry $attempt."
           done
