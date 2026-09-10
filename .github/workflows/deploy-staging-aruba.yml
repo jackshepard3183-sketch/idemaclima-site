@@ -57,10 +57,8 @@ jobs:
           : "${FTP_SERVER:?Missing ARUBA_FTP_SERVER secret}"
           : "${FTP_USERNAME:?Missing ARUBA_FTP_USERNAME secret}"
           : "${FTP_PASSWORD:?Missing ARUBA_FTP_PASSWORD secret}"
-
-          for file in WarrantyController.php WarrantyRulesTrait.php WarrantyCertificateActionsTrait.php WarrantyCertificatePdfTrait.php; do
-            test "$(wc -c < "build/idemaclima-staging/app/Controllers/Admin/$file")" -lt 16384
-          done
+          rm -rf /tmp/idemaclima-remote
+          mkdir -p /tmp/idemaclima-remote
 
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<'EOF'
           set ftp:ssl-allow yes
@@ -73,23 +71,36 @@ jobs:
           set net:timeout 20
           mkdir -p /www.rappresentanzeguanzirolisas.it/idemaclima
           cd /www.rappresentanzeguanzirolisas.it/idemaclima
-          mirror -R --delete --verbose --parallel=1 \
+          mirror -R --delete --verbose --parallel=1 --transfer-all \
             --exclude='(^|/)\.env$' \
             --exclude='^storage/private(/|$)' \
             --exclude='^public/uploads(/|$)' \
             build/idemaclima-staging/ ./
-          get app/Controllers/Admin/WarrantyController.php -o /tmp/WarrantyController.php
-          get app/Controllers/Admin/WarrantyRulesTrait.php -o /tmp/WarrantyRulesTrait.php
-          get app/Controllers/Admin/WarrantyCertificateActionsTrait.php -o /tmp/WarrantyCertificateActionsTrait.php
-          get app/Controllers/Admin/WarrantyCertificatePdfTrait.php -o /tmp/WarrantyCertificatePdfTrait.php
+          lcd /tmp/idemaclima-remote
+          mirror --verbose --parallel=1 \
+            --exclude='(^|/)\.env$' \
+            --exclude='^storage/private(/|$)' \
+            --exclude='^public/uploads(/|$)' \
+            ./ ./
           bye
           EOF
-          for file in WarrantyController.php WarrantyRulesTrait.php WarrantyCertificateActionsTrait.php WarrantyCertificatePdfTrait.php; do
-            cmp "build/idemaclima-staging/app/Controllers/Admin/$file" "/tmp/$file"
-          done
+
+          while IFS= read -r -d '' source; do
+            relative="${source#build/idemaclima-staging/}"
+            remote="/tmp/idemaclima-remote/$relative"
+            test -f "$remote"
+            cmp "$source" "$remote"
+          done < <(find build/idemaclima-staging -type f \
+            ! -path '*/storage/private/*' \
+            ! -path '*/public/uploads/*' -print0)
 
       - name: Verify public staging endpoint
         run: |
+          curl --fail --silent --show-error --location \
+            --retry 3 --retry-delay 3 \
+            https://www.rappresentanzeguanzirolisas.it/idemaclima/health \
+            -o /tmp/idemaclima-health.json
+          test -s /tmp/idemaclima-health.json
           curl --fail --silent --show-error --location \
             --retry 3 --retry-delay 3 \
             https://www.rappresentanzeguanzirolisas.it/idemaclima/ \
