@@ -46,6 +46,8 @@ final class WarrantyController
         $stmt->execute([$id]); $details = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
         $stmt = $pdo->prepare('SELECT * FROM warranty_generated_certificates WHERE registration_id=?');
         $stmt->execute([$id]); $certificate = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        $stmt = $pdo->prepare('SELECT action,metadata,created_at FROM audit_log WHERE entity_type="warranty_registration" AND entity_id=? ORDER BY created_at DESC,id DESC LIMIT 100');
+        $stmt->execute([$id]); $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $models = $pdo->query('SELECT pm.id,pm.code,p.name product_name FROM product_models pm JOIN products p ON p.id=pm.product_id WHERE pm.published=1 ORDER BY p.name,pm.code')->fetchAll(PDO::FETCH_ASSOC);
         $title = 'Garanzia #' . $id; $user = AdminAuth::user(); $csrf = Security::csrfToken();
         require dirname(__DIR__, 2) . '/Views/admin/warranty_registration.php';
@@ -114,6 +116,20 @@ final class WarrantyController
         if (!$stmt->fetchColumn()) { http_response_code(422); exit('Modello non valido.'); }
         $stmt = $pdo->prepare('SELECT file_path FROM warranty_generated_certificates WHERE registration_id=?');
         $stmt->execute([$id]); $certificatePath = $stmt->fetchColumn() ?: null;
+
+        $unitStmt=$pdo->prepare('SELECT id,unit_type FROM warranty_units WHERE registration_id=? ORDER BY id');
+        $unitStmt->execute([$id]); $registeredUnits=$unitStmt->fetchAll(PDO::FETCH_ASSOC);
+        $outdoorCount=0;$indoorCount=0;$allowedUnitIds=[];
+        foreach($registeredUnits as $unit){$allowedUnitIds[(int)$unit['id']]=true;if($unit['unit_type']==='outdoor')$outdoorCount++;elseif($unit['unit_type']==='indoor')$indoorCount++;}
+        $expectedIndoor=1;
+        if($productType==='multi'){
+            $expectedIndoor=0;
+            foreach(preg_split('/\s*\+\s*/',$data['combination'])?:[] as $part){$quantity=1;if(preg_match('/^\s*(\d+)\s*x\b/i',$part,$match))$quantity=max(1,(int)$match[1]);$expectedIndoor+=$quantity;}
+            $expectedIndoor=max(1,min(3,$expectedIndoor));
+        }
+        if($outdoorCount!==1||$indoorCount!==$expectedIndoor){http_response_code(422);exit('La combinazione richiede 1 unità esterna e '.$expectedIndoor.' unità interne. Correggi la combinazione oppure i seriali prima di salvare.');}
+        if(count($serials)!==count($registeredUnits)){http_response_code(422);exit('Compila tutti i seriali delle unità registrate.');}
+        foreach($serials as $unitId=>$serial){if(!isset($allowedUnitIds[(int)$unitId])){http_response_code(422);exit('Elenco seriali non valido.');}}
 
         $pdo->beginTransaction();
         try {
