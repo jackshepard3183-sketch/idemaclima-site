@@ -9,7 +9,10 @@ $admin = implode("\n", array_map(
     ['WarrantyController.php', 'WarrantyRulesTrait.php', 'WarrantyCertificateActionsTrait.php', 'WarrantyCertificatePdfTrait.php']
 ));
 $service = file_get_contents($root . '/app/Services/WarrantyService.php');
-$form = file_get_contents($root . '/app/Views/public/warranty/form.php');
+$form = implode("\n", array_map(
+    static fn (string $file): string => (string)file_get_contents($root . '/app/Views/public/warranty/' . $file),
+    ['form.php', 'form_fields.php']
+));
 $migration = file_get_contents($root . '/database/migrations/018_warranty_hardening.sql');
 
 foreach ([$public,$admin,$service,$form,$migration] as $content) {
