@@ -34,7 +34,7 @@ final class SeoController
             foreach ($pdo->query('SELECT slug,updated_at FROM product_categories WHERE published=1 AND parent_id IS NOT NULL')->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $add('/schede-tecniche/famiglia/' . $row['slug'], self::dateOnly($row['updated_at'] ?? null));
             }
-            foreach ($pdo->query('SELECT slug,updated_at FROM products WHERE published=1')->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            foreach ($pdo->query("SELECT p.slug,p.updated_at FROM products p JOIN product_categories c ON c.id=p.category_id JOIN product_categories parent ON parent.id=c.parent_id WHERE p.published=1 AND parent.slug='linea-residenziale-r32' AND c.name='Mono Split' AND p.name IN ('ISPT-R32','ISAX-R32','ISZZ-R32','WTZ-R32','WTMC-R32','WTMC-R32 COLOR')")->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $add('/schede-tecniche/prodotto/' . $row['slug'], self::dateOnly($row['updated_at'] ?? null));
             }
             foreach ($pdo->query('SELECT slug,updated_at FROM gallery_albums WHERE published=1 AND archived_at IS NULL')->fetchAll(PDO::FETCH_ASSOC) as $row) {
