@@ -1,4 +1,5 @@
 name: Deploy staging to Aruba
+# Full integrity redeploy after technical-sheet update
 
 on:
   workflow_dispatch:
