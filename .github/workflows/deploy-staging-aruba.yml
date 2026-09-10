@@ -196,7 +196,11 @@ jobs:
             cat /tmp/idemaclima-migration-output.txt >&2
             exit 1
           fi
-          grep -q 'Completato. Migration applicate:' /tmp/idemaclima-migration-output.txt
+          if ! grep -q 'Completato. Migration applicate:' /tmp/idemaclima-migration-output.txt; then
+            echo 'Migration runner did not confirm completion.' >&2
+            sed -E 's#(password|secret|token)[^[:space:]]*#REDACTED#gI' /tmp/idemaclima-migration-output.txt >&2
+            exit 1
+          fi
           cleanup_migration_wrapper
           trap - EXIT
 
