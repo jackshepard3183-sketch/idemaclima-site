@@ -58,8 +58,9 @@ jobs:
           : "${FTP_USERNAME:?Missing ARUBA_FTP_USERNAME secret}"
           : "${FTP_PASSWORD:?Missing ARUBA_FTP_PASSWORD secret}"
 
-          test "$(wc -c < build/idemaclima-staging/app/Controllers/Admin/WarrantyController.php)" -lt 32768
-          test "$(wc -c < build/idemaclima-staging/app/Controllers/Admin/WarrantyCertificatePdfTrait.php)" -lt 32768
+          for file in WarrantyController.php WarrantyRulesTrait.php WarrantyCertificateActionsTrait.php WarrantyCertificatePdfTrait.php; do
+            test "$(wc -c < "build/idemaclima-staging/app/Controllers/Admin/$file")" -lt 16384
+          done
 
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<'EOF'
           set ftp:ssl-allow yes
@@ -77,12 +78,15 @@ jobs:
             --exclude='^storage/private(/|$)' \
             --exclude='^public/uploads(/|$)' \
             build/idemaclima-staging/ ./
-          get app/Controllers/Admin/WarrantyController.php -o /tmp/idemaclima-warranty-controller.php
-          get app/Controllers/Admin/WarrantyCertificatePdfTrait.php -o /tmp/idemaclima-warranty-pdf-trait.php
+          get app/Controllers/Admin/WarrantyController.php -o /tmp/WarrantyController.php
+          get app/Controllers/Admin/WarrantyRulesTrait.php -o /tmp/WarrantyRulesTrait.php
+          get app/Controllers/Admin/WarrantyCertificateActionsTrait.php -o /tmp/WarrantyCertificateActionsTrait.php
+          get app/Controllers/Admin/WarrantyCertificatePdfTrait.php -o /tmp/WarrantyCertificatePdfTrait.php
           bye
           EOF
-          cmp build/idemaclima-staging/app/Controllers/Admin/WarrantyController.php /tmp/idemaclima-warranty-controller.php
-          cmp build/idemaclima-staging/app/Controllers/Admin/WarrantyCertificatePdfTrait.php /tmp/idemaclima-warranty-pdf-trait.php
+          for file in WarrantyController.php WarrantyRulesTrait.php WarrantyCertificateActionsTrait.php WarrantyCertificatePdfTrait.php; do
+            cmp "build/idemaclima-staging/app/Controllers/Admin/$file" "/tmp/$file"
+          done
 
       - name: Verify public staging endpoint
         run: |
