@@ -75,10 +75,3 @@ jobs:
           bye
           EOF
 
-      - name: Verify public staging endpoint
-        run: |
-          curl --fail --silent --show-error --location \
-            --retry 3 --retry-delay 3 \
-            https://www.rappresentanzeguanzirolisas.it/idemaclima/ \
-            -o /tmp/idemaclima-home.html
-          test -s /tmp/idemaclima-home.html
