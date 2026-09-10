@@ -10,10 +10,11 @@ $reference = file_get_contents($root . '/app/Views/admin/content_reference_form.
 $referenceList = file_get_contents($root . '/app/Views/admin/content_references.php');
 $upload = file_get_contents($root . '/app/Core/Upload.php');
 $productsView = file_get_contents($root . '/app/Views/admin/products.php');
+$adminLayoutEnd = file_get_contents($root . '/app/Views/admin/_layout_end.php');
 $routes = file_get_contents($root . '/public/index.php');
 $migration = file_get_contents($root . '/database/migrations/021_visual_content_hardening.sql');
 
-foreach ([$admin,$public,$album,$reference,$referenceList,$upload,$productsView,$routes,$migration] as $content) {
+foreach ([$admin,$public,$album,$reference,$referenceList,$upload,$productsView,$adminLayoutEnd,$routes,$migration] as $content) {
     if (!is_string($content) || $content === '') throw new RuntimeException('File contenuti visuali non leggibile.');
 }
 
@@ -38,6 +39,8 @@ $checks = [
     [$productsView, 'product-group', 'gerarchia categorie prodotti'],
     [$productsView, 'product-series', 'gerarchia serie prodotti'],
     [$productsView, 'product-filter', 'ricerca prodotti amministrativa'],
+    [$productsView, 'Security::nonce()', 'nonce CSP ricerca prodotti'],
+    [$adminLayoutEnd, 'Security::nonce()', 'nonce CSP menu mobile'],
     [$migration, 'ADD COLUMN archived_at', 'schema archiviazione'],
 ];
 
