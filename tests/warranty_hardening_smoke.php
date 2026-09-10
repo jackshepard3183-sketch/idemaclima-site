@@ -24,7 +24,7 @@ $checks = [
     [$admin, 'reviewed_at', 'timestamp revisione'],
     [$admin, 'Cache-Control: private, no-store', 'no-store file privati'],
     [$service, 'isIsoDate', 'validazione date ISO'],
-    [$form, "L'obbligatorietà dipende dalla regola", 'fattura dinamica'],
+    [$form, 'L’obbligatorietà dipende dalla regola', 'fattura dinamica'],
     [$migration, 'MODIFY COLUMN invoice_file VARCHAR(500) NULL', 'fattura opzionale DB'],
 ];
 
