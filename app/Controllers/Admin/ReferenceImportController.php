@@ -18,7 +18,7 @@ final class ReferenceImportController
         $csrf = Security::csrfToken();
         $report = null;
         $error = null;
-        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/reference_import.php';
+        require dirname(__DIR__, 2) . '/Views/admin/reference_import.php';
     }
 
     public static function run(): void
@@ -42,7 +42,7 @@ final class ReferenceImportController
         } catch (\Throwable $exception) {
             $error = $exception->getMessage();
         }
-        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/reference_import.php';
+        require dirname(__DIR__, 2) . '/Views/admin/reference_import.php';
     }
 
     private static function import(bool $execute): array

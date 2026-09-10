@@ -19,7 +19,7 @@ trait WarrantyRulesTrait
         $sql = 'SELECT wr.*,p.name product_name,pm.code model_code FROM warranty_rules wr LEFT JOIN products p ON p.id=wr.product_id LEFT JOIN product_models pm ON pm.id=wr.model_id ORDER BY wr.enabled DESC,p.name,pm.code,wr.id';
         $rules = Database::connection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $title = 'Regole garanzia'; $user = AdminAuth::user(); $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/warranty_rules.php';
+        require dirname(__DIR__, 2) . '/Views/admin/warranty_rules.php';
     }
 
     public static function ruleForm(): void
@@ -117,7 +117,7 @@ trait WarrantyRulesTrait
         $products = $pdo->query('SELECT id,name FROM products WHERE published=1 ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);
         $models = $pdo->query('SELECT pm.id,pm.code,p.name product_name FROM product_models pm JOIN products p ON p.id=pm.product_id WHERE pm.published=1 ORDER BY p.name,pm.code')->fetchAll(PDO::FETCH_ASSOC);
         $title='Regola garanzia'; $user=AdminAuth::user(); $csrf=Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/warranty_rule_form.php';
+        require dirname(__DIR__, 2) . '/Views/admin/warranty_rule_form.php';
     }
 }
 

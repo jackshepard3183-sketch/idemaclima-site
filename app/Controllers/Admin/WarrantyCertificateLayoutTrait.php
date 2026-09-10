@@ -47,7 +47,7 @@ trait WarrantyCertificateLayoutTrait
         AdminAuth::requireLogin(); $pdo=Database::connection();
         $layout=self::certificateLayout($pdo); $title='Editor certificato PDF';
         $user=AdminAuth::user(); $csrf=Security::csrfToken(); $saved=isset($_GET['saved']);
-        require dirname(__DIR__,2).'/Views/idemaclima/admin/warranty_certificate_layout.php';
+        require dirname(__DIR__,2).'/Views/admin/warranty_certificate_layout.php';
     }
 
     public static function saveCertificateLayout(): void

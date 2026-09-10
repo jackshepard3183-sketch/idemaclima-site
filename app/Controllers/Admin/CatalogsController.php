@@ -167,7 +167,7 @@ final class CatalogsController
         extract($data,EXTR_SKIP);
         $user=AdminAuth::user();
         $csrf=Security::csrfToken();
-        require dirname(__DIR__,2).'/Views/idemaclima/admin/'.$file.'.php';
+        require dirname(__DIR__,2).'/Views/admin/'.$file.'.php';
     }
 
     private static function csrf(): void

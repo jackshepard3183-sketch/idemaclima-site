@@ -18,7 +18,7 @@ final class CatalogImportController
         $report = null;
         $urlRepair = null;
         $error = null;
-        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/catalog_import.php';
+        require dirname(__DIR__, 2) . '/Views/admin/catalog_import.php';
     }
 
     public static function run(): void
@@ -58,7 +58,7 @@ final class CatalogImportController
             $error = $exception->getMessage();
         }
 
-        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/catalog_import.php';
+        require dirname(__DIR__, 2) . '/Views/admin/catalog_import.php';
     }
 
     /** @return array{mode:string,matched:int,updated:int,columns:array<int,array{column:string,count:int,samples:array<int,string>}>} */

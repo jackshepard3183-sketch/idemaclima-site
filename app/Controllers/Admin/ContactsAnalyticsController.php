@@ -82,6 +82,6 @@ final class ContactsAnalyticsController
         foreach($columns as $name=>$definition)if(!in_array($name,$existing,true))$pdo->exec('ALTER TABLE analytics_settings ADD COLUMN '.$name.' '.$definition);
     }
 
-    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/idemaclima/admin/'.$file.'.php';}
+    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/'.$file.'.php';}
     private static function csrf():void{if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}}
 }

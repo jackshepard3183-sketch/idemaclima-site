@@ -20,7 +20,7 @@ final class RedirectsController
         $rows = Database::connection()->query('SELECT * FROM seo_redirects ORDER BY source_path')->fetchAll(PDO::FETCH_ASSOC);
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
-        require dirname(__DIR__,2).'/Views/idemaclima/admin/redirects.php';
+        require dirname(__DIR__,2).'/Views/admin/redirects.php';
     }
 
     public static function form(): void
@@ -36,7 +36,7 @@ final class RedirectsController
             $redirect=$found;
         }
         $errors=[];$user=AdminAuth::user();$csrf=Security::csrfToken();
-        require dirname(__DIR__,2).'/Views/idemaclima/admin/redirect_form.php';
+        require dirname(__DIR__,2).'/Views/admin/redirect_form.php';
     }
 
     public static function save(): void
@@ -62,7 +62,7 @@ final class RedirectsController
             if($resolved!=='')$target=$resolved;
         }
 
-        if($errors){$redirect=['id'=>$id,'source_path'=>$source,'target_path'=>$target,'status_code'=>$code,'enabled'=>$enabled];$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/idemaclima/admin/redirect_form.php';return;}
+        if($errors){$redirect=['id'=>$id,'source_path'=>$source,'target_path'=>$target,'status_code'=>$code,'enabled'=>$enabled];$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/redirect_form.php';return;}
         if($id){$s=$pdo->prepare('UPDATE seo_redirects SET source_path=?,target_path=?,status_code=?,enabled=? WHERE id=?');$s->execute([$source,$target,$code,$enabled,$id]);$entityId=$id;$action='redirect.update';}
         else{$s=$pdo->prepare('INSERT INTO seo_redirects(source_path,target_path,status_code,enabled) VALUES(?,?,?,?)');$s->execute([$source,$target,$code,$enabled]);$entityId=(int)$pdo->lastInsertId();$action='redirect.create';}
         Audit::log($action,'seo_redirect',$entityId,['source'=>$source,'target'=>$target,'status_code'=>$code,'enabled'=>$enabled]);

@@ -22,7 +22,7 @@ final class ProductsController
         $products = Database::connection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/products.php';
+        require dirname(__DIR__, 2) . '/Views/admin/products.php';
     }
 
     public static function form(): void
@@ -57,7 +57,7 @@ final class ProductsController
         $errors = [];
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/product_form.php';
+        require dirname(__DIR__, 2) . '/Views/admin/product_form.php';
     }
 
     public static function save(): void
@@ -130,7 +130,7 @@ final class ProductsController
             }
             $user = AdminAuth::user();
             $csrf = Security::csrfToken();
-            require dirname(__DIR__, 2) . '/Views/idemaclima/admin/product_form.php';
+            require dirname(__DIR__, 2) . '/Views/admin/product_form.php';
             return;
         }
 

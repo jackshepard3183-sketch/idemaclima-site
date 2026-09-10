@@ -17,7 +17,7 @@ final class AuthController
             exit;
         }
         $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/login.php';
+        require dirname(__DIR__, 2) . '/Views/admin/login.php';
     }
 
     public static function login(): void

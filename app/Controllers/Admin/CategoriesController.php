@@ -19,7 +19,7 @@ final class CategoriesController
         AdminAuth::requireLogin();
         $categories = Database::connection()->query('SELECT c.*, p.name parent_name FROM product_categories c LEFT JOIN product_categories p ON p.id=c.parent_id ORDER BY c.sort_order,c.name')->fetchAll(PDO::FETCH_ASSOC);
         $user = AdminAuth::user(); $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/categories.php';
+        require dirname(__DIR__, 2) . '/Views/admin/categories.php';
     }
 
     public static function form(): void
@@ -33,7 +33,7 @@ final class CategoriesController
         }
         $categories=Database::connection()->query('SELECT id,name FROM product_categories ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC);
         $errors=[]; $user=AdminAuth::user(); $csrf=Security::csrfToken();
-        require dirname(__DIR__,2).'/Views/idemaclima/admin/category_form.php';
+        require dirname(__DIR__,2).'/Views/admin/category_form.php';
     }
 
     public static function save(): void
@@ -66,6 +66,6 @@ final class CategoriesController
     {
         $category=['id'=>$id,'parent_id'=>$parentId,'name'=>$name,'slug'=>$slug,'sort_order'=>$sort,'content_status'=>$contentStatus,'published'=>$published];
         $categories=Database::connection()->query('SELECT id,name FROM product_categories ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC);
-        $user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/idemaclima/admin/category_form.php';
+        $user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/category_form.php';
     }
 }

@@ -213,7 +213,7 @@ final class CampusController
             && preg_match('/[^A-Za-z0-9]/',$password);
     }
 
-    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/idemaclima/admin/'.$file.'.php';}
+    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/'.$file.'.php';}
     private static function csrf():void{if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}}
     private static function slugify(string $v):string{$a=iconv('UTF-8','ASCII//TRANSLIT//IGNORE',strtolower(trim($v)))?:$v;return trim((string)preg_replace('/[^a-z0-9]+/','-',$a),'-');}
     private static function mysqlDateTime(mixed $value):?string{$v=trim((string)$value);if($v==='')return null;$dt=\DateTimeImmutable::createFromFormat('Y-m-d\TH:i',$v);if(!$dt||$dt->format('Y-m-d\TH:i')!==$v)return null;return $dt->format('Y-m-d H:i:s');}

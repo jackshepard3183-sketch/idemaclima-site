@@ -33,6 +33,6 @@ final class DashboardController
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
 
-        require dirname(__DIR__, 2) . '/Views/idemaclima/admin/dashboard.php';
+        require dirname(__DIR__, 2) . '/Views/admin/dashboard.php';
     }
 }

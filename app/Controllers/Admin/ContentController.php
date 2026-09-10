@@ -155,7 +155,7 @@ final class ContentController
     private static function assertReference(PDO $pdo,int $id):void{$s=$pdo->prepare('SELECT COUNT(*) FROM references_projects WHERE id=? AND archived_at IS NULL');$s->execute([$id]);if(!(int)$s->fetchColumn())self::notFound('Referenza non trovata');}
     private static function redirectAlbum(int $id):never{header('Location:/idemaclima/admin/content/gallery/form?id='.$id);exit;}
     private static function redirectReference(int $id):never{header('Location:/idemaclima/admin/content/references/form?id='.$id);exit;}
-    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/idemaclima/admin/'.$file.'.php';}
+    private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/'.$file.'.php';}
     private static function csrf():void{if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}}
     private static function notFound(string $message):never{http_response_code(404);exit($message);}
     private static function normalizeSlug(string $slug,string $fallback,array &$errors):string{$slug=trim($slug);$slug=$slug===''?self::slugify($fallback):self::slugify($slug);if($slug===''||strlen($slug)>240)$errors[]='Slug non valido.';return $slug;}
