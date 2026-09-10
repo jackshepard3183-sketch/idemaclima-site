@@ -20,7 +20,7 @@
 <label class="full">Oggetto *<input name="subject" maxlength="220" required value="<?= e((string)($old['subject']??'')) ?>"></label>
 <label class="full">Messaggio *<textarea name="message" rows="7" maxlength="10000" required><?= e((string)($old['message']??'')) ?></textarea></label>
 <label class="full">Allegato facoltativo<input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"><small>PDF, immagini o documenti Office - massimo 10 MB.</small></label>
-<label class="full check"><input type="checkbox" name="privacy" value="1" required <?= isset($old['privacy'])?'checked':'' ?>> <span>Accetto l’informativa privacy. *</span></label>
+<label class="full check"><input type="checkbox" name="privacy" value="1" required <?= isset($old['privacy'])?'checked':'' ?>> <span>Ho letto l’<a href="https://www.iubenda.com/privacy-policy/38092343" target="_blank" rel="noopener">informativa privacy</a> e acconsento al trattamento dei dati per la gestione della richiesta. *</span></label>
 </div>
 <button class="btn" type="submit">Invia richiesta</button>
 </form></div><aside class="contact-info"><span class="section-label">IDEMA CLIMA®</span><h2>Competenza e assistenza diretta.</h2><p>Descrivi la tua richiesta con il maggior numero possibile di dettagli. Il team potrà indirizzarla rapidamente alla funzione corretta.</p></aside></div></div></section>

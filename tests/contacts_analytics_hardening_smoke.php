@@ -10,8 +10,10 @@ $layout = file_get_contents($root . '/app/Views/public/_layout_start.php');
 $form = file_get_contents($root . '/app/Views/public/contact/form.php');
 $upload = file_get_contents($root . '/app/Core/PrivateUpload.php');
 $migration = file_get_contents($root . '/database/migrations/022_contacts_analytics_privacy.sql');
+$mail = file_get_contents($root . '/app/Services/ContactMailService.php');
+$detail = file_get_contents($root . '/app/Views/admin/contact_detail.php');
 
-foreach ([$contact,$analytics,$admin,$layout,$form,$upload,$migration] as $content) {
+foreach ([$contact,$analytics,$admin,$layout,$form,$upload,$migration,$mail,$detail] as $content) {
     if (!is_string($content) || $content === '') throw new RuntimeException('File contatti/analytics non leggibile.');
 }
 
@@ -29,6 +31,11 @@ $checks = [
     [$form, 'company_website', 'honeypot nel form'],
     [$upload, 'allowOfficeZipDetection', 'riconoscimento OpenXML'],
     [$migration, 'internal_tracking_retention_days', 'schema retention'],
+    [$contact, 'ContactMailService::notify', 'notifica dopo il salvataggio'],
+    [$mail, 'contacts_recipients', 'destinatari contatti configurabili'],
+    [$mail, 'Reply-To:', 'risposta al mittente'],
+    [$form, 'privacy-policy/38092343', 'privacy iubenda'],
+    [$detail, '/idemaclima/admin/contacts/update', 'azioni backend con base path'],
 ];
 
 foreach ($checks as [$haystack,$needle,$label]) {

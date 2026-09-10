@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Core\PrivateUpload;
 use App\Core\RateLimiter;
 use App\Core\Security;
+use App\Services\ContactMailService;
 use Throwable;
 
 final class ContactController
@@ -66,6 +67,7 @@ final class ContactController
                 strtolower((string)$old['email']),(string)$old['phone'],$old['subject'],$old['message'],
                 $attachment['path']??null,$attachment['original_name']??null,$attachment['mime']??null
             ]);
+            ContactMailService::notify($old, $attachment['original_name']??null);
             self::render('contact/result',['title'=>'Messaggio ricevuto','success'=>true,'message'=>'La richiesta è stata inviata correttamente.']);
         } catch(Throwable $e) {
             if($attachment)PrivateUpload::remove($attachment['path']);

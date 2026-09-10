@@ -15,8 +15,9 @@ final class ContactsAnalyticsController
     public static function contacts(): void
     {
         AdminAuth::requireLogin();
-        $rows=Database::connection()->query('SELECT * FROM contact_submissions ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
-        self::view('contacts',['title'=>'Contatti','rows'=>$rows]);
+        $status=(string)($_GET['status']??'');$allowed=['new','in_progress','closed','spam'];$pdo=Database::connection();
+        if(in_array($status,$allowed,true)){$s=$pdo->prepare('SELECT * FROM contact_submissions WHERE status=? ORDER BY created_at DESC');$s->execute([$status]);$rows=$s->fetchAll(PDO::FETCH_ASSOC);}else{$rows=$pdo->query('SELECT * FROM contact_submissions ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);}
+        self::view('contacts',['title'=>'Contatti','rows'=>$rows,'status'=>$status]);
     }
 
     public static function contact(): void
@@ -32,7 +33,7 @@ final class ContactsAnalyticsController
         $reviewedAt=$status==='new'?null:date('Y-m-d H:i:s');
         $s=$pdo->prepare('UPDATE contact_submissions SET status=?,admin_notes=?,reviewed_at=? WHERE id=?');$s->execute([$status,$notes?:null,$reviewedAt,$id]);
         Audit::log('contact.update','contact_submission',$id,['status_from'=>$before,'status_to'=>$status]);
-        header('Location:/admin/contacts/view?id='.$id);exit;
+        header('Location:/idemaclima/admin/contacts/view?id='.$id);exit;
     }
 
     public static function attachment(string $id): void
