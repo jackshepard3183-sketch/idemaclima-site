@@ -141,6 +141,7 @@ jobs:
           php -r '
             $token = getenv("MIGRATION_TOKEN");
             $source = "<?php\ndeclare(strict_types=1);\n" .
+              "ini_set(\x27display_errors\x27, \x271\x27); error_reporting(E_ALL);\n" .
               "if ((\$_SERVER[\x27REQUEST_METHOD\x27] ?? \x27\x27) !== \x27POST\x27 || !hash_equals(\x27" . $token . "\x27, (string)(\$_SERVER[\x27HTTP_X_IDEMA_MIGRATION_TOKEN\x27] ?? \x27\x27))) { http_response_code(404); exit; }\n" .
               "define(\x27IDEMA_INTERNAL_MIGRATION_RUN\x27, true);\n" .
               "\$argv = [__FILE__, \x27--execute\x27]; \$_SERVER[\x27argv\x27] = \$argv; \$_SERVER[\x27argc\x27] = 2;\n" .
@@ -160,13 +161,25 @@ jobs:
           }
           trap cleanup_migration_wrapper EXIT
 
-          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
-          set ftp:ssl-allow yes
-          set ssl:verify-certificate yes
-          set ssl:check-hostname no
-          put /tmp/$MIGRATION_FILE -o /www.rappresentanzeguanzirolisas.it/idemaclima/$MIGRATION_FILE
-          bye
+          WRAPPER_VERIFIED=0
+          for attempt in 1 2 3; do
+            rm -f "/tmp/$MIGRATION_FILE.remote"
+            lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
+            set ftp:ssl-allow yes
+            set ssl:verify-certificate yes
+            set ssl:check-hostname no
+            put /tmp/$MIGRATION_FILE -o /www.rappresentanzeguanzirolisas.it/idemaclima/$MIGRATION_FILE
+            get /www.rappresentanzeguanzirolisas.it/idemaclima/$MIGRATION_FILE -o /tmp/$MIGRATION_FILE.remote
+            bye
           EOF
+            if cmp -s "/tmp/$MIGRATION_FILE" "/tmp/$MIGRATION_FILE.remote"; then
+              WRAPPER_VERIFIED=1
+              break
+            fi
+            echo "Migration wrapper integrity retry $attempt."
+          done
+          test "$WRAPPER_VERIFIED" = "1"
+          rm -f "/tmp/$MIGRATION_FILE.remote"
 
           HTTP_CODE="$(curl --silent --show-error --request POST \
             --header "X-IDEMA-MIGRATION-TOKEN: $MIGRATION_TOKEN" \
