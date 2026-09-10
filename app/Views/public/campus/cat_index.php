@@ -10,6 +10,8 @@ $renderEvent=static function(array $event):void{$cancelled=(int)$event['cancelle
     <span class="meta"><?=e(date('d/m/Y · H:i',strtotime((string)$event['starts_at'])))?><?=!empty($event['location'])?' · '.e($event['location']):''?></span>
     <?php if(!empty($event['short_description'])):?><p><?=e($event['short_description'])?></p><?php endif;?>
     <?php if(!empty($event['user_status'])):?><span class="event-state"><?=['registered'=>'Iscritto','confirmed'=>'Confermato','waitlist'=>'Lista d’attesa','cancelled'=>'Iscrizione annullata'][$event['user_status']]??e($event['user_status'])?></span><?php elseif($cancelled):?><span class="event-state cancelled">Evento annullato</span><?php elseif(strtotime((string)$event['starts_at'])<time()):?><span class="event-state">Evento concluso</span><?php endif;?>
+    <?php if($event['user_attended']!==null):?><span class="event-state"><?=(int)$event['user_attended']?'Presente':'Assente'?></span><?php endif;?>
+    <?php if(!empty($event['certificate_number'])):?><span class="event-state">Attestato <?=e($event['certificate_number'])?></span><?php elseif((int)($event['user_attended']??0)===1):?><span class="meta">Attestato non ancora disponibile</span><?php endif;?>
     <span class="event-more">Apri evento →</span>
   </a>
 <?php }; ?>
