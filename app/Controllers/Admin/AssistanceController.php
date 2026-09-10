@@ -86,9 +86,9 @@ final class AssistanceController
             }
         }
 
-        if ($uploaded !== null) {
-            $external = null;
-        } elseif (($documentId === null) === ($external === null)) {
+        if ($uploaded !== null && $external !== null) {
+            $errors[] = 'Con un nuovo PDF non inserire anche un URL esterno.';
+        } elseif ($uploaded === null && (($documentId === null) === ($external === null))) {
             $errors[] = 'Seleziona esattamente una destinazione: un documento oppure un URL esterno.';
         }
 
