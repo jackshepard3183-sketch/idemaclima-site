@@ -5,6 +5,7 @@
  ['Contatti da gestire','contacts_new','/admin/contacts'],
  ['Garanzie da verificare','warranties_new','/admin/warranties'],
  ['Iscrizioni Campus','campus_new','/admin/campus/registrations'],
+ ['Richieste EasyTool','incentives_new','/admin/incentives'],
  ['CAT da approvare','cat_pending','/admin/cat/users?status=pending'],
 ] as [$label,$key,$url]): ?><a class="card card-link" href="<?= $url ?>"><span class="muted"><?= htmlspecialchars($label,ENT_QUOTES,'UTF-8') ?></span><strong><?= (int)($counts[$key]??0) ?></strong><small>Apri la sezione →</small></a><?php endforeach; ?>
 </div>

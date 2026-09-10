@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Controllers\Public;
 
 use App\Core\Database;
+use App\Core\Security;
 use PDO;
 
 final class EditorialController
 {
-    public static function page(string $slug): void
+    public static function page(string $slug, array $extra=[]): void
     {
         $pdo = Database::connection();
         $s = $pdo->prepare('SELECT * FROM editorial_pages WHERE slug=? AND published=1 LIMIT 1');
@@ -35,13 +36,14 @@ final class EditorialController
             $documentGroups[$group][] = $doc;
         }
 
-        self::render('editorial/page', [
+        self::render('editorial/page', array_merge([
             'title'=>$page['meta_title'] ?: $page['title'],
             'page'=>$page,
             'sections'=>$sections->fetchAll(PDO::FETCH_ASSOC),
             'faqs'=>$faqs->fetchAll(PDO::FETCH_ASSOC),
             'documentGroups'=>$documentGroups,
-        ]);
+            'csrf'=>Security::csrfToken(),'errors'=>[],'old'=>[],
+        ],$extra));
     }
 
     private static function render(string $view, array $data): void

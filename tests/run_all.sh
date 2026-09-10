@@ -12,6 +12,7 @@ if command -v php >/dev/null 2>&1; then
   php "$ROOT/tests/assistance_hardening_smoke.php"
   php "$ROOT/tests/warranty_hardening_smoke.php"
   php "$ROOT/tests/warranty_layout_editor_smoke.php"
+  php "$ROOT/tests/incentives_hardening_smoke.php"
   php "$ROOT/tests/render_warranty_certificate_fixture.php"
   php "$ROOT/tests/campus_hardening_smoke.php"
   php "$ROOT/tests/catalog_import_smoke.php"

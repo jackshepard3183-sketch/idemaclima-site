@@ -21,6 +21,7 @@ final class DashboardController
             'contacts_new' => $count("SELECT COUNT(*) FROM contact_submissions WHERE status='new'"),
             'warranties_new' => $count("SELECT COUNT(*) FROM warranty_registrations WHERE status='pending'"),
             'campus_new' => $count("SELECT COUNT(*) FROM event_registrations WHERE status IN ('registered','waitlist')"),
+            'incentives_new' => $count("SELECT COUNT(*) FROM incentive_requests WHERE status='new'"),
             'cat_pending' => $count('SELECT COUNT(*) FROM cat_accounts WHERE active=0 AND verified_at IS NULL AND disabled_at IS NULL'),
         ];
         try {

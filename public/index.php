@@ -21,6 +21,7 @@ use App\Controllers\Admin\ContactsAnalyticsController as AdminContactsAnalyticsC
 use App\Controllers\Admin\RedirectsController;
 use App\Controllers\Admin\AssistanceController as AdminAssistanceController;
 use App\Controllers\Admin\EditorialController as AdminEditorialController;
+use App\Controllers\Admin\IncentivesController as AdminIncentivesController;
 use App\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Controllers\Public\TechnicalSheetsController;
 use App\Controllers\Public\WarrantyController;
@@ -32,6 +33,7 @@ use App\Controllers\Public\AnalyticsController;
 use App\Controllers\Public\SystemController;
 use App\Controllers\Public\AssistanceController;
 use App\Controllers\Public\EditorialController;
+use App\Controllers\Public\IncentivesController;
 use App\Controllers\Public\SeoController;
 use App\Core\Router;
 
@@ -60,6 +62,7 @@ $router->get('/detrazioni-e-incentivi/bonus-casa', static fn() => EditorialContr
 $router->get('/detrazioni-e-incentivi/ecobonus', static fn() => EditorialController::page('detrazioni-e-incentivi'));
 $router->get('/detrazioni-e-incentivi/conto-termico', static fn() => EditorialController::page('detrazioni-e-incentivi'));
 $router->get('/detrazioni-e-incentivi/consulenza-energetica', static fn() => EditorialController::page('detrazioni-e-incentivi'));
+$router->post('/detrazioni-e-incentivi/consulenza-energetica', [IncentivesController::class, 'submit']);
 $router->get('/galleria', [ContentController::class, 'gallery']);
 $router->get('/galleria/{slug}', [ContentController::class, 'galleryAlbum']);
 $router->get('/referenze', [ContentController::class, 'references']);
@@ -132,6 +135,9 @@ $router->post('/admin/editorial/faq/save', [AdminEditorialController::class, 'sa
 $router->post('/admin/editorial/faq/delete', [AdminEditorialController::class, 'deleteFaq']);
 $router->post('/admin/editorial/document', [AdminEditorialController::class, 'addDocument']);
 $router->post('/admin/editorial/document/delete', [AdminEditorialController::class, 'deleteDocument']);
+$router->get('/admin/incentives', [AdminIncentivesController::class, 'requests']);
+$router->get('/admin/incentives/request', [AdminIncentivesController::class, 'request']);
+$router->post('/admin/incentives/update', [AdminIncentivesController::class, 'update']);
 $router->get('/admin/campus/events', [AdminCampusController::class, 'events']);
 $router->get('/admin/campus/events/form', [AdminCampusController::class, 'eventForm']);
 $router->post('/admin/campus/events/save', [AdminCampusController::class, 'saveEvent']);
