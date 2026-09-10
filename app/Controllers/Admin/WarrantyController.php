@@ -269,7 +269,9 @@ final class WarrantyController
         $registrationId=(int)$id;
         if (!in_array($kind,['invoice','fgas'],true)) { http_response_code(404); exit; }
         $column=$kind==='invoice'?'invoice_file':'fgas_file';
-        $s=Database::connection()->prepare("SELECT {$column} FROM warranty_registrations WHERE id=?"); $s->execute([$registrationId]); $rel=(string)($s->fetchColumn() ?: '');
+        $s = Database::connection()->prepare("SELECT {$column} FROM warranty_registrations WHERE id=?");
+        $s->execute([$registrationId]);
+        $rel = (string)($s->fetchColumn() ?: '');
         if ($rel==='' || str_contains($rel,'..')) { http_response_code(404); exit; }
         $root=realpath(dirname(__DIR__,3).'/storage/private'); $file=realpath(dirname(__DIR__,3).'/storage/private/'.$rel);
         if (!$root || !$file || !str_starts_with($file,$root.DIRECTORY_SEPARATOR) || !is_file($file)) { http_response_code(404); exit; }
