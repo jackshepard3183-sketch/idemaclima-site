@@ -1,5 +1,4 @@
 name: Deploy staging to Aruba
-# Full integrity redeploy after technical-sheet update
 
 on:
   workflow_dispatch:
@@ -74,12 +73,14 @@ jobs:
           cd /www.rappresentanzeguanzirolisas.it/idemaclima
           mirror -R --delete --verbose --parallel=1 --transfer-all \
             --exclude='(^|/)\.env$' \
+            --exclude='^DEPLOY_SHA256SUMS\.txt$' \
             --exclude='^storage/private(/|$)' \
             --exclude='^public/uploads(/|$)' \
             build/idemaclima-staging/ ./
           lcd /tmp/idemaclima-remote
           mirror --verbose --parallel=1 \
             --exclude='(^|/)\.env$' \
+            --exclude='^DEPLOY_SHA256SUMS\.txt$' \
             --exclude='^storage/private(/|$)' \
             --exclude='^public/uploads(/|$)' \
             ./ ./
@@ -92,6 +93,7 @@ jobs:
             test -f "$remote"
             cmp "$source" "$remote"
           done < <(find build/idemaclima-staging -type f \
+            ! -name 'DEPLOY_SHA256SUMS.txt' \
             ! -path '*/storage/private/*' \
             ! -path '*/public/uploads/*' -print0)
 
