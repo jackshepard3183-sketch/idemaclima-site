@@ -58,8 +58,8 @@ jobs:
           : "${FTP_USERNAME:?Missing ARUBA_FTP_USERNAME secret}"
           : "${FTP_PASSWORD:?Missing ARUBA_FTP_PASSWORD secret}"
 
-          head -c 30000 build/idemaclima-staging/app/Controllers/Admin/WarrantyController.php > /tmp/idema-warranty-part-1.php
-          tail -c +30001 build/idemaclima-staging/app/Controllers/Admin/WarrantyController.php > /tmp/idema-warranty-part-2.php
+          test "$(wc -c < build/idemaclima-staging/app/Controllers/Admin/WarrantyController.php)" -lt 32768
+          test "$(wc -c < build/idemaclima-staging/app/Controllers/Admin/WarrantyCertificatePdfTrait.php)" -lt 32768
 
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<'EOF'
           set ftp:ssl-allow yes
@@ -77,12 +77,12 @@ jobs:
             --exclude='^storage/private(/|$)' \
             --exclude='^public/uploads(/|$)' \
             build/idemaclima-staging/ ./
-          put /tmp/idema-warranty-part-1.php -o app/Controllers/Admin/WarrantyController.php
-          put -a /tmp/idema-warranty-part-2.php -o app/Controllers/Admin/WarrantyController.php
           get app/Controllers/Admin/WarrantyController.php -o /tmp/idemaclima-warranty-controller.php
+          get app/Controllers/Admin/WarrantyCertificatePdfTrait.php -o /tmp/idemaclima-warranty-pdf-trait.php
           bye
           EOF
           cmp build/idemaclima-staging/app/Controllers/Admin/WarrantyController.php /tmp/idemaclima-warranty-controller.php
+          cmp build/idemaclima-staging/app/Controllers/Admin/WarrantyCertificatePdfTrait.php /tmp/idemaclima-warranty-pdf-trait.php
 
       - name: Verify public staging endpoint
         run: |
