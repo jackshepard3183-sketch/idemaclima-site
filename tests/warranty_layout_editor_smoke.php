@@ -11,7 +11,7 @@ $migration=(string)file_get_contents($root.'/database/migrations/029_warranty_ce
 foreach([$controller,$pdf,$view,$routes,$migration] as $content)if($content==='')throw new RuntimeException('File editor PDF non leggibile.');
 $checks=[
     [$controller,'array_intersect_key($saved,$defaults)','chiavi configurazione limitate'],
-    [$controller,"preg_match('/^#[0-9a-f]{6}$/',$value)",'validazione colori'],
+    [$controller,"preg_match('/^#[0-9a-f]{6}$/',\$value)",'validazione colori'],
     [$controller,"max(.85,min(1.10",'limiti tipografici'],
     [$controller,"JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR",'salvataggio JSON sicuro'],
     [$controller,"AdminAuth::requireLogin()",'anteprima autenticata'],
