@@ -17,8 +17,10 @@ final class CampusController
     public static function events(): void
     {
         AdminAuth::requireLogin();
-        $events=Database::connection()->query('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id) registrations FROM events e ORDER BY e.starts_at DESC')->fetchAll(PDO::FETCH_ASSOC);
-        self::view('campus_events',['title'=>'Campus - Eventi','events'=>$events]);
+        $audience=in_array($_GET['audience']??'', ['public','cat'],true)?(string)$_GET['audience']:'';
+        $sql='SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id) registrations FROM events e'.($audience!==''?' WHERE e.audience=?':'').' ORDER BY e.starts_at DESC';
+        $stmt=Database::connection()->prepare($sql);$stmt->execute($audience!==''?[$audience]:[]);
+        self::view('campus_events',['title'=>'Campus - Eventi','events'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'audience'=>$audience]);
     }
 
     public static function eventForm(): void
@@ -26,7 +28,7 @@ final class CampusController
         AdminAuth::requireLogin();
         $id=Validator::int($_GET['id']??0);
         $pdo=Database::connection();
-        $event=['id'=>0,'title'=>'','slug'=>'','audience'=>'public','location'=>'','address'=>'','starts_at'=>'','ends_at'=>'','short_description'=>'','description'=>'','cover_image'=>'','max_seats'=>'','registration_open'=>1,'registration_deadline'=>'','published'=>0,'cancelled'=>0,'sort_order'=>0];
+        $event=['id'=>0,'title'=>'','slug'=>'','audience'=>'public','category'=>'','location'=>'','address'=>'','starts_at'=>'','ends_at'=>'','short_description'=>'','speaker'=>'','description'=>'','program'=>'','cover_image'=>'','max_seats'=>'','waitlist_enabled'=>1,'registration_open'=>1,'registration_deadline'=>'','published'=>0,'cancelled'=>0,'sort_order'=>0];
         if($id){
             $s=$pdo->prepare('SELECT * FROM events WHERE id=?');
             $s->execute([$id]);
@@ -59,8 +61,12 @@ final class CampusController
         $location=Validator::optionalString($_POST['location']??'',190,'Luogo',$errors);
         $address=Validator::optionalString($_POST['address']??'',255,'Indirizzo',$errors);
         $short=Validator::optionalString($_POST['short_description']??'',1000,'Descrizione breve',$errors);
+        $category=Validator::optionalString($_POST['category']??'',120,'Categoria',$errors);
+        $speaker=Validator::optionalString($_POST['speaker']??'',190,'Relatore',$errors);
         $description=trim((string)($_POST['description']??''));
+        $program=trim((string)($_POST['program']??''));
         if(mb_strlen($description)>50000)$errors[]='Descrizione troppo lunga.';
+        if(mb_strlen($program)>30000)$errors[]='Programma troppo lungo.';
         $pdo=Database::connection();
         $existingImage='';
         if($id){
@@ -72,7 +78,7 @@ final class CampusController
         }
         $uploaded=Upload::contentImage('cover_image_file','campus',$errors);
         $cover=$uploaded['path']??$existingImage;
-        $data=['id'=>$id,'title'=>$title,'slug'=>$slug,'audience'=>$audience,'location'=>$location,'address'=>$address,'starts_at'=>$starts??'','ends_at'=>$ends??'','short_description'=>$short,'description'=>$description,'cover_image'=>$cover,'max_seats'=>$maxSeats,'registration_open'=>Validator::bool($_POST['registration_open']??0),'registration_deadline'=>$deadline,'published'=>Validator::bool($_POST['published']??0),'cancelled'=>Validator::bool($_POST['cancelled']??0),'sort_order'=>Validator::int($_POST['sort_order']??0)];
+        $data=['id'=>$id,'title'=>$title,'slug'=>$slug,'audience'=>$audience,'category'=>$category,'location'=>$location,'address'=>$address,'starts_at'=>$starts??'','ends_at'=>$ends??'','short_description'=>$short,'speaker'=>$speaker,'description'=>$description,'program'=>$program,'cover_image'=>$cover,'max_seats'=>$maxSeats,'waitlist_enabled'=>Validator::bool($_POST['waitlist_enabled']??0),'registration_open'=>Validator::bool($_POST['registration_open']??0),'registration_deadline'=>$deadline,'published'=>Validator::bool($_POST['published']??0),'cancelled'=>Validator::bool($_POST['cancelled']??0),'sort_order'=>Validator::int($_POST['sort_order']??0)];
         if($errors){
             if($uploaded)Upload::removeManaged($uploaded['path']);
             self::view('campus_event_form',['title'=>'Evento Campus','event'=>$data,'errors'=>$errors]);
@@ -83,13 +89,13 @@ final class CampusController
             $q->execute([$slug,$id]);
             if($q->fetchColumn()!==false)throw new \RuntimeException('Slug già utilizzato da un altro evento.');
             if($id){
-                $s=$pdo->prepare('UPDATE events SET title=?,slug=?,audience=?,location=?,address=?,starts_at=?,ends_at=?,short_description=?,description=?,cover_image=?,max_seats=?,registration_open=?,registration_deadline=?,published=?,cancelled=?,sort_order=? WHERE id=?');
-                $s->execute([$title,$slug,$audience,$location?:null,$address?:null,$starts,$ends,$short?:null,$description?:null,$cover?:null,$maxSeats,$data['registration_open'],$deadline,$data['published'],$data['cancelled'],$data['sort_order'],$id]);
+                $s=$pdo->prepare('UPDATE events SET title=?,slug=?,audience=?,category=?,location=?,address=?,starts_at=?,ends_at=?,short_description=?,speaker=?,description=?,program=?,cover_image=?,max_seats=?,waitlist_enabled=?,registration_open=?,registration_deadline=?,published=?,cancelled=?,sort_order=? WHERE id=?');
+                $s->execute([$title,$slug,$audience,$category?:null,$location?:null,$address?:null,$starts,$ends,$short?:null,$speaker?:null,$description?:null,$program?:null,$cover?:null,$maxSeats,$data['waitlist_enabled'],$data['registration_open'],$deadline,$data['published'],$data['cancelled'],$data['sort_order'],$id]);
                 if($uploaded && $existingImage && $existingImage!==$cover)Upload::removeManaged($existingImage);
                 $entityId=$id;$action='campus.event.update';
             } else {
-                $s=$pdo->prepare('INSERT INTO events(title,slug,audience,location,address,starts_at,ends_at,short_description,description,cover_image,max_seats,registration_open,registration_deadline,published,cancelled,sort_order) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
-                $s->execute([$title,$slug,$audience,$location?:null,$address?:null,$starts,$ends,$short?:null,$description?:null,$cover?:null,$maxSeats,$data['registration_open'],$deadline,$data['published'],$data['cancelled'],$data['sort_order']]);
+                $s=$pdo->prepare('INSERT INTO events(title,slug,audience,category,location,address,starts_at,ends_at,short_description,speaker,description,program,cover_image,max_seats,waitlist_enabled,registration_open,registration_deadline,published,cancelled,sort_order) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+                $s->execute([$title,$slug,$audience,$category?:null,$location?:null,$address?:null,$starts,$ends,$short?:null,$speaker?:null,$description?:null,$program?:null,$cover?:null,$maxSeats,$data['waitlist_enabled'],$data['registration_open'],$deadline,$data['published'],$data['cancelled'],$data['sort_order']]);
                 $entityId=(int)$pdo->lastInsertId();$action='campus.event.create';
             }
             Audit::log($action,'event',$entityId,['title'=>$title,'audience'=>$audience,'slug'=>$slug]);

@@ -16,14 +16,17 @@ final class CampusController
     public static function index(): void
     {
         $pdo = Database::connection();
-        $stmt = $pdo->query('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.audience="public" AND e.published=1 AND e.cancelled=0 ORDER BY e.starts_at ASC');
-        self::render('campus/index',['title'=>'Campus','events'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'csrf'=>Security::csrfToken()]);
+        $stmt = $pdo->query('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.audience="public" AND e.published=1 ORDER BY e.starts_at ASC');
+        $all=$stmt->fetchAll(PDO::FETCH_ASSOC);$status=in_array($_GET['stato']??'', ['prossimi','passati','annullati'],true)?(string)$_GET['stato']:'tutti';$category=trim((string)($_GET['categoria']??''));$month=preg_match('/^\d{4}-\d{2}$/',(string)($_GET['mese']??''))?(string)$_GET['mese']:'';
+        $categories=array_values(array_unique(array_filter(array_column($all,'category'))));sort($categories,SORT_NATURAL|SORT_FLAG_CASE);
+        $events=array_values(array_filter($all,static function(array $e)use($status,$category,$month):bool{$start=strtotime((string)$e['starts_at']);if($status==='prossimi'&&($start<time()||(int)$e['cancelled']))return false;if($status==='passati'&&($start>=time()||(int)$e['cancelled']))return false;if($status==='annullati'&&!(int)$e['cancelled'])return false;if($status!=='annullati'&&$status!=='tutti'&&(int)$e['cancelled'])return false;if($category!==''&&(string)$e['category']!==$category)return false;if($month!==''&&date('Y-m',$start)!==$month)return false;return true;}));
+        self::render('campus/index',['title'=>'Campus','events'=>$events,'categories'=>$categories,'filters'=>['status'=>$status,'category'=>$category,'month'=>$month],'csrf'=>Security::csrfToken()]);
     }
 
     public static function event(string $slug): void
     {
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="public" AND e.published=1 AND e.cancelled=0 LIMIT 1');
+        $stmt = $pdo->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="public" AND e.published=1 LIMIT 1');
         $stmt->execute([$slug]);
         $event=$stmt->fetch(PDO::FETCH_ASSOC);
         if(!$event){self::notFound();return;}
@@ -33,7 +36,8 @@ final class CampusController
     public static function catIndex(): void
     {
         $catUser=CatAuth::requireLogin();
-        $stmt=Database::connection()->query('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.audience="cat" AND e.published=1 AND e.cancelled=0 ORDER BY e.starts_at ASC');
+        $stmt=Database::connection()->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked,(SELECT ur.status FROM event_registrations ur WHERE ur.event_id=e.id AND ur.cat_account_id=? ORDER BY ur.id DESC LIMIT 1) AS user_status FROM events e WHERE e.audience="cat" AND e.published=1 ORDER BY e.starts_at ASC');
+        $stmt->execute([(int)$catUser['id']]);
         self::render('campus/cat_index',['title'=>'Campus CAT','events'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'catUser'=>$catUser,'csrf'=>Security::csrfToken()]);
     }
 
@@ -89,7 +93,9 @@ final class CampusController
             $count=$pdo->prepare('SELECT COUNT(*) FROM event_registrations WHERE event_id=? AND status IN ("registered","confirmed")');
             $count->execute([(int)$event['id']]);
             $booked=(int)$count->fetchColumn();
-            $status=(!empty($event['max_seats']) && $booked >= (int)$event['max_seats'])?'waitlist':'registered';
+            $full=!empty($event['max_seats']) && $booked >= (int)$event['max_seats'];
+            if($full && empty($event['waitlist_enabled'])){$pdo->rollBack();self::render('campus/result',['title'=>'Evento completo','message'=>'I posti disponibili sono esauriti e la lista d’attesa non è attiva.']);return;}
+            $status=$full?'waitlist':'registered';
             $ins=$pdo->prepare('INSERT INTO event_registrations(event_id,cat_account_id,first_name,last_name,email,phone,company,role,notes,status,privacy_accepted_at) VALUES(?,?,?,?,?,?,?,?,?,?,NOW())');
             $ins->execute([(int)$event['id'],$catUser['id']??null,$first,$last,$email,$phone?:null,$company?:null,$role?:null,$notes?:null,$status]);
             $registrationId=(int)$pdo->lastInsertId();

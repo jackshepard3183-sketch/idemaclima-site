@@ -11,6 +11,7 @@ use App\Controllers\Admin\DocumentsController;
 use App\Controllers\Admin\ProductsController;
 use App\Controllers\Admin\WarrantyController as AdminWarrantyController;
 use App\Controllers\Admin\CampusController as AdminCampusController;
+use App\Controllers\Admin\CampusActionsController as AdminCampusActionsController;
 use App\Controllers\Admin\ContentController as AdminContentController;
 use App\Controllers\Admin\GalleryContentController as AdminGalleryContentController;
 use App\Controllers\Admin\CatalogsController as AdminCatalogsController;
@@ -125,7 +126,9 @@ $router->post('/admin/editorial/document/delete', [AdminEditorialController::cla
 $router->get('/admin/campus/events', [AdminCampusController::class, 'events']);
 $router->get('/admin/campus/events/form', [AdminCampusController::class, 'eventForm']);
 $router->post('/admin/campus/events/save', [AdminCampusController::class, 'saveEvent']);
+$router->post('/admin/campus/events/duplicate', [AdminCampusActionsController::class, 'duplicate']);
 $router->get('/admin/campus/registrations', [AdminCampusController::class, 'registrations']);
+$router->get('/admin/campus/registrations/export', [AdminCampusActionsController::class, 'export']);
 $router->post('/admin/campus/registrations/update', [AdminCampusController::class, 'updateRegistration']);
 $router->get('/admin/cat/users', [AdminCampusController::class, 'catUsers']);
 $router->get('/admin/cat/users/form', [AdminCampusController::class, 'catUserForm']);
