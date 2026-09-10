@@ -8,6 +8,7 @@ use App\Auth\AdminAuth;
 use App\Core\Audit;
 use App\Core\Database;
 use App\Core\Security;
+use App\Core\Upload;
 use App\Core\Validator;
 use PDO;
 
@@ -69,6 +70,7 @@ final class AssistanceController
         $label = Validator::requiredString($_POST['label'] ?? '', 'Etichetta', 220, $errors);
         $documentId = Validator::int($_POST['document_id'] ?? 0) ?: null;
         $external = trim((string)($_POST['external_url'] ?? '')) ?: null;
+        $uploaded = Upload::contentPdf('document_file', 'documents', $errors);
 
         if ($documentId !== null) {
             $s = $pdo->prepare('SELECT COUNT(*) FROM documents WHERE id=? AND published=1');
@@ -84,7 +86,9 @@ final class AssistanceController
             }
         }
 
-        if (($documentId === null) === ($external === null)) {
+        if ($uploaded !== null && $external !== null) {
+            $errors[] = 'Con un nuovo PDF non inserire anche un URL esterno.';
+        } elseif ($uploaded === null && (($documentId === null) === ($external === null))) {
             $errors[] = 'Seleziona esattamente una destinazione: un documento oppure un URL esterno.';
         }
 
@@ -93,22 +97,49 @@ final class AssistanceController
         $resource = ['id'=>$id,'section'=>$section,'label'=>$label,'document_id'=>$documentId,'external_url'=>$external,'sort_order'=>$sort,'published'=>$published];
 
         if ($errors) {
+            if ($uploaded) Upload::removeManaged($uploaded['path']);
             $documents = $pdo->query('SELECT d.id,d.title FROM documents d WHERE d.published=1 ORDER BY d.title')->fetchAll(PDO::FETCH_ASSOC);
             self::view('assistance_resource_form', ['title'=>'Risorsa Assistenza','resource'=>$resource,'documents'=>$documents,'errors'=>$errors]);
             return;
         }
 
-        if ($id) {
-            $s = $pdo->prepare('UPDATE assistance_resources SET section=?,label=?,document_id=?,external_url=?,sort_order=?,published=? WHERE id=? AND archived_at IS NULL');
-            $s->execute([$section,$label,$documentId,$external,$sort,$published,$id]);
-            $entityId = $id;
-            $action = 'assistance_resource.update';
-        } else {
-            $s = $pdo->prepare('INSERT INTO assistance_resources(section,label,document_id,external_url,sort_order,published) VALUES(?,?,?,?,?,?)');
-            $s->execute([$section,$label,$documentId,$external,$sort,$published]);
-            $entityId = (int)$pdo->lastInsertId();
-            $action = 'assistance_resource.create';
+        $oldPath = null;
+        $pdo->beginTransaction();
+        try {
+            if ($uploaded) {
+                if ($documentId !== null) {
+                    $s = $pdo->prepare('SELECT file_path FROM documents WHERE id=? AND published=1');
+                    $s->execute([$documentId]);
+                    $oldPath = $s->fetchColumn();
+                    if ($oldPath === false) throw new \RuntimeException('Documento da sostituire non trovato.');
+                    $pdo->prepare('UPDATE documents SET title=?,filename=?,file_path=?,published=1 WHERE id=?')->execute([$label,$uploaded['filename'],$uploaded['path'],$documentId]);
+                } else {
+                    $typeId = (int)$pdo->query('SELECT id FROM document_types WHERE active=1 ORDER BY sort_order,id LIMIT 1')->fetchColumn();
+                    if ($typeId < 1) throw new \RuntimeException('Nessun tipo documento attivo disponibile.');
+                    $pdo->prepare('INSERT INTO documents(document_type_id,title,filename,file_path,published,sort_order) VALUES(?,?,?,?,1,0)')->execute([$typeId,$label,$uploaded['filename'],$uploaded['path']]);
+                    $documentId = (int)$pdo->lastInsertId();
+                }
+                $external = null;
+            }
+
+            if ($id) {
+                $s = $pdo->prepare('UPDATE assistance_resources SET section=?,label=?,document_id=?,external_url=?,sort_order=?,published=? WHERE id=? AND archived_at IS NULL');
+                $s->execute([$section,$label,$documentId,$external,$sort,$published,$id]);
+                $entityId = $id;
+                $action = 'assistance_resource.update';
+            } else {
+                $s = $pdo->prepare('INSERT INTO assistance_resources(section,label,document_id,external_url,sort_order,published) VALUES(?,?,?,?,?,?)');
+                $s->execute([$section,$label,$documentId,$external,$sort,$published]);
+                $entityId = (int)$pdo->lastInsertId();
+                $action = 'assistance_resource.create';
+            }
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            if ($uploaded) Upload::removeManaged($uploaded['path']);
+            throw $e;
         }
+        if ($uploaded && is_string($oldPath) && $oldPath !== $uploaded['path']) Upload::removeManaged($oldPath);
 
         Audit::log($action, 'assistance_resource', $entityId, [
             'section'=>$section,
