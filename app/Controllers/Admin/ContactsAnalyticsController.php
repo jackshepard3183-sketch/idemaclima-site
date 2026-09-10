@@ -69,6 +69,7 @@ final class ContactsAnalyticsController
         if($retention<1||$retention>3650)$errors[]='Conservazione statistiche: inserisci un valore tra 1 e 3650 giorni.';
         if($enabled&&$measurement===''&&$gtm==='')$errors[]='Inserisci il Measurement ID GA4 o il Container ID GTM prima di attivare il tracking.';
         if($iubendaEnabled&&$iubendaSite==='')$errors[]='Inserisci il Site ID prima di attivare iubenda CMP.';
+        if($enabled&&$consent&&!$iubendaEnabled)$errors[]='Per attivare servizi soggetti a consenso devi prima configurare e attivare iubenda CMP.';
         if($errors){http_response_code(422);exit(implode("\n",$errors));}
         Database::connection()->prepare('UPDATE analytics_settings SET ga4_measurement_id=?,ga4_property_id=?,gtm_container_id=?,search_console_verification=?,meta_pixel_id=?,iubenda_enabled=?,iubenda_site_id=?,iubenda_cookie_policy_id=?,analytics_enabled=?,consent_required=?,pdf_tracking_enabled=?,internal_tracking_retention_days=? WHERE id=1')->execute([$measurement?:null,$property?:null,$gtm?:null,$searchConsole?:null,$metaPixel?:null,$iubendaEnabled,$iubendaSite?:null,$iubendaPolicy,$enabled,$consent,$pdf,$retention]);
         Audit::log('analytics.settings','analytics_settings',1,['analytics_enabled'=>$enabled,'iubenda_enabled'=>$iubendaEnabled,'consent_required'=>$consent,'pdf_tracking_enabled'=>$pdf,'retention_days'=>$retention]);
