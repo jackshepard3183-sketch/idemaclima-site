@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 require dirname(__DIR__) . '/app/Controllers/Admin/WarrantyCertificatePdfTrait.php';
+require dirname(__DIR__) . '/app/Controllers/Admin/WarrantyCertificateLayoutTrait.php';
 
 final class WarrantyPdfFixture
 {
     use \App\Controllers\Admin\WarrantyCertificatePdfTrait;
+    use \App\Controllers\Admin\WarrantyCertificateLayoutTrait;
 
     public static function render(array $registration,array $units,string $number):string
     {

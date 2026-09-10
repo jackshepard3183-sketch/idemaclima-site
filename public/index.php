@@ -109,6 +109,10 @@ $router->post('/admin/warranties/delete', [AdminWarrantyController::class, 'dele
 $router->post('/admin/warranties/certificate/generate', [AdminWarrantyController::class, 'generateCertificate']);
 $router->get('/admin/warranties/certificate/{id}', [AdminWarrantyController::class, 'certificateFile']);
 $router->post('/admin/warranties/certificate/send', [AdminWarrantyController::class, 'sendCertificate']);
+$router->get('/admin/warranties/certificate-layout', [AdminWarrantyController::class, 'certificateLayoutEditor']);
+$router->post('/admin/warranties/certificate-layout/save', [AdminWarrantyController::class, 'saveCertificateLayout']);
+$router->post('/admin/warranties/certificate-layout/reset', [AdminWarrantyController::class, 'resetCertificateLayout']);
+$router->get('/admin/warranties/certificate-layout/preview', [AdminWarrantyController::class, 'certificateLayoutPreview']);
 $router->get('/admin/warranties/rules', [AdminWarrantyController::class, 'rules']);
 $router->get('/admin/warranties/rules/form', [AdminWarrantyController::class, 'ruleForm']);
 $router->post('/admin/warranties/rules/save', [AdminWarrantyController::class, 'saveRule']);

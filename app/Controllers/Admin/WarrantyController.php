@@ -17,6 +17,7 @@ final class WarrantyController
     use WarrantyCertificatePdfTrait;
     use WarrantyRulesTrait;
     use WarrantyCertificateActionsTrait;
+    use WarrantyCertificateLayoutTrait;
     public static function registrations(): void
     {
         AdminAuth::requireLogin();
