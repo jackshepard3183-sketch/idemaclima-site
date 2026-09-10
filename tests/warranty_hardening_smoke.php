@@ -20,7 +20,7 @@ $checks = [
     [$public, 'fgas_required_snapshot', 'snapshot F-GAS'],
     [$public, 'min(3, $expectedIndoor)', 'limite seriali interni'],
     [$admin, 'Il modello selezionato non appartiene al prodotto indicato', 'coerenza prodotto/modello'],
-    [$admin, 'warranty_certificates', 'vincolo certificato prima di issued'],
+    [$admin, 'warranty_generated_certificates', 'vincolo certificato prima di issued'],
     [$admin, 'reviewed_at', 'timestamp revisione'],
     [$admin, 'Cache-Control: private, no-store', 'no-store file privati'],
     [$service, 'isIsoDate', 'validazione date ISO'],
