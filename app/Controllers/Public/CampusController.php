@@ -8,7 +8,7 @@ use App\Auth\CatAuth;
 use App\Core\Database;
 use App\Core\RateLimiter;
 use App\Core\Security;
-use App\Services\WarrantyService;
+use App\Services\CampusMailService;
 use PDO;
 
 final class CampusController
@@ -100,7 +100,7 @@ final class CampusController
             $ins->execute([(int)$event['id'],$catUser['id']??null,$first,$last,$email,$phone?:null,$company?:null,$role?:null,$notes?:null,$status]);
             $registrationId=(int)$pdo->lastInsertId();
             $pdo->commit();
-            WarrantyService::notifyInternal(
+            CampusMailService::notifyInternal(
                 'Nuova iscrizione Campus IDEMA #' . $registrationId,
                 [
                     'Iscrizione' => '#' . $registrationId,
@@ -108,7 +108,8 @@ final class CampusController
                     'Stato' => $status,
                     'Pannello' => 'https://www.rappresentanzeguanzirolisas.it/idemaclima/admin/campus/registrations',
                 ]
-            );
+            ,$email);
+            CampusMailService::notifyParticipant($email,'Iscrizione Campus IDEMA - '.(string)$event['title'],$status==='waitlist'?"La tua richiesta è stata registrata in lista d’attesa.\n\nEvento: ".$event['title']."\nData: ".date('d/m/Y H:i',strtotime((string)$event['starts_at'])):"La tua iscrizione è stata registrata correttamente.\n\nEvento: ".$event['title']."\nData: ".date('d/m/Y H:i',strtotime((string)$event['starts_at'])));
             self::render('campus/result',['title'=>'Iscrizione ricevuta','message'=>$status==='waitlist'?'Posti esauriti: sei stato inserito in lista d’attesa.':'Iscrizione registrata correttamente.']);
         }catch(\PDOException $e){
             if($pdo->inTransaction())$pdo->rollBack();

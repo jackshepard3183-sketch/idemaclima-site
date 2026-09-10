@@ -37,6 +37,7 @@ $checks = [
     [$indexView, "annullati", 'filtro eventi annullati'],
     [$actions, "campus.event.duplicate", 'duplicazione evento'],
     [$actions, "Content-Type:text/csv", 'export iscrizioni'],
+    [$actions, "Accesso Campus CAT approvato", 'notifica approvazione CAT'],
     [$migration, "password_changed_at", 'schema password tracking'],
     [$migration, "chk_events_dates", 'vincolo date evento'],
     [$completeMigration, "waitlist_enabled", 'schema lista attesa'],

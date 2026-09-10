@@ -9,10 +9,24 @@ use App\Core\Audit;
 use App\Core\Database;
 use App\Core\Security;
 use App\Core\Validator;
+use App\Services\CampusMailService;
 use PDO;
 
 final class CampusActionsController
 {
+    public static function updateCatStatus():void
+    {
+        AdminAuth::requireLogin();self::csrf();$id=Validator::int($_POST['id']??0);$action=(string)($_POST['action']??'');$pdo=Database::connection();
+        $q=$pdo->prepare('SELECT email,contact_first_name,company_name FROM cat_accounts WHERE id=?');$q->execute([$id]);$cat=$q->fetch(PDO::FETCH_ASSOC);if(!$cat){http_response_code(404);exit('Utente CAT non trovato');}
+        if($action==='approve')$sql='UPDATE cat_accounts SET active=1,verified_at=COALESCE(verified_at,NOW()),disabled_at=NULL WHERE id=?';
+        elseif($action==='disable')$sql='UPDATE cat_accounts SET active=0,disabled_at=NOW() WHERE id=?';
+        elseif($action==='reject')$sql='UPDATE cat_accounts SET active=0,verified_at=NULL,disabled_at=NOW() WHERE id=?';
+        else{http_response_code(422);exit('Azione non valida');}
+        $pdo->prepare($sql)->execute([$id]);Audit::log('cat_account.'.$action,'cat_account',$id,[]);
+        if(in_array($action,['approve','reject'],true))CampusMailService::notifyParticipant((string)$cat['email'],$action==='approve'?'Accesso Campus CAT approvato':'Richiesta Campus CAT non approvata',$action==='approve'?"Ciao ".$cat['contact_first_name'].",\n\nla richiesta per ".$cat['company_name']." è stata approvata. Puoi accedere all’Area CAT con la tua email e la password scelta in registrazione.":"Ciao ".$cat['contact_first_name'].",\n\nla richiesta di accesso all’Area CAT non è stata approvata. Per chiarimenti contatta IDEMA Clima.");
+        header('Location:/admin/cat/users');exit;
+    }
+
     public static function duplicate(): void
     {
         AdminAuth::requireLogin();self::csrf();$id=Validator::int($_POST['id']??0);$pdo=Database::connection();

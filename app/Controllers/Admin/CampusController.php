@@ -137,17 +137,6 @@ final class CampusController
         self::view('cat_users',['title'=>'Utenti CAT','users'=>$users]);
     }
 
-    public static function updateCatStatus():void
-    {
-        AdminAuth::requireLogin();self::csrf();$id=Validator::int($_POST['id']??0);$action=(string)($_POST['action']??'');$pdo=Database::connection();
-        if($action==='approve')$sql='UPDATE cat_accounts SET active=1,verified_at=COALESCE(verified_at,NOW()),disabled_at=NULL WHERE id=?';
-        elseif($action==='disable')$sql='UPDATE cat_accounts SET active=0,disabled_at=NOW() WHERE id=?';
-        elseif($action==='reject')$sql='UPDATE cat_accounts SET active=0,verified_at=NULL,disabled_at=NOW() WHERE id=?';
-        else{http_response_code(422);exit('Azione non valida');}
-        $s=$pdo->prepare($sql);$s->execute([$id]);if($s->rowCount()===0){$q=$pdo->prepare('SELECT 1 FROM cat_accounts WHERE id=?');$q->execute([$id]);if(!$q->fetchColumn()){http_response_code(404);exit('Utente CAT non trovato');}}
-        Audit::log('cat_account.'.$action,'cat_account',$id,[]);header('Location:/admin/cat/users');exit;
-    }
-
     public static function catUserForm(): void
     {
         AdminAuth::requireLogin();

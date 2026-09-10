@@ -8,6 +8,7 @@ use App\Auth\CatAuth;
 use App\Core\RateLimiter;
 use App\Core\Security;
 use App\Core\Database;
+use App\Services\CampusMailService;
 
 final class CatAuthController
 {
@@ -48,11 +49,12 @@ final class CatAuthController
         if($error!==null){self::render('campus/cat_register',['title'=>'Registrazione CAT','csrf'=>Security::csrfToken(),'error'=>$error,'success'=>false,'old'=>$old]);return;}
         try{
             $pdo=Database::connection();$s=$pdo->prepare('INSERT INTO cat_accounts(company_name,contact_first_name,contact_last_name,email,phone,username,password_hash,password_changed_at,active,verified_at,disabled_at) VALUES(?,?,?,?,?,?,?,NOW(),0,NULL,NULL)');
-            $s->execute([$old['company_name'],$old['first_name'],$old['last_name'],$old['email'],$old['phone'],$old['email'],password_hash($password,PASSWORD_DEFAULT)]);
+            $s->execute([$old['company_name'],$old['first_name'],$old['last_name'],$old['email'],$old['phone'],$old['email'],password_hash($password,PASSWORD_DEFAULT)]);$requestId=(int)$pdo->lastInsertId();
         }catch(\PDOException $e){
             if((string)$e->getCode()==='23000')$error='Esiste già una richiesta o un account associato a questa email.';else throw $e;
             self::render('campus/cat_register',['title'=>'Registrazione CAT','csrf'=>Security::csrfToken(),'error'=>$error,'success'=>false,'old'=>$old]);return;
         }
+        CampusMailService::notifyInternal('Nuovo CAT da approvare #'.$requestId,['Richiesta'=>'#'.$requestId,'Azienda / CAT'=>$old['company_name'],'Referente'=>$old['first_name'].' '.$old['last_name'],'Email'=>$old['email'],'Telefono'=>$old['phone'],'Pannello'=>'https://www.rappresentanzeguanzirolisas.it/idemaclima/admin/cat/users?status=pending'],$old['email']);
         self::render('campus/cat_register',['title'=>'Registrazione CAT','csrf'=>Security::csrfToken(),'error'=>null,'success'=>true,'old'=>[]]);
     }
 

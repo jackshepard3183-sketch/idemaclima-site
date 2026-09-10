@@ -133,7 +133,7 @@ $router->post('/admin/campus/registrations/update', [AdminCampusController::clas
 $router->get('/admin/cat/users', [AdminCampusController::class, 'catUsers']);
 $router->get('/admin/cat/users/form', [AdminCampusController::class, 'catUserForm']);
 $router->post('/admin/cat/users/save', [AdminCampusController::class, 'saveCatUser']);
-$router->post('/admin/cat/users/status', [AdminCampusController::class, 'updateCatStatus']);
+$router->post('/admin/cat/users/status', [AdminCampusActionsController::class, 'updateCatStatus']);
 $router->get('/admin/content/catalogs', [AdminCatalogsController::class, 'index']);
 $router->get('/admin/content/catalogs/form', [AdminCatalogsController::class, 'form']);
 $router->post('/admin/content/catalogs/save', [AdminCatalogsController::class, 'save']);
