@@ -44,7 +44,7 @@ final class CampusController
     public static function catEvent(string $slug): void
     {
         $catUser=CatAuth::requireLogin();
-        $stmt=Database::connection()->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="cat" AND e.published=1 AND e.cancelled=0 LIMIT 1');
+        $stmt=Database::connection()->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="cat" AND e.published=1 LIMIT 1');
         $stmt->execute([$slug]);
         $event=$stmt->fetch(PDO::FETCH_ASSOC);
         if(!$event){self::notFound();return;}

@@ -14,8 +14,10 @@ $completeMigration = file_get_contents($root . '/database/migrations/027_campus_
 $eventsMigration = file_get_contents($root . '/database/migrations/028_seed_campus_events.sql');
 $actions = file_get_contents($root . '/app/Controllers/Admin/CampusActionsController.php');
 $indexView = file_get_contents($root . '/app/Views/public/campus/index.php');
+$catIndexView = file_get_contents($root . '/app/Views/public/campus/cat_index.php');
+$registrationsView = file_get_contents($root . '/app/Views/admin/campus_registrations.php');
 
-foreach ([$admin,$public,$auth,$eventForm,$catForm,$eventView,$migration,$completeMigration,$eventsMigration,$actions,$indexView] as $content) {
+foreach ([$admin,$public,$auth,$eventForm,$catForm,$eventView,$migration,$completeMigration,$eventsMigration,$actions,$indexView,$catIndexView,$registrationsView] as $content) {
     if (!is_string($content) || $content === '') throw new RuntimeException('File Campus/CAT non leggibile.');
 }
 
@@ -37,6 +39,8 @@ $checks = [
     [$eventView, "Programma", 'programma evento'],
     [$indexView, "annullati", 'filtro eventi annullati'],
     [$actions, "campus.event.duplicate", 'duplicazione evento'],
+    [$actions, "Upload::duplicateManaged", 'copertina evento duplicata in modo indipendente'],
+    [$actions, "r.status=?", 'export iscrizioni filtrabile per stato'],
     [$actions, "Content-Type:text/csv", 'export iscrizioni'],
     [$actions, "Accesso Campus CAT approvato", 'notifica approvazione CAT'],
     [$migration, "password_changed_at", 'schema password tracking'],
@@ -46,6 +50,8 @@ $checks = [
     [$eventsMigration, "sistemi-pdc-idronici-vertemate-30-04-2026", 'ultimo evento Lovable'],
     [$eventsMigration, "ON DUPLICATE KEY UPDATE", 'import eventi idempotente'],
     [$eventsMigration, "registration_open = VALUES(registration_open)", 'iscrizioni storiche chiuse'],
+    [$catIndexView, "Storico attività", 'storico attività CAT separato'],
+    [$registrationsView, "Tutti gli stati", 'filtro stato iscrizioni'],
 ];
 
 foreach ($checks as [$haystack,$needle,$label]) {
