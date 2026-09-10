@@ -9,8 +9,10 @@ $migration = file_get_contents($root . '/database/migrations/020_catalog_documen
 $importer = file_get_contents($root . '/database/import/import_catalogs.php');
 $admin = file_get_contents($root . '/app/Controllers/Admin/CatalogsController.php');
 $publicView = file_get_contents($root . '/app/Views/public/content/catalogs.php');
+$adminView = file_get_contents($root . '/app/Views/admin/content_catalogs.php');
+$routes = file_get_contents($root . '/public/index.php');
 
-foreach ([$migration,$importer,$admin,$publicView] as $content) {
+foreach ([$migration,$importer,$admin,$adminView,$routes,$publicView] as $content) {
     if (!is_string($content) || $content === '') throw new RuntimeException('File cataloghi non leggibile.');
 }
 
@@ -56,6 +58,9 @@ $checks = [
     [$importer, 'beginTransaction()', 'import transazionale'],
     [$admin, 'Documento canonico non valido o non pubblicato', 'validazione documento admin'],
     [$admin, 'Audit::log', 'audit cataloghi'],
+    [$admin, 'catalog.duplicate', 'audit duplica catalogo'],
+    [$adminView, 'Duplica', 'UI duplica catalogo'],
+    [$routes, '/admin/content/catalogs/duplicate', 'route duplica catalogo'],
     [$publicView, "/documento/", 'download canonico pubblico'],
 ];
 foreach ($checks as [$haystack,$needle,$label]) {

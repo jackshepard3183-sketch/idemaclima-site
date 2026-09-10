@@ -129,6 +129,7 @@ $router->post('/admin/cat/users/status', [AdminCampusController::class, 'updateC
 $router->get('/admin/content/catalogs', [AdminCatalogsController::class, 'index']);
 $router->get('/admin/content/catalogs/form', [AdminCatalogsController::class, 'form']);
 $router->post('/admin/content/catalogs/save', [AdminCatalogsController::class, 'save']);
+$router->post('/admin/content/catalogs/duplicate', [AdminCatalogsController::class, 'duplicate']);
 $router->get('/admin/content/gallery', [AdminContentController::class, 'albums']);
 $router->get('/admin/content/gallery/form', [AdminContentController::class, 'albumForm']);
 $router->post('/admin/content/gallery/save', [AdminContentController::class, 'saveAlbum']);
@@ -144,6 +145,7 @@ $router->get('/admin/content/references', [AdminContentController::class, 'refer
 $router->get('/admin/content/references/form', [AdminContentController::class, 'referenceForm']);
 $router->post('/admin/content/references/save', [AdminContentController::class, 'saveReference']);
 $router->post('/admin/content/references/archive', [AdminContentController::class, 'archiveReference']);
+$router->post('/admin/content/references/duplicate', [AdminContentController::class, 'duplicateReference']);
 $router->post('/admin/content/references/image', [AdminContentController::class, 'addReferenceImage']);
 $router->post('/admin/content/references/image/update', [AdminContentController::class, 'updateReferenceImage']);
 $router->post('/admin/content/references/image/delete', [AdminContentController::class, 'deleteReferenceImage']);

@@ -142,6 +142,21 @@ final class CatalogsController
         exit;
     }
 
+    public static function duplicate(): void
+    {
+        AdminAuth::requireLogin(); self::csrf();
+        $pdo=Database::connection(); $id=Validator::int($_POST['id']??0);
+        $s=$pdo->prepare('SELECT * FROM catalogs WHERE id=? LIMIT 1');$s->execute([$id]);$row=$s->fetch(PDO::FETCH_ASSOC);
+        if(!$row){http_response_code(404);exit('Catalogo non trovato');}
+        $slug=self::slugify((string)$row['slug'].'-copia');$n=2;
+        while(true){$q=$pdo->prepare('SELECT 1 FROM catalogs WHERE slug=?');$q->execute([$slug]);if(!$q->fetchColumn())break;$slug=self::slugify((string)$row['slug'].'-copia-'.$n++);}
+        $cover=Upload::duplicateManaged($row['cover_image']??null);$pdf=!empty($row['document_id'])?null:Upload::duplicateManaged($row['pdf_path']??null);
+        $q=$pdo->prepare('INSERT INTO catalogs(title,slug,description,cover_image,document_id,pdf_path,document_year,published,sort_order) VALUES(?,?,?,?,?,?,?,?,?)');
+        $q->execute(['Copia di '.$row['title'],$slug,$row['description'],$cover,$row['document_id'],$pdf,$row['document_year'],0,(int)$row['sort_order']+1]);
+        $newId=(int)$pdo->lastInsertId();Audit::log('catalog.duplicate','catalog',$newId,['source_id'=>$id]);
+        header('Location:/admin/content/catalogs/form?id='.$newId);exit;
+    }
+
     private static function documents(PDO $pdo): array
     {
         return $pdo->query('SELECT id,title,filename FROM documents WHERE published=1 ORDER BY title,filename')->fetchAll(PDO::FETCH_ASSOC);

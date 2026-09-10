@@ -60,6 +60,19 @@ final class Upload
         if ($real !== false && str_starts_with($real, $root . DIRECTORY_SEPARATOR) && is_file($real)) @unlink($real);
     }
 
+    public static function duplicateManaged(?string $publicPath): ?string
+    {
+        if (!$publicPath || !str_starts_with($publicPath, '/uploads/')) return $publicPath;
+        $root = realpath(dirname(__DIR__, 2) . '/public/uploads');
+        $source = realpath(dirname(__DIR__, 2) . '/public' . $publicPath);
+        if ($root === false || $source === false || !str_starts_with($source, $root . DIRECTORY_SEPARATOR) || !is_file($source)) return null;
+        $info = pathinfo($source);
+        $copy = $info['dirname'] . '/' . $info['filename'] . '-copy-' . bin2hex(random_bytes(4)) . (isset($info['extension']) ? '.' . $info['extension'] : '');
+        if (!copy($source, $copy)) throw new RuntimeException('Impossibile duplicare il file associato.');
+        @chmod($copy, 0644);
+        return str_replace(dirname(__DIR__, 2) . '/public', '', $copy);
+    }
+
     private static function safeBucket(string $bucket): string
     {
         $bucket = strtolower(trim($bucket));
