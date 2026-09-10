@@ -36,8 +36,8 @@ final class CampusController
     public static function catIndex(): void
     {
         $catUser=CatAuth::requireLogin();
-        $stmt=Database::connection()->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked,(SELECT ur.status FROM event_registrations ur WHERE ur.event_id=e.id AND ur.cat_account_id=? ORDER BY ur.id DESC LIMIT 1) AS user_status FROM events e WHERE e.audience="cat" AND e.published=1 ORDER BY e.starts_at ASC');
-        $stmt->execute([(int)$catUser['id']]);
+        $stmt=Database::connection()->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked,(SELECT ur.status FROM event_registrations ur WHERE ur.event_id=e.id AND ur.cat_account_id=? ORDER BY ur.id DESC LIMIT 1) AS user_status,(SELECT ur.attended FROM event_registrations ur WHERE ur.event_id=e.id AND ur.cat_account_id=? ORDER BY ur.id DESC LIMIT 1) AS user_attended,(SELECT ur.certificate_number FROM event_registrations ur WHERE ur.event_id=e.id AND ur.cat_account_id=? ORDER BY ur.id DESC LIMIT 1) AS certificate_number FROM events e WHERE e.audience="cat" AND e.published=1 ORDER BY e.starts_at ASC');
+        $stmt->execute([(int)$catUser['id'],(int)$catUser['id'],(int)$catUser['id']]);
         self::render('campus/cat_index',['title'=>'Campus CAT','events'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'catUser'=>$catUser,'csrf'=>Security::csrfToken()]);
     }
 
