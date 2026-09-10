@@ -53,18 +53,22 @@ trait WarrantyCertificatePdfTrait
         };
 
         $flow = static function (float $left,float $right,float $y,float $size,array $segments,float $leading=12.5) use ($text): float {
-            $x=$left;
-            foreach ($segments as $segment) {
-                $bold=(bool)($segment['bold'] ?? false);
-                $words=preg_split('/\s+/',trim((string)($segment['text'] ?? ''))) ?: [];
-                foreach ($words as $word) {
-                    if ($word==='') continue;
-                    $width=(strlen(iconv('UTF-8','Windows-1252//TRANSLIT',$word) ?: $word)+1)*$size*($bold?0.54:0.49);
-                    if ($x+$width>$right && $x>$left) { $x=$left; $y-=$leading; }
-                    $text($x,$y,$size,$word,$bold);
-                    $x+=$width;
+            $plain=trim(implode(' ',array_map(static fn(array $segment): string => trim((string)($segment['text'] ?? '')),$segments)));
+            $words=preg_split('/\s+/', $plain) ?: [];
+            $line='';
+            foreach ($words as $word) {
+                if ($word==='') continue;
+                $candidate=$line===''?$word:$line.' '.$word;
+                $encoded=iconv('UTF-8','Windows-1252//TRANSLIT',$candidate) ?: $candidate;
+                if ($line!=='' && strlen($encoded)*$size*0.49>($right-$left)) {
+                    $text($left,$y,$size,$line);
+                    $y-=$leading;
+                    $line=$word;
+                } else {
+                    $line=$candidate;
                 }
             }
+            if ($line!=='') $text($left,$y,$size,$line);
             return $y;
         };
 
