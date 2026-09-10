@@ -26,7 +26,7 @@ final class CategoriesController
     {
         AdminAuth::requireLogin();
         $id = Validator::int($_GET['id'] ?? 0);
-        $category = ['id'=>0,'parent_id'=>null,'name'=>'','slug'=>'','sort_order'=>0,'published'=>1];
+        $category = ['id'=>0,'parent_id'=>null,'name'=>'','slug'=>'','sort_order'=>0,'content_status'=>'draft','published'=>0];
         if ($id) {
             $s=Database::connection()->prepare('SELECT * FROM product_categories WHERE id=?'); $s->execute([$id]);
             $category=$s->fetch(PDO::FETCH_ASSOC) ?: $category;
@@ -44,7 +44,9 @@ final class CategoriesController
         $name=Validator::requiredString($_POST['name']??'', 'Nome',160,$errors);
         $slug=Validator::slug((string)($_POST['slug']??'')); if($slug==='') $slug=Validator::slug($name);
         $parentId=Validator::int($_POST['parent_id']??0); $parentId=$parentId>0?$parentId:null;
-        $sort=Validator::int($_POST['sort_order']??0); $published=Validator::bool($_POST['published']??0);
+        $sort=Validator::int($_POST['sort_order']??0); $contentStatus=(string)($_POST['content_status']??'draft');
+        if(!in_array($contentStatus,['draft','published','hidden'],true))$errors[]='Stato contenuto non valido.';
+        $published=$contentStatus==='published'?1:0;
         $pdo=Database::connection();
 
         $parentError = DataIntegrity::categoryParentError($pdo, $id, $parentId);
@@ -54,15 +56,15 @@ final class CategoriesController
         $q->execute([$slug,$id]);
         if($q->fetch()) $errors[]='Slug già utilizzato.';
 
-        if($errors){ self::renderErrors($id,$parentId,$name,$slug,$sort,$published,$errors); return; }
-        if($id){$s=$pdo->prepare('UPDATE product_categories SET parent_id=?,name=?,slug=?,sort_order=?,published=? WHERE id=?');$s->execute([$parentId,$name,$slug,$sort,$published,$id]);$entityId=$id;$action='category.update';}
-        else{$s=$pdo->prepare('INSERT INTO product_categories(parent_id,name,slug,sort_order,published) VALUES(?,?,?,?,?)');$s->execute([$parentId,$name,$slug,$sort,$published]);$entityId=(int)$pdo->lastInsertId();$action='category.create';}
+        if($errors){ self::renderErrors($id,$parentId,$name,$slug,$sort,$contentStatus,$published,$errors); return; }
+        if($id){$s=$pdo->prepare('UPDATE product_categories SET parent_id=?,name=?,slug=?,sort_order=?,content_status=?,published=? WHERE id=?');$s->execute([$parentId,$name,$slug,$sort,$contentStatus,$published,$id]);$entityId=$id;$action='category.update';}
+        else{$s=$pdo->prepare('INSERT INTO product_categories(parent_id,name,slug,sort_order,content_status,published) VALUES(?,?,?,?,?,?)');$s->execute([$parentId,$name,$slug,$sort,$contentStatus,$published]);$entityId=(int)$pdo->lastInsertId();$action='category.create';}
         Audit::log($action,'product_category',$entityId,['name'=>$name,'parent_id'=>$parentId]); header('Location: /admin/categories'); exit;
     }
 
-    private static function renderErrors(int $id, ?int $parentId,string $name,string $slug,int $sort,int $published,array $errors):void
+    private static function renderErrors(int $id, ?int $parentId,string $name,string $slug,int $sort,string $contentStatus,int $published,array $errors):void
     {
-        $category=['id'=>$id,'parent_id'=>$parentId,'name'=>$name,'slug'=>$slug,'sort_order'=>$sort,'published'=>$published];
+        $category=['id'=>$id,'parent_id'=>$parentId,'name'=>$name,'slug'=>$slug,'sort_order'=>$sort,'content_status'=>$contentStatus,'published'=>$published];
         $categories=Database::connection()->query('SELECT id,name FROM product_categories ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC);
         $user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/category_form.php';
     }

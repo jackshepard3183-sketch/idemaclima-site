@@ -94,6 +94,8 @@ $router->post('/admin/categories/save', [CategoriesController::class, 'save']);
 $router->get('/admin/products', [ProductsController::class, 'index']);
 $router->get('/admin/products/form', [ProductsController::class, 'form']);
 $router->post('/admin/products/save', [ProductsController::class, 'save']);
+$router->post('/admin/products/duplicate', [ProductsController::class, 'duplicate']);
+$router->post('/admin/products/delete', [ProductsController::class, 'delete']);
 $router->post('/admin/models/save', [ProductsController::class, 'saveModel']);
 $router->get('/admin/documents', [DocumentsController::class, 'index']);
 $router->get('/admin/documents/form', [DocumentsController::class, 'form']);

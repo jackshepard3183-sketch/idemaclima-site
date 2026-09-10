@@ -24,7 +24,7 @@ $requirements=[
     [$documentCode,'migrate_documents.php --download','import DB deve richiedere prima la copia locale'],
     [$documentCode,"hash_file('sha256'",'import DB deve ricalcolare SHA-256'],
     [$migrationCode,'product_category_links','migration categorie multiple mancante'],
-    [$migrationCode,'UNIQUE KEY uq_product_category','vincolo univoco relazione categoria prodotto mancante'],
+    [$migrationCode,'UNIQUE KEY uq_product_secondary_category','vincolo univoco relazione categoria prodotto mancante'],
 ];
 foreach ($requirements as [$haystack,$needle,$message]) {
     if (!str_contains($haystack,$needle)) throw new RuntimeException($message);
