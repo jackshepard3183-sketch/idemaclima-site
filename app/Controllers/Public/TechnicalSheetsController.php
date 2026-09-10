@@ -255,8 +255,11 @@ final class TechnicalSheetsController
     {
         $normalized=[];
         foreach($groups as $name=>$documents){
+            // Imported document types use both singular and plural labels.
+            $name=trim((string)$name);
             $key=match(true){
                 stripos($name,'scheda')!==false=>'Schede tecniche',
+                stripos($name,'tabella')!==false=>'Tabelle rese',
                 stripos($name,'resa')!==false=>'Tabelle rese',
                 stripos($name,'detraz')!==false=>'Detrazioni fiscali',
                 stripos($name,'conto')!==false=>'Conto termico',
