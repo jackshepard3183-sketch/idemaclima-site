@@ -89,6 +89,7 @@ final class TechnicalSheetsController
              LEFT JOIN products p ON p.published = 1 AND (p.category_id = c.id OR p.id = pcl.product_id)
              WHERE c.parent_id = ? AND c.published = 1
              GROUP BY c.id
+             HAVING COUNT(DISTINCT p.id) > 0
              ORDER BY c.sort_order, c.name'
         );
         $stmt->execute([(int)$category['id']]);
@@ -174,6 +175,18 @@ final class TechnicalSheetsController
         $stmt->execute([(int)$product['id']]);
         $models = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        $stmt = $pdo->prepare('SELECT label, sort_order FROM product_features WHERE product_id = ? ORDER BY sort_order, id');
+        $stmt->execute([(int)$product['id']]);
+        $features = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $pdo->prepare('SELECT specification_key, specification_value, sort_order FROM product_specifications WHERE product_id = ? ORDER BY sort_order, id');
+        $stmt->execute([(int)$product['id']]);
+        $specifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $pdo->prepare('SELECT code, name, description, sort_order FROM product_accessories WHERE product_id = ? AND published = 1 ORDER BY sort_order, id');
+        $stmt->execute([(int)$product['id']]);
+        $accessories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         $stmt = $pdo->prepare(
             'SELECT d.id, d.title, d.filename, d.file_path, d.revision, d.document_year,
                     dt.name AS type_name, dt.slug AS type_slug, dl.model_id
@@ -196,6 +209,9 @@ final class TechnicalSheetsController
             'product' => $product,
             'secondaryCategories' => $secondaryCategories,
             'models' => $models,
+            'features' => $features,
+            'specifications' => $specifications,
+            'accessories' => $accessories,
             'documentGroups' => $grouped,
         ]);
     }
