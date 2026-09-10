@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__);
 $public = file_get_contents($root . '/app/Controllers/Public/WarrantyController.php');
-$admin = file_get_contents($root . '/app/Controllers/Admin/WarrantyController.php');
+$admin = implode("\n", array_map(
+    static fn (string $file): string => (string)file_get_contents($root . '/app/Controllers/Admin/' . $file),
+    ['WarrantyController.php', 'WarrantyRulesTrait.php', 'WarrantyCertificateActionsTrait.php', 'WarrantyCertificatePdfTrait.php']
+));
 $service = file_get_contents($root . '/app/Services/WarrantyService.php');
 $form = file_get_contents($root . '/app/Views/public/warranty/form.php');
 $migration = file_get_contents($root . '/database/migrations/018_warranty_hardening.sql');
