@@ -18,7 +18,7 @@ $checks = [
     [$public, 'La data fattura non può essere futura', 'blocco data futura'],
     [$public, 'invoice_required_snapshot', 'snapshot fattura'],
     [$public, 'fgas_required_snapshot', 'snapshot F-GAS'],
-    [$public, 'count($indoorSerials) > 20', 'limite seriali interni'],
+    [$public, 'min(3, $expectedIndoor)', 'limite seriali interni'],
     [$admin, 'Il modello selezionato non appartiene al prodotto indicato', 'coerenza prodotto/modello'],
     [$admin, 'warranty_certificates', 'vincolo certificato prima di issued'],
     [$admin, 'reviewed_at', 'timestamp revisione'],
