@@ -45,11 +45,11 @@ final class CampusActionsController
 
     public static function export(): void
     {
-        AdminAuth::requireLogin();$eventId=Validator::int($_GET['event_id']??0);$status=in_array($_GET['status']??'', ['registered','confirmed','waitlist','cancelled'],true)?(string)$_GET['status']:'';$where=[];$params=[];if($eventId){$where[]='e.id=?';$params[]=$eventId;}if($status!==''){$where[]='r.status=?';$params[]=$status;}$sql='SELECT e.title,e.audience,r.first_name,r.last_name,r.email,r.phone,r.company,r.role,r.status,r.attended,r.created_at FROM event_registrations r JOIN events e ON e.id=r.event_id'.($where?' WHERE '.implode(' AND ',$where):'').' ORDER BY e.starts_at,r.last_name,r.first_name';
+        AdminAuth::requireLogin();$eventId=Validator::int($_GET['event_id']??0);$catAccountId=Validator::int($_GET['cat_account_id']??0);$status=in_array($_GET['status']??'', ['registered','confirmed','waitlist','cancelled'],true)?(string)$_GET['status']:'';$where=[];$params=[];if($eventId){$where[]='e.id=?';$params[]=$eventId;}if($catAccountId){$where[]='r.cat_account_id=?';$params[]=$catAccountId;}if($status!==''){$where[]='r.status=?';$params[]=$status;}$sql='SELECT e.title,e.audience,r.first_name,r.last_name,r.email,r.phone,r.company,r.role,r.status,r.attended,r.certificate_number,r.certificate_issued_at,r.created_at FROM event_registrations r JOIN events e ON e.id=r.event_id'.($where?' WHERE '.implode(' AND ',$where):'').' ORDER BY e.starts_at,r.last_name,r.first_name';
         $stmt=Database::connection()->prepare($sql);$stmt->execute($params);
         header('Content-Type:text/csv;charset=UTF-8');header('Content-Disposition:attachment;filename="iscrizioni-campus-'.date('Y-m-d').'.csv"');echo "\xEF\xBB\xBF";
-        $out=fopen('php://output','wb');fputcsv($out,['Evento','Tipologia','Nome','Cognome','Email','Telefono','Azienda','Ruolo','Stato','Presenza','Data iscrizione'],';');
-        while($row=$stmt->fetch(PDO::FETCH_ASSOC)){fputcsv($out,[$row['title'],$row['audience']==='cat'?'CAT':'Aperto',$row['first_name'],$row['last_name'],$row['email'],$row['phone'],$row['company'],$row['role'],$row['status'],$row['attended']===null?'':((int)$row['attended']?'Presente':'Assente'),$row['created_at']],';');}
+        $out=fopen('php://output','wb');fputcsv($out,['Evento','Tipologia','Nome','Cognome','Email','Telefono','Azienda','Ruolo','Stato','Presenza','Attestato','Data attestato','Data iscrizione'],';');
+        while($row=$stmt->fetch(PDO::FETCH_ASSOC)){fputcsv($out,[$row['title'],$row['audience']==='cat'?'CAT':'Aperto',$row['first_name'],$row['last_name'],$row['email'],$row['phone'],$row['company'],$row['role'],$row['status'],$row['attended']===null?'':((int)$row['attended']?'Presente':'Assente'),$row['certificate_number']??'', $row['certificate_issued_at']??'', $row['created_at']],';');}
         fclose($out);exit;
     }
 
