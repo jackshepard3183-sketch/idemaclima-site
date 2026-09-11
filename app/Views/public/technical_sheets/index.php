@@ -1,4 +1,5 @@
 <?php
+// Le etichette descrivono soltanto famiglie che hanno prodotti pubblicati.
 $categoryMeta = [
  'linea-residenziale-r32'=>['Comfort domestico','Climatizzatori Mono Split, Multi Split e Multi PRO per la casa, con gas refrigerante R32 a basso impatto ambientale.','home',['Mono Split','Multi Split','Multi Pro','Accessori']],
  'linea-commerciale-r32'=>['Uffici & negozi','Soluzioni dedicate a uffici, negozi, ristoranti e ambienti professionali. Cassette, canalizzati, console e soffitto/pavimento.','building',['Unità esterne','Unità interne','Accessori']],

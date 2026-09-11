@@ -31,6 +31,7 @@ final class SeoController
             foreach ($pdo->query('SELECT slug,updated_at FROM product_categories WHERE published=1 AND parent_id IS NULL')->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $add('/schede-tecniche/' . $row['slug'], self::dateOnly($row['updated_at'] ?? null));
             }
+            // Le serie vuote restano amministrabili, ma non devono entrare nella sitemap pubblica.
             foreach ($pdo->query('SELECT c.slug,c.updated_at FROM product_categories c WHERE c.published=1 AND c.parent_id IS NOT NULL AND EXISTS (SELECT 1 FROM products p LEFT JOIN product_category_links pcl ON pcl.product_id=p.id WHERE p.published=1 AND (p.category_id=c.id OR pcl.category_id=c.id))')->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $add('/schede-tecniche/famiglia/' . $row['slug'], self::dateOnly($row['updated_at'] ?? null));
             }
