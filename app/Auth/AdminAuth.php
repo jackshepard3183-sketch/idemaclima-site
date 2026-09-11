@@ -133,7 +133,7 @@ final class AdminAuth
         if (!in_array($role, ['content','requests'], true)) return;
 
         $settings = ['/admin/settings','/admin/analytics','/admin/redirects','/admin/catalog-import','/admin/reference-import'];
-        $content = ['/admin/categories','/admin/products','/admin/documents','/admin/media','/admin/content','/admin/assistance','/admin/editorial','/admin/campus/events'];
+        $content = ['/admin/categories','/admin/products','/admin/documents','/admin/media','/admin/mono-split-import','/admin/content','/admin/assistance','/admin/editorial','/admin/campus/events'];
         $requests = ['/admin/contacts','/admin/incentives','/admin/warranties','/admin/campus/registrations','/admin/cat/users'];
         $blocked = $role === 'content' ? array_merge($settings, $requests) : array_merge($settings, $content);
         foreach ($blocked as $prefix) {
