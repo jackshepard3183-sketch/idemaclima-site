@@ -24,4 +24,4 @@
 </div>
 <button class="btn" type="submit">Invia richiesta</button>
 </form></div><aside class="contact-info"><span class="section-label">IDEMA CLIMA®</span><h2>Competenza e assistenza diretta.</h2><p>Descrivi la tua richiesta con il maggior numero possibile di dettagli. Il team potrà indirizzarla rapidamente alla funzione corretta.</p></aside></div></div></section>
-<script src="/idemaclima/public/warranty-locations-2026.js" defer></script>
+<script src="/idemaclima/public/locations-cascade.js" defer></script>

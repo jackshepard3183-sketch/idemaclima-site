@@ -24,4 +24,4 @@
     <div class="easy-actions"><button class="btn" type="submit">Invia richiesta</button></div>
   </form>
 </section>
-<script src="/idemaclima/public/warranty-locations-2026.js" defer></script>
+<script src="/idemaclima/public/locations-cascade.js" defer></script>

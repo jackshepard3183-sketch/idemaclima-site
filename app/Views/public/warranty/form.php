@@ -8,4 +8,4 @@
 <p class="privacy-policy-link"><a href="https://www.iubenda.com/privacy-policy/38092343/full-legal" target="_blank" rel="noopener">Consulta l’informativa privacy completa</a></p>
 <?php require __DIR__ . '/form_fields.php'; ?>
 <script src="/idemaclima/public/warranty-system.js" defer></script>
-<script src="/idemaclima/public/warranty-locations-2026.js" defer></script>
+<script src="/idemaclima/public/locations-cascade.js" defer></script>
