@@ -1,3 +1,4 @@
+-- Allinea gli eventi pubblici dello staging alla fonte IDEMA.
 DELETE FROM events WHERE slug = 'test-collaudo-flusso-dati-campus';
 
 INSERT INTO events
