@@ -59,12 +59,12 @@ body{font-feature-settings:"ss01" 1,"cv02" 1}.footer{margin-top:96px}.footer-mai
   <div class="wrap">
     <a class="brand" href="<?= $base ?>/" aria-label="IDEMA — Home"><img src="https://idemaclima.lovable.app/__l5e/assets-v1/7822a496-f1f2-47c2-917e-60feffd7c77e/logo-idema.svg" alt="IDEMA — Quality has a name"></a>
     <nav class="nav" aria-label="Navigazione principale">
-      <a href="https://www.idemaclima.it/wp-content/uploads/LISTINO_PREZZI_IDEMA_2026.pdf" target="_blank" rel="noopener">Listino prezzi</a><a href="<?= $base ?>/cataloghi">Cataloghi</a><a href="<?= $base ?>/galleria">Galleria</a><a href="<?= $base ?>/referenze">Referenze</a><a href="<?= $base ?>/schede-tecniche">Schede</a><a href="<?= $base ?>/assistenza">Assistenza</a><a href="<?= $base ?>/campus">Campus</a><a href="<?= $base ?>/garanzia">Garanzia</a><a href="<?= $base ?>/detrazioni-e-incentivi">Detrazioni</a>
+      <a href="https://www.idemaclima.it/wp-content/uploads/LISTINO_PREZZI_IDEMA_2026.pdf" target="_blank" rel="noopener">Listino prezzi</a><a href="<?= $base ?>/cataloghi">Cataloghi</a><a href="<?= $base ?>/galleria">Galleria</a><a href="<?= $base ?>/referenze">Referenze</a><a href="<?= $base ?>/schede-tecniche">Schede tecniche</a><a href="<?= $base ?>/assistenza">Assistenza</a><a href="<?= $base ?>/campus">Campus</a><a href="<?= $base ?>/garanzia">Garanzia</a><a href="<?= $base ?>/detrazioni-e-incentivi">Detrazioni</a>
     </nav>
     <a class="contact-btn" href="<?= $base ?>/contatti">Contatti</a>
     <button class="menu-toggle" type="button" aria-label="Apri menu" aria-expanded="false" aria-controls="mobile-nav">☰</button>
   </div>
   <nav class="mobile-nav" id="mobile-nav" aria-label="Navigazione mobile">
-    <a href="https://www.idemaclima.it/wp-content/uploads/LISTINO_PREZZI_IDEMA_2026.pdf" target="_blank" rel="noopener">Listino prezzi</a><a href="<?= $base ?>/cataloghi">Cataloghi</a><a href="<?= $base ?>/galleria">Galleria</a><a href="<?= $base ?>/referenze">Referenze</a><a href="<?= $base ?>/schede-tecniche">Schede</a><a href="<?= $base ?>/assistenza">Assistenza</a><a href="<?= $base ?>/campus">Campus</a><a href="<?= $base ?>/garanzia">Garanzia</a><a href="<?= $base ?>/detrazioni-e-incentivi">Detrazioni</a><a class="mobile-contact" href="<?= $base ?>/contatti">Contatti</a>
+    <a href="https://www.idemaclima.it/wp-content/uploads/LISTINO_PREZZI_IDEMA_2026.pdf" target="_blank" rel="noopener">Listino prezzi</a><a href="<?= $base ?>/cataloghi">Cataloghi</a><a href="<?= $base ?>/galleria">Galleria</a><a href="<?= $base ?>/referenze">Referenze</a><a href="<?= $base ?>/schede-tecniche">Schede tecniche</a><a href="<?= $base ?>/assistenza">Assistenza</a><a href="<?= $base ?>/campus">Campus</a><a href="<?= $base ?>/garanzia">Garanzia</a><a href="<?= $base ?>/detrazioni-e-incentivi">Detrazioni</a><a class="mobile-contact" href="<?= $base ?>/contatti">Contatti</a>
   </nav>
 </header>

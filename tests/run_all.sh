@@ -25,6 +25,7 @@ if command -v php >/dev/null 2>&1; then
   php "$ROOT/tests/staging_deploy_package_smoke.php"
   php "$ROOT/tests/admin_users_permissions_smoke.php"
   php "$ROOT/tests/responsive_foundation_smoke.php"
+  php "$ROOT/tests/visual_consistency_smoke.php"
 fi
 
 if [ -x "$ROOT/tests/import_datasheets_smoke.sh" ]; then
