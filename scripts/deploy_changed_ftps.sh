@@ -76,7 +76,6 @@ for required_path in \
   public/brand-assets/idema-clima.png.php \
   public/brand-assets/garanzia-10anni.png.php \
   public/brand-assets/garanzia-5anni.png.php \
-  app/Controllers/Admin/WarrantyCertificatePdfTrait.php \
   app/Controllers/Admin/WarrantyCertificateActionsTrait.php \
   app/Views/public/contact/form.php \
   app/Views/public/editorial/incentives_easytool_form.php \
