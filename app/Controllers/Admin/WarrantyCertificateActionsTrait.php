@@ -150,7 +150,7 @@ trait WarrantyCertificateActionsTrait
         $safeName = preg_replace('/[^A-Za-z0-9._-]/','_', (string)$row['file_name']) ?: 'Certificato-Garanzia-IDEMA.pdf';
         $attachment = chunk_split(base64_encode((string)file_get_contents($file)));
         $headers = [
-            'From: IDEMA Clima <no-reply@rappresentanzeguanzirolisas.it>',
+            'From: Idema Clima Srl <no-reply@rappresentanzeguanzirolisas.it>',
             'Reply-To: commerciale.tre@idemaclima.it',
             'MIME-Version: 1.0',
             'Content-Type: multipart/mixed; boundary="'.$boundary.'"',
