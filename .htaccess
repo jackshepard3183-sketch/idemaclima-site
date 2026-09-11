@@ -2,7 +2,7 @@ Options -Indexes
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
-# Never expose application internals from the project web root. The single
+# Never expose application internals or test fixtures from the project web root. The single
 # legacy frontend asset below remains reachable until it is moved to /public.
 RewriteRule ^app/(?!Views/public/technical_sheets/technical-interactions\.js$) - [F,L,NC]
 RewriteRule ^(?:config|database|deploy|scripts|storage|tests|vendor)(?:/|$) - [F,L,NC]
