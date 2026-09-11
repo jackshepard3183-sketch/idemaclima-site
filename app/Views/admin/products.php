@@ -9,6 +9,10 @@ foreach($products as $p){
     $series=(string)($p['category_group']?$p['category_name']:'Prodotti');
     $tree[$group][$series][]=$p;
 }
+$lineOrder=['Linea Residenziale R32'=>0,'Linea Commerciale R32'=>1,'Linea VRF'=>2,'Linea Idronica'=>3,'Altri Prodotti'=>4];
+$seriesOrder=['Mono Split'=>0,'Multi Split'=>1,'Multi Pro'=>2,'Accessori'=>3];
+uksort($tree,static fn($a,$b)=>($lineOrder[$a]??99)<=>($lineOrder[$b]??99));
+foreach($tree as &$seriesList)uksort($seriesList,static fn($a,$b)=>($seriesOrder[$a]??99)<=>($seriesOrder[$b]??99));unset($seriesList);
 require __DIR__.'/_layout_start.php';
 ?>
 <style>
@@ -27,5 +31,4 @@ require __DIR__.'/_layout_start.php';
 </div><div class="product-empty" id="product-empty">Nessun prodotto corrisponde alla ricerca.</div>
 <script nonce="<?= htmlspecialchars(\App\Core\Security::nonce(),ENT_QUOTES,'UTF-8') ?>">(()=>{const input=document.getElementById('product-filter'),tree=document.getElementById('product-tree'),empty=document.getElementById('product-empty');if(!input||!tree)return;tree.querySelectorAll('[data-jump]').forEach(()=>{});document.querySelectorAll('[data-jump]').forEach(button=>button.addEventListener('click',()=>{input.value=button.dataset.jump;input.dispatchEvent(new Event('input'));const visible=tree.querySelector('.product-group:not([hidden])');if(visible)visible.scrollIntoView({behavior:'smooth',block:'start'})}));input.addEventListener('input',()=>{const q=input.value.trim().toLowerCase();let total=0;tree.querySelectorAll('.product-series').forEach(series=>{let count=0;series.querySelectorAll('.product-row').forEach(row=>{const show=!q||row.dataset.search.includes(q);row.hidden=!show;if(show)count++});series.hidden=count===0;if(q&&count)series.open=true;total+=count});tree.querySelectorAll('.product-group').forEach(group=>{const show=[...group.querySelectorAll('.product-series')].some(series=>!series.hidden);group.hidden=!show;if(q&&show)group.open=true});empty.style.display=total?'none':'block'})})();</script>
 <?php require __DIR__.'/_layout_end.php'; ?>
-
 
