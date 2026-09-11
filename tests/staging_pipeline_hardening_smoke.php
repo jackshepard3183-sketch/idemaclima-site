@@ -14,7 +14,8 @@ $appConfig=file_get_contents($root.'/config/app.php');
 $pipeline=file_get_contents($root.'/database/import/SAFETY_PIPELINE.md');
 $warrantyMigration=file_get_contents($root.'/database/migrations/018_warranty_hardening.sql');
 $workflow=file_get_contents($root.'/.github/workflows/deploy-staging-aruba.yml');
-foreach([$downloader,$dbImporter,$preflight,$readiness,$migrate,$stagingPreflight,$bootstrap,$appConfig,$pipeline,$warrantyMigration,$workflow] as $content){if(!is_string($content)||$content==='')throw new RuntimeException('File staging pipeline non leggibile.');}
+$changedDeploy=file_get_contents($root.'/scripts/deploy_changed_ftps.sh');
+foreach([$downloader,$dbImporter,$preflight,$readiness,$migrate,$stagingPreflight,$bootstrap,$appConfig,$pipeline,$warrantyMigration,$workflow,$changedDeploy] as $content){if(!is_string($content)||$content==='')throw new RuntimeException('File staging pipeline non leggibile.');}
 $checks=[
     [$downloader,'Modalita --execute disabilitata','legacy execute disabilitato'],
     [$downloader,"'actual_filename'",'mapping filename deduplicato'],
@@ -46,8 +47,9 @@ $checks=[
     [$workflow,'cleanup_migration_wrapper','rimozione wrapper migration'],
     [$workflow,"--accept-legacy-baseline",'baseline legacy accettato solo dal wrapper interno'],
     [$workflow,"grep -q 'Completato. Migration applicate:'",'verifica esecuzione migration'],
-    [$workflow,'verify_deploy_integrity','verifica integrita con retry'],
-    [$workflow,'Integrity mismatch after retries','errore file remoto identificabile'],
+    [$workflow,'bash scripts/deploy_changed_ftps.sh','deploy incrementale collegato al workflow'],
+    [$changedDeploy,'transfer_and_verify','verifica integrita incrementale con retry'],
+    [$changedDeploy,'Integrity mismatch:','errore file remoto identificabile'],
 ];
 foreach($checks as [$haystack,$needle,$label]){if(!str_contains($haystack,$needle))throw new RuntimeException('Check staging pipeline fallito: '.$label);}
 if(str_contains($warrantyMigration,'idx_warranty_registrations_certificate'))throw new RuntimeException('Indice warranty certificate ridondante ancora presente.');
