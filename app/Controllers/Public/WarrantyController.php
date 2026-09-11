@@ -76,7 +76,7 @@ final class WarrantyController
             'address' => 255,
             'postal_code' => 12,
             'city' => 120,
-            'province' => 8,
+            'province' => 120,
             'region' => 120,
             'invoice_date' => 10,
             'outdoor_serial' => 160,
@@ -104,8 +104,8 @@ final class WarrantyController
         $postal = strtoupper(trim((string)($old['postal_code'] ?? '')));
         if (!preg_match('/^[A-Z0-9 -]{3,12}$/', $postal)) $errors[] = 'CAP non valido.';
 
-        $province = strtoupper(trim((string)($old['province'] ?? '')));
-        if (!preg_match('/^[A-Z]{2}$/', $province)) $errors[] = 'Provincia non valida: usa la sigla di 2 lettere.';
+        $province = trim((string)($old['province'] ?? ''));
+        if (!preg_match("/^[\\p{L}.' -]{2,120}$/u", $province)) $errors[] = 'Provincia non valida.';
 
         $invoice = DateTimeImmutable::createFromFormat('!Y-m-d', $invoiceDate);
         $dateErrors = DateTimeImmutable::getLastErrors();
