@@ -14,7 +14,7 @@ $checks=[
     [$controller,"preg_match('/^#[0-9a-f]{6}$/',\$value)",'validazione colori'],
     [$controller,"max(.85,min(1.10",'limiti tipografici'],
     [$controller,"JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR",'salvataggio JSON sicuro'],
-    [$controller,"AdminAuth::requireLogin()",'anteprima autenticata'],
+    [$controller,"AdminAuth::requireLogin()",'anteprima autenticata'],\n    [$controller,"\$_GET['years']",'selettore anteprima 5 o 10 anni'],
     [$pdf,'$layout=self::certificateLayout()','layout collegato al PDF'],
     [$pdf,"foreach(\$layout['order'] as \$block)",'ordine blocchi applicato'],
     [$view,'name="block_order"','ordine editor'],
