@@ -4,6 +4,7 @@
 @media(max-width:900px){.hero-video iframe{width:max(100vw,calc(100svh * 16 / 9));height:max(100svh,calc(100vw * 9 / 16))}.stats-strip{display:none}.section-head,.warranty-grid{grid-template-columns:1fr}.units-grid{grid-template-columns:repeat(2,1fr)}.pillar-grid,.line-grid{grid-template-columns:repeat(2,1fr)}.home-hero{height:calc(100svh - 72px);min-height:560px}.home-section,.manifesto,.home-cta{padding-top:72px;padding-bottom:72px}.company-grid{grid-template-columns:1fr;padding:48px;text-align:center}.pdf-symbol{margin:auto}.company-action{justify-content:center}}
 @media(max-width:620px){.units-grid,.pillar-grid,.line-grid{grid-template-columns:1fr}.home-hero h1{font-size:48px}.hero-video{opacity:.75}.year strong{font-size:46px}.warranty-home{padding:72px 0}.company-wrap{padding-top:56px;padding-bottom:56px}.company-grid{gap:30px;padding:38px 22px}.company-action .btn{width:100%;padding-inline:18px}}
 </style>
+<!-- Hero video: dimensioni e ritaglio cover allineati al progetto Lovable. -->
 <style>.home-hero{height:92vh}@media(max-width:900px){.home-hero{height:92vh;min-height:640px}.hero-video iframe{width:max(100vw,calc(100vh * 16 / 9));height:max(100vh,calc(100vw * 9 / 16))}}</style>
 <main>
 <section class="home-hero">
