@@ -8,13 +8,14 @@ $security = file_get_contents($root . '/app/Core/Security.php');
 $bootstrap = file_get_contents($root . '/scripts/bootstrap.php');
 $layout = file_get_contents($root . '/app/Views/public/_layout_start.php');
 $adminLayout = file_get_contents($root . '/app/Views/admin/_layout_start.php');
+$adminLayoutEnd = file_get_contents($root . '/app/Views/admin/_layout_end.php');
 $seoController = file_get_contents($root . '/app/Controllers/Public/SeoController.php');
 $redirects = file_get_contents($root . '/app/Controllers/Admin/RedirectsController.php');
 $system = file_get_contents($root . '/app/Controllers/Public/SystemController.php');
 $routes = file_get_contents($root . '/public/index.php');
 $analytics = file_get_contents($root . '/app/Controllers/Public/AnalyticsController.php');
 
-foreach ([$seo,$security,$bootstrap,$layout,$adminLayout,$seoController,$redirects,$system,$routes,$analytics] as $content) {
+foreach ([$seo,$security,$bootstrap,$layout,$adminLayout,$adminLayoutEnd,$seoController,$redirects,$system,$routes,$analytics] as $content) {
     if (!is_string($content) || $content === '') throw new RuntimeException('File SEO/sicurezza non leggibile.');
 }
 
@@ -34,7 +35,13 @@ $checks = [
     [$bootstrap, 'Security::requireAppKey()', 'bootstrap APP_KEY'],
     [$adminLayout, 'Security::adminNoStore()', 'layout admin no-store'],
     [$analytics, 'Security::clientIp()', 'IP da proxy affidabile'],
+    [$adminLayoutEnd, "removeAttribute('onsubmit')", 'conferme legacy compatibili con CSP'],
+    [$adminLayoutEnd, "document.addEventListener('submit'", 'conferme submit centralizzate'],
 ];
+
+if (str_contains($security, "script-src 'self' 'unsafe-inline'")) {
+    throw new RuntimeException('Check SEO/sicurezza fallito: unsafe-inline ancora presente negli script CSP');
+}
 
 foreach ($checks as [$haystack,$needle,$label]) {
     if (!str_contains($haystack, $needle)) throw new RuntimeException('Check SEO/sicurezza fallito: ' . $label);

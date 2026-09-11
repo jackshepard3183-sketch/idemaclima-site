@@ -21,7 +21,7 @@ final class Security
         header('Referrer-Policy: strict-origin-when-cross-origin');
         header('X-Frame-Options: SAMEORIGIN');
         header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()');
-        header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://cdn.iubenda.com; script-src 'self' 'unsafe-inline' 'nonce-{$nonce}' https://www.googletagmanager.com https://connect.facebook.net https://cdn.iubenda.com https://cs.iubenda.com; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://*.google-analytics.com https://www.facebook.com https://*.iubenda.com; font-src 'self' data:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://*.iubenda.com");
+        header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://cdn.iubenda.com; script-src 'self' 'nonce-{$nonce}' https://www.googletagmanager.com https://connect.facebook.net https://cdn.iubenda.com https://cs.iubenda.com; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://*.google-analytics.com https://www.facebook.com https://*.iubenda.com; font-src 'self' data:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://*.iubenda.com");
 
         $env = strtolower((string)($_ENV['APP_ENV'] ?? getenv('APP_ENV') ?: 'production'));
         if ($env === 'staging') {
