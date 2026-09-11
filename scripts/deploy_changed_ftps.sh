@@ -21,8 +21,9 @@ is_managed_path() {
 
 transfer_and_verify() {
   local relative="$1" source="$package_root/$1" remote="$remote_root/$1"
-  local remote_copy attempt
+  local remote_copy remote_tmp attempt
   remote_copy="$(mktemp)"
+  remote_tmp="${remote}.deploying.${GITHUB_RUN_ID:-$}.${RANDOM}"
   for attempt in 1 2 3; do
     rm -f "$remote_copy"
     lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
@@ -32,17 +33,31 @@ set ssl:check-hostname no
 set net:max-retries 2
 set net:timeout 20
 mkdir -p "$(dirname "$remote")"
-put "$source" -o "$remote"
-get "$remote" -o "$remote_copy"
+put "$source" -o "$remote_tmp"
+get "$remote_tmp" -o "$remote_copy"
 bye
 EOF
     if cmp -s "$source" "$remote_copy"; then
+      lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
+set ftp:ssl-allow yes
+set ssl:verify-certificate yes
+set ssl:check-hostname no
+mv "$remote_tmp" "$remote"
+bye
+EOF
       rm -f "$remote_copy"
-      echo "Verified $relative"
+      echo "Verified and published $relative"
       return 0
     fi
     echo "Integrity retry $attempt: $relative"
   done
+  lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF || true
+set ftp:ssl-allow yes
+set ssl:verify-certificate yes
+set ssl:check-hostname no
+rm -f "$remote_tmp"
+bye
+EOF
   rm -f "$remote_copy"
   echo "Integrity mismatch: $relative" >&2
   return 1
