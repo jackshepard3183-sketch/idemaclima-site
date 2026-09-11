@@ -19,7 +19,7 @@
       <label>Profilo *<select name="role" required><option value="">Seleziona</option><?php foreach(['Installatore','Progettista','Centro assistenza tecnica','Cliente privato','Altro'] as $role): ?><option value="<?=e($role)?>" <?=($old['role']??'')===$role?'selected':''?>><?=e($role)?></option><?php endforeach; ?></select></label>
       <label>Email *<input type="email" name="email" maxlength="190" autocomplete="email" required value="<?=e((string)($old['email']??''))?>"></label>
       <label>Conferma email *<input type="email" name="email_confirm" maxlength="190" required value="<?=e((string)($old['email_confirm']??''))?>"></label>
-      <label class="easy-full easy-check"><input type="checkbox" name="privacy" value="1" required <?=isset($old['privacy'])?'checked':''?>><span>Ho letto l’<a href="https://www.iubenda.com/privacy-policy/38092343" target="_blank" rel="noopener">informativa privacy</a> e acconsento al trattamento dei dati per la gestione della richiesta. *</span></label>
+      <label class="easy-full easy-check"><input type="checkbox" name="privacy" value="1" required <?=isset($old['privacy'])?'checked':''?>><span>Ho letto l’<a href="https://www.iubenda.com/privacy-policy/38092343/full-legal" target="_blank" rel="noopener">informativa privacy</a> e acconsento al trattamento dei dati per la gestione della richiesta. *</span></label>
     </div>
     <div class="easy-actions"><button class="btn" type="submit">Invia richiesta</button></div>
   </form>

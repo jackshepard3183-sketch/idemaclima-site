@@ -7,13 +7,16 @@ $contact = file_get_contents($root . '/app/Controllers/Public/ContactController.
 $analytics = file_get_contents($root . '/app/Controllers/Public/AnalyticsController.php');
 $admin = file_get_contents($root . '/app/Controllers/Admin/ContactsAnalyticsController.php');
 $layout = file_get_contents($root . '/app/Views/public/_layout_start.php');
+$footer = file_get_contents($root . '/app/Views/public/_layout_end.php');
 $form = file_get_contents($root . '/app/Views/public/contact/form.php');
+$warrantyForm = file_get_contents($root . '/app/Views/public/warranty/form.php');
+$incentivesForm = file_get_contents($root . '/app/Views/public/editorial/incentives_easytool_form.php');
 $upload = file_get_contents($root . '/app/Core/PrivateUpload.php');
 $migration = file_get_contents($root . '/database/migrations/022_contacts_analytics_privacy.sql');
 $mail = file_get_contents($root . '/app/Services/ContactMailService.php');
 $detail = file_get_contents($root . '/app/Views/admin/contact_detail.php');
 
-foreach ([$contact,$analytics,$admin,$layout,$form,$upload,$migration,$mail,$detail] as $content) {
+foreach ([$contact,$analytics,$admin,$layout,$footer,$form,$warrantyForm,$incentivesForm,$upload,$migration,$mail,$detail] as $content) {
     if (!is_string($content) || $content === '') throw new RuntimeException('File contatti/analytics non leggibile.');
 }
 
@@ -28,6 +31,10 @@ $checks = [
     [$admin, 'Cache-Control: private, no-store', 'no-store allegati'],
     [$admin, 'consent_required', 'consenso analytics amministrabile'],
     [$layout, 'class="_iub_cs_activate" data-iub-purposes="5"', 'gate consenso GA4 tramite iubenda'],
+    [$layout, 'acceptButtonDisplay:true', 'pulsante accetta iubenda'],
+    [$layout, 'rejectButtonDisplay:true', 'pulsante rifiuta iubenda'],
+    [$layout, 'customizeButtonDisplay:true', 'pulsante personalizza iubenda'],
+    [$footer, 'iubenda-cs-preferences-link', 'riapertura preferenze cookie'],
     [$form, 'company_website', 'honeypot nel form'],
     [$upload, 'allowOfficeZipDetection', 'riconoscimento OpenXML'],
     [$migration, 'internal_tracking_retention_days', 'schema retention'],
@@ -35,6 +42,8 @@ $checks = [
     [$mail, 'contacts_recipients', 'destinatari contatti configurabili'],
     [$mail, 'Reply-To:', 'risposta al mittente'],
     [$form, 'privacy-policy/38092343', 'privacy iubenda'],
+    [$warrantyForm, 'privacy-policy/38092343/full-legal', 'privacy iubenda garanzia'],
+    [$incentivesForm, 'privacy-policy/38092343/full-legal', 'privacy iubenda detrazioni'],
     [$detail, '/idemaclima/admin/contacts/update', 'azioni backend con base path'],
 ];
 
