@@ -152,15 +152,23 @@ jobs:
           ASSET_TOKEN="$(openssl rand -hex 32)"
           ASSET_FILE="idemaclima-assets-$(openssl rand -hex 24).php"
           export ASSET_TOKEN ASSET_FILE
-          php -r '
-            $token = getenv("ASSET_TOKEN");
-            $source = "<?php\\ndeclare(strict_types=1);\\n" .
-              "ini_set(\\x27display_errors\\x27, \\x271\\x27); error_reporting(E_ALL); set_time_limit(900);\\n" .
-              "if ((\\$_SERVER[\\x27REQUEST_METHOD\\x27] ?? \\x27\\x27) !== \\x27POST\\x27 || !hash_equals(\\x27" . $token . "\\x27, (string)(\\$_SERVER[\\x27HTTP_X_IDEMA_ASSET_TOKEN\\x27] ?? \\x27\\x27))) { http_response_code(404); exit; }\\n" .
-              "\\$argv = [__FILE__, \\x27--execute\\x27]; \\$_SERVER[\\x27argv\\x27] = \\$argv; \\$_SERVER[\\x27argc\\x27] = 2;\\n" .
-              "require __DIR__ . \\x27/scripts/mirror_remote_assets.php\\x27;\\n";
-            file_put_contents("/tmp/" . getenv("ASSET_FILE"), $source);
-          '
+          cat > "/tmp/$ASSET_FILE" <<'PHP'
+          <?php
+          declare(strict_types=1);
+          ini_set('display_errors', '1');
+          error_reporting(E_ALL);
+          set_time_limit(900);
+          if ((\$_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
+              || !hash_equals('__TOKEN__', (string)(\$_SERVER['HTTP_X_IDEMA_ASSET_TOKEN'] ?? ''))) {
+              http_response_code(404);
+              exit;
+          }
+          \$argv = [__FILE__, '--execute'];
+          \$_SERVER['argv'] = \$argv;
+          \$_SERVER['argc'] = 2;
+          require __DIR__ . '/scripts/mirror_remote_assets.php';
+          PHP
+          sed -i "s/__TOKEN__/$ASSET_TOKEN/" "/tmp/$ASSET_FILE"
           cleanup_asset_wrapper() {
             lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF || true
             set ftp:ssl-allow yes
