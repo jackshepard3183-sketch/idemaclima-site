@@ -1,4 +1,5 @@
 <?php
+// Mantiene il layout Lovable e completa unicamente i contenuti informativi.
 $slug=(string)($page['slug']??'detrazioni-e-incentivi');
 $requestPath=(string)(parse_url($_SERVER['REQUEST_URI']??'',PHP_URL_PATH)??'');
 $marker='/detrazioni-e-incentivi/';
