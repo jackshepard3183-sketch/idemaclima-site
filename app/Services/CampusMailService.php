@@ -24,7 +24,7 @@ final class CampusMailService
 
     private static function send(string $recipient,string $subject,string $body,?string $replyTo=null):bool
     {
-        $settings=self::settings();$from=filter_var($settings['sender_email']??'',FILTER_VALIDATE_EMAIL)?$settings['sender_email']:'no-reply@rappresentanzeguanzirolisas.it';$name=self::clean($settings['sender_name']??'IDEMA Clima');
+        $settings=self::settings();$from=filter_var($settings['sender_email']??'',FILTER_VALIDATE_EMAIL)?$settings['sender_email']:'no-reply@rappresentanzeguanzirolisas.it';$name=self::clean($settings['sender_name']??'Idema Clima Srl');if(in_array(strtolower($name),['idema clima','idema sito web'],true))$name='Idema Clima Srl';
         $headers=['From: '.$name.' <'.$from.'>','Content-Type: text/plain; charset=UTF-8','X-Mailer: IDEMA Website'];
         if($replyTo&&filter_var($replyTo,FILTER_VALIDATE_EMAIL))$headers[]='Reply-To: '.$replyTo;
         $subject=self::clean($subject);$encoded=function_exists('mb_encode_mimeheader')?mb_encode_mimeheader($subject,'UTF-8'):$subject;
