@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Database;
 use DateTimeImmutable;
 use PDO;
 
@@ -80,11 +81,15 @@ final class WarrantyService
 
     public static function notificationRecipient(): string
     {
-        return 'commerciale.tre@idemaclima.it';
+        return self::notificationRecipients()[0];
     }
 
     public static function notifyInternal(string $subject, array $rows, ?string $replyTo = null): bool
     {
+        $settings = self::emailSettings();
+        if (in_array(strtolower(trim((string)($settings['notifications_enabled'] ?? '1'))), ['0','false','no','off'], true)) {
+            return true;
+        }
         $subject = trim(preg_replace('/[\r\n]+/', ' ', $subject) ?? '');
         if ($subject === '') $subject = 'Nuova richiesta dal sito IDEMA';
 
@@ -96,8 +101,12 @@ final class WarrantyService
         }
         $body .= "\nAccedi al pannello amministrativo IDEMA per verificare i dati e gli eventuali allegati.\n";
 
+        $from = filter_var($settings['sender_email'] ?? '', FILTER_VALIDATE_EMAIL)
+            ? (string)$settings['sender_email']
+            : 'no-reply@rappresentanzeguanzirolisas.it';
+        $senderName = trim((string)preg_replace('/[\r\n]+/', ' ', (string)($settings['sender_name'] ?? 'IDEMA sito web')));
         $headers = [
-            'From: IDEMA sito web <no-reply@rappresentanzeguanzirolisas.it>',
+            'From: ' . $senderName . ' <' . $from . '>',
             'Content-Type: text/plain; charset=UTF-8',
             'X-Mailer: IDEMA Website',
         ];
@@ -108,9 +117,38 @@ final class WarrantyService
         $encodedSubject = function_exists('mb_encode_mimeheader')
             ? mb_encode_mimeheader($subject, 'UTF-8')
             : $subject;
-        $sent = @mail(self::notificationRecipient(), $encodedSubject, $body, implode("\r\n", $headers));
-        if (!$sent) error_log('IDEMA notification email not sent: ' . $subject);
+        $sent = true;
+        foreach (self::notificationRecipients($settings) as $recipient) {
+            if (!@mail($recipient, $encodedSubject, $body, implode("\r\n", $headers))) {
+                $sent = false;
+                error_log('IDEMA notification email not sent: ' . $subject);
+            }
+        }
         return $sent;
+    }
+
+    private static function notificationRecipients(?array $settings = null): array
+    {
+        $settings ??= self::emailSettings();
+        $values = preg_split('/[;,\s]+/', trim((string)($settings['warranty_recipients'] ?? ''))) ?: [];
+        $valid = array_values(array_unique(array_filter(
+            $values,
+            static fn(string $email): bool => (bool)filter_var($email, FILTER_VALIDATE_EMAIL)
+        )));
+        return $valid ?: ['commerciale.tre@idemaclima.it'];
+    }
+
+    private static function emailSettings(): array
+    {
+        static $settings = null;
+        if ($settings !== null) return $settings;
+        try {
+            $stmt = Database::connection()->query("SELECT setting_key,setting_value FROM site_settings WHERE setting_group='email'");
+            $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+        } catch (\Throwable) {
+            $settings = [];
+        }
+        return $settings;
     }
 
 }
