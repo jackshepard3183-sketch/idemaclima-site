@@ -13,6 +13,9 @@ $checks=[
  [$admin,'body.nav-open{overflow:hidden}','drawer senza scorrimento pagina'],
  [$admin,'-webkit-overflow-scrolling:touch','tabelle touch'],
  [$admin,'.toolbar .btnlink,.toolbar>.btn','azioni toolbar responsive'],
+ [$admin,'.formgrid,.inlineform{grid-template-columns:1fr!important}','form inline sovrascritti su mobile'],
+ [$admin,'.quick-list{grid-template-columns:1fr!important}','filtri rapidi su una colonna'],
+ [$admin,'.row-actions{flex-wrap:wrap','azioni tabella raggiungibili'],
  [$family,'white-space:nowrap','nomi modello uniti'],
 ];
 foreach($checks as [$haystack,$needle,$label])if(!str_contains($haystack,$needle))throw new RuntimeException('Check responsive fallito: '.$label);
