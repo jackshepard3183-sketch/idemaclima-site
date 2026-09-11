@@ -104,7 +104,8 @@ final class WarrantyService
         $from = filter_var($settings['sender_email'] ?? '', FILTER_VALIDATE_EMAIL)
             ? (string)$settings['sender_email']
             : 'no-reply@rappresentanzeguanzirolisas.it';
-        $senderName = trim((string)preg_replace('/[\r\n]+/', ' ', (string)($settings['sender_name'] ?? 'IDEMA sito web')));
+        $senderName = trim((string)preg_replace('/[\r\n]+/', ' ', (string)($settings['sender_name'] ?? 'Idema Clima Srl')));
+        if (in_array(strtolower($senderName), ['idema clima', 'idema sito web'], true)) $senderName = 'Idema Clima Srl';
         $headers = [
             'From: ' . $senderName . ' <' . $from . '>',
             'Content-Type: text/plain; charset=UTF-8',
