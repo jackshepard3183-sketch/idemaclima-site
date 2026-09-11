@@ -98,8 +98,14 @@ trait WarrantyCertificateLayoutTrait
     public static function certificateLayoutPreview(): void
     {
         AdminAuth::requireLogin();
-        $registration=['warranty_years'=>10,'extension_formula'=>'5 + 5','customer_first_name'=>'Alessandro Massimiliano','customer_last_name'=>'De Santis','fiscal_code'=>'DSSLSS80A01F205X','address'=>'Via della Progettazione Termotecnica, 125','city'=>'Vertemate con Minoprio','province'=>'CO','postal_code'=>'22070','region'=>'Lombardia','email'=>'cliente@example.it','phone'=>'+39 031 888 1637','product_type'=>'multi','outer_unit'=>'3MWTZ-70-R32','combination'=>'WTMC-25UI-BLK-R32 + 2x WTMC-35UI-BLK-R32','code'=>'WTMC-35UI-BLK-R32','invoice_date'=>'2026-08-31'];
-        $units=[['unit_type'=>'outdoor','serial_number'=>'UE-TEST-2026-00000001'],['unit_type'=>'indoor','serial_number'=>'UI-TEST-2026-00000001'],['unit_type'=>'indoor','serial_number'=>'UI-TEST-2026-00000002']];
+        $years=(int)($_GET['years']??10)===5?5:10;
+        if($years===5){
+            $registration=['warranty_years'=>5,'extension_formula'=>'2 + 3','customer_first_name'=>'Alessandro','customer_last_name'=>'De Santis','fiscal_code'=>'DSSLSS80A01F205X','address'=>'Via della Progettazione Termotecnica, 125','city'=>'Vertemate con Minoprio','province'=>'CO','postal_code'=>'22070','region'=>'Lombardia','email'=>'cliente@example.it','phone'=>'+39 031 888 1637','product_type'=>'mono','outer_unit'=>'','combination'=>'ISPT-12-R32','code'=>'ISPT-12-R32','invoice_date'=>'2026-09-11'];
+            $units=[['unit_type'=>'outdoor','serial_number'=>'UE-TEST-5ANNI-000001'],['unit_type'=>'indoor','serial_number'=>'UI-TEST-5ANNI-000001']];
+        }else{
+            $registration=['warranty_years'=>10,'extension_formula'=>'5 + 5','customer_first_name'=>'Alessandro Massimiliano','customer_last_name'=>'De Santis','fiscal_code'=>'DSSLSS80A01F205X','address'=>'Via della Progettazione Termotecnica, 125','city'=>'Vertemate con Minoprio','province'=>'CO','postal_code'=>'22070','region'=>'Lombardia','email'=>'cliente@example.it','phone'=>'+39 031 888 1637','product_type'=>'multi','outer_unit'=>'3MWTZ-70-R32','combination'=>'WTMC-25UI-BLK-R32 + 2x WTMC-35UI-BLK-R32','code'=>'WTMC-35UI-BLK-R32','invoice_date'=>'2026-08-31'];
+            $units=[['unit_type'=>'outdoor','serial_number'=>'UE-TEST-2026-00000001'],['unit_type'=>'indoor','serial_number'=>'UI-TEST-2026-00000001'],['unit_type'=>'indoor','serial_number'=>'UI-TEST-2026-00000002']];
+        }
         $pdf=self::buildCertificatePdf($registration,$units,'IDM-ANTEPRIMA');
         header('Content-Type: application/pdf'); header('Cache-Control: private, no-store'); header('Content-Disposition: inline; filename="Anteprima-Certificato-IDEMA.pdf"');
         echo $pdf;exit;
