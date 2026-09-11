@@ -112,6 +112,38 @@ final class AdminAuth
         }
     }
 
+    public static function requireManager(): array
+    {
+        $user = self::user();
+        if ($user === null) {
+            header('Location: /idemaclima/admin/login', true, 302);
+            exit;
+        }
+        if (in_array(strtolower((string)($user['role'] ?? '')), ['content','requests'], true)) {
+            http_response_code(403);
+            exit('Accesso riservato agli amministratori completi.');
+        }
+        return $user;
+    }
+
+    public static function authorizeRequest(string $path): void
+    {
+        if (!self::check() || !str_starts_with($path, '/admin/')) return;
+        $role = strtolower((string)(self::user()['role'] ?? ''));
+        if (!in_array($role, ['content','requests'], true)) return;
+
+        $settings = ['/admin/settings','/admin/analytics','/admin/redirects','/admin/catalog-import','/admin/reference-import'];
+        $content = ['/admin/categories','/admin/products','/admin/documents','/admin/content','/admin/assistance','/admin/editorial','/admin/campus/events'];
+        $requests = ['/admin/contacts','/admin/incentives','/admin/warranties','/admin/campus/registrations','/admin/cat/users'];
+        $blocked = $role === 'content' ? array_merge($settings, $requests) : array_merge($settings, $content);
+        foreach ($blocked as $prefix) {
+            if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
+                http_response_code(403);
+                exit('Non disponi dei permessi necessari per questa sezione.');
+            }
+        }
+    }
+
     public static function logout(): void
     {
         unset($_SESSION[self::SESSION_KEY]);

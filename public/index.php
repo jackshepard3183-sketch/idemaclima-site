@@ -36,6 +36,7 @@ use App\Controllers\Public\EditorialController;
 use App\Controllers\Public\IncentivesController;
 use App\Controllers\Public\SeoController;
 use App\Core\Router;
+use App\Auth\AdminAuth;
 
 $router = new Router();
 $router->get('/', static function (): void {
@@ -183,6 +184,8 @@ $router->post('/admin/settings/general/save', static fn() => AdminSettingsContro
 $router->get('/admin/settings/email', static fn() => AdminSettingsController::page('email'));
 $router->post('/admin/settings/email/save', static fn() => AdminSettingsController::save('email'));
 $router->get('/admin/settings/users', [AdminSettingsController::class, 'users']);
+$router->get('/admin/settings/users/form', [AdminSettingsController::class, 'userForm']);
+$router->post('/admin/settings/users/save', [AdminSettingsController::class, 'saveUser']);
 $router->get('/admin/settings/site', static fn() => AdminSettingsController::page('site'));
 $router->post('/admin/settings/site/save', static fn() => AdminSettingsController::save('site'));
 $router->get('/admin/settings/system', [AdminSettingsController::class, 'system']);
@@ -191,4 +194,7 @@ $router->get('/admin/redirects/form', [RedirectsController::class, 'form']);
 $router->post('/admin/redirects/save', [RedirectsController::class, 'save']);
 
 $router->setNotFoundHandler([SystemController::class, 'notFound']);
+$requestPath=(string)(parse_url($_SERVER['REQUEST_URI']??'/',PHP_URL_PATH)?:'/');
+if(str_starts_with($requestPath,'/idemaclima/'))$requestPath=substr($requestPath,strlen('/idemaclima'))?:'/';
+AdminAuth::authorizeRequest($requestPath);
 $router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $_SERVER['REQUEST_URI'] ?? '/');

@@ -40,13 +40,32 @@ final class SettingsController
     }
     public static function users():void
     {
-        AdminAuth::requireLogin();$rows=Database::connection()->query('SELECT id,first_name,last_name,email,username,role,active,last_login_at FROM admin_users ORDER BY last_name,first_name')->fetchAll(PDO::FETCH_ASSOC);
-        self::view('settings_users',['title'=>'Utenti e accessi','rows'=>$rows]);
+        AdminAuth::requireManager();$rows=Database::connection()->query('SELECT id,first_name,last_name,email,username,role,active,last_login_at FROM admin_users ORDER BY last_name,first_name')->fetchAll(PDO::FETCH_ASSOC);
+        self::view('settings_users',['title'=>'Utenti e accessi','rows'=>$rows,'saved'=>isset($_GET['saved'])]);
+    }
+    public static function userForm():void
+    {
+        AdminAuth::requireManager();$id=max(0,(int)($_GET['id']??0));
+        $row=['id'=>0,'first_name'=>'','last_name'=>'','email'=>'','username'=>'','role'=>'content','active'=>1];
+        if($id){$s=Database::connection()->prepare('SELECT id,first_name,last_name,email,username,role,active FROM admin_users WHERE id=?');$s->execute([$id]);$row=$s->fetch(PDO::FETCH_ASSOC)?:null;if(!$row){http_response_code(404);exit('Utente non trovato');}}
+        self::view('settings_user_form',['title'=>$id?'Modifica utente':'Nuovo utente','row'=>$row]);
+    }
+    public static function saveUser():void
+    {
+        $manager=AdminAuth::requireManager();self::csrf();$pdo=Database::connection();$id=max(0,(int)($_POST['id']??0));$errors=[];
+        $first=trim((string)($_POST['first_name']??''));$last=trim((string)($_POST['last_name']??''));$email=strtolower(trim((string)($_POST['email']??'')));$username=trim((string)($_POST['username']??''));$password=(string)($_POST['password']??'');$role=(string)($_POST['role']??'content');$active=isset($_POST['active'])?1:0;
+        if($first===''||mb_strlen($first)>120)$errors[]='Nome obbligatorio o troppo lungo.';if($last===''||mb_strlen($last)>120)$errors[]='Cognome obbligatorio o troppo lungo.';if(!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>190)$errors[]='Email non valida.';if(!preg_match('/^[A-Za-z0-9._-]{3,80}$/',$username))$errors[]='Username non valido.';if(!in_array($role,['admin','content','requests'],true))$errors[]='Ruolo non valido.';if(($id===0&&strlen($password)<12)||($password!==''&&strlen($password)<12))$errors[]='La password deve contenere almeno 12 caratteri.';if($id===(int)$manager['id']&&!$active)$errors[]='Non puoi disabilitare il tuo account.';
+        if($errors){http_response_code(422);exit(htmlspecialchars(implode(' ',$errors),ENT_QUOTES,'UTF-8'));}
+        try{
+            if($id){$sql='UPDATE admin_users SET first_name=?,last_name=?,email=?,username=?,role=?,active=?'.($password!==''?',password_hash=?':'').' WHERE id=?';$params=[$first,$last,$email,$username,$role,$active];if($password!=='')$params[]=password_hash($password,PASSWORD_DEFAULT);$params[]=$id;$pdo->prepare($sql)->execute($params);}
+            else{$pdo->prepare('INSERT INTO admin_users(first_name,last_name,email,username,password_hash,role,active) VALUES(?,?,?,?,?,?,?)')->execute([$first,$last,$email,$username,password_hash($password,PASSWORD_DEFAULT),$role,$active]);$id=(int)$pdo->lastInsertId();}
+            Audit::log('admin_user.save','admin_user',$id,['role'=>$role,'active'=>$active]);
+        }catch(\PDOException $e){if((string)$e->getCode()==='23000'){http_response_code(422);exit('Email o username già utilizzato.');}throw $e;}
+        header('Location:/idemaclima/admin/settings/users?saved=1');exit;
     }
     public static function system():void
     {
-        AdminAuth::requireLogin();$user=AdminAuth::user();
-        if(in_array((string)($user['role']??''),['content','requests'],true)){http_response_code(403);exit('Accesso riservato agli amministratori tecnici.');}
+        $user=AdminAuth::requireManager();
         $pdo=Database::connection();$databaseVersion='Non disponibile';
         try{$databaseVersion=(string)$pdo->query('SELECT VERSION()')->fetchColumn();}catch(\Throwable){}
         $upload=dirname(__DIR__,3).'/public/uploads';$private=dirname(__DIR__,3).'/storage/private';
