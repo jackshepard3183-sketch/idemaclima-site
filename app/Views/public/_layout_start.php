@@ -22,6 +22,9 @@ $base = '/idemaclima';
 <meta name="description" content="<?= e((string)$seo['description']) ?>">
 <meta name="robots" content="<?= e((string)$seo['robots']) ?>">
 <link rel="canonical" href="<?= e((string)$seo['canonical']) ?>">
+<link rel="icon" type="image/png" sizes="96x96" href="/idemaclima/public/brand-assets/idema-logo-96.png.php">
+<link rel="icon" type="image/png" sizes="512x512" href="/idemaclima/public/brand-assets/idema-logo-512.png.php">
+<link rel="apple-touch-icon" sizes="180x180" href="/idemaclima/public/brand-assets/idema-logo-180.png.php">
 <meta property="og:title" content="<?= e((string)$seo['title']) ?>">
 <meta property="og:description" content="<?= e((string)$seo['description']) ?>">
 <meta property="og:url" content="<?= e((string)$seo['canonical']) ?>">
@@ -57,7 +60,7 @@ body{font-feature-settings:"ss01" 1,"cv02" 1}.footer{margin-top:96px}.footer-mai
 <body>
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="<?= $base ?>/" aria-label="IDEMA — Home"><img src="https://idemaclima.lovable.app/__l5e/assets-v1/7822a496-f1f2-47c2-917e-60feffd7c77e/logo-idema.svg" alt="IDEMA — Quality has a name"></a>
+    <a class="brand" href="<?= $base ?>/" aria-label="IDEMA — Home"><img src="/idemaclima/public/brand-assets/idema-logo-nero.png.php" alt="IDEMA — Quality has a name"></a>
     <nav class="nav" aria-label="Navigazione principale">
       <a href="https://www.idemaclima.it/wp-content/uploads/LISTINO_PREZZI_IDEMA_2026.pdf" target="_blank" rel="noopener">Listino prezzi</a><a href="<?= $base ?>/cataloghi">Cataloghi</a><a href="<?= $base ?>/galleria">Galleria</a><a href="<?= $base ?>/referenze">Referenze</a><a href="<?= $base ?>/schede-tecniche">Schede tecniche</a><a href="<?= $base ?>/assistenza">Assistenza</a><a href="<?= $base ?>/campus">Campus</a><a href="<?= $base ?>/garanzia">Garanzia</a><a href="<?= $base ?>/detrazioni-e-incentivi">Detrazioni</a>
     </nav>
