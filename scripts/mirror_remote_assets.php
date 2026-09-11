@@ -114,6 +114,14 @@ foreach ($columns as $table => $tableColumns) {
     }
 }
 
+$renderedSources = dirname(__DIR__) . '/database/import/rendered_asset_sources.txt';
+if (is_file($renderedSources)) {
+    foreach (file($renderedSources, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $url) {
+        $url = trim($url);
+        if (preg_match($allowedUrlPattern, $url, $match) && $match[0] === $url) $references[$url] = true;
+    }
+}
+
 $stats = ['references' => count($references), 'downloaded' => 0, 'existing' => 0, 'updated_fields' => 0, 'errors' => 0];
 $replacements = [];
 $errors = [];
