@@ -144,7 +144,7 @@ foreach (array_keys($references) as $url) {
     }
 }
 
-if ($execute && $errors === []) {
+if ($execute && $replacements !== []) {
     $pdo->beginTransaction();
     try {
         foreach ($columns as $table => $tableColumns) {
@@ -180,4 +180,5 @@ file_put_contents($reportDir . '/remote-assets-migration-latest.json', json_enco
 echo ($execute ? 'EXECUTE' : 'DRY-RUN') . " remote assets migration\n";
 foreach ($stats as $key => $value) echo str_pad($key, 20) . ': ' . $value . "\n";
 if (!$execute) echo "Nessuna scrittura eseguita. Usa --execute solo sullo staging.\n";
-if ($errors !== []) exit(2);
+foreach ($errors as $error) echo 'ERRORE ' . $error['url'] . ': ' . $error['error'] . "\n";
+if ($errors !== []) echo "Migrazione parziale: i collegamenti scaricabili sono stati localizzati; i residui restano esterni.\n";
