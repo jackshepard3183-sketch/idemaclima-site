@@ -30,7 +30,7 @@ $allowedColumns = [
     'site_settings' => ['value'],
 ];
 
-$allowedUrlPattern = '#https://(?:www\.)?idemaclima\.it/wp-content/uploads/[^\s\"\'<>\\)]+|https://idemaclima\.lovable\.app/__l5e/assets-v1/[^\s\"\'<>\\)]+#i';
+$allowedUrlPattern = "~https://(?:www\\.)?idemaclima\\.it/wp-content/uploads/[^\\s\\\"'<>]+|https://idemaclima\\.lovable\\.app/__l5e/assets-v1/[^\\s\\\"'<>]+~i";
 $allowedExtensions = ['pdf','png','jpg','jpeg','webp','gif','svg'];
 $targetRoot = dirname(__DIR__) . '/public/uploads/mirrored';
 
