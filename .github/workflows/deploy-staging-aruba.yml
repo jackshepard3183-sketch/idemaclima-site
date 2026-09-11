@@ -158,14 +158,14 @@ jobs:
           ini_set('display_errors', '1');
           error_reporting(E_ALL);
           set_time_limit(900);
-          if ((\$_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
-              || !hash_equals('__TOKEN__', (string)(\$_SERVER['HTTP_X_IDEMA_ASSET_TOKEN'] ?? ''))) {
+          if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
+              || !hash_equals('__TOKEN__', (string)($_SERVER['HTTP_X_IDEMA_ASSET_TOKEN'] ?? ''))) {
               http_response_code(404);
               exit;
           }
-          \$argv = [__FILE__, '--execute'];
-          \$_SERVER['argv'] = \$argv;
-          \$_SERVER['argc'] = 2;
+          $argv = [__FILE__, '--execute'];
+          $_SERVER['argv'] = $argv;
+          $_SERVER['argc'] = 2;
           require __DIR__ . '/scripts/mirror_remote_assets.php';
           PHP
           sed -i "s/__TOKEN__/$ASSET_TOKEN/" "/tmp/$ASSET_FILE"
@@ -188,6 +188,7 @@ jobs:
           bye
           EOF
           HTTP_CODE="$(curl --silent --show-error --max-time 900 --request POST --header "X-IDEMA-ASSET-TOKEN: $ASSET_TOKEN" --output /tmp/idemaclima-assets-output.txt --write-out '%{http_code}' "https://www.rappresentanzeguanzirolisas.it/idemaclima/$ASSET_FILE")"
+          echo "Asset migration HTTP $HTTP_CODE"
           cat /tmp/idemaclima-assets-output.txt
           test "$HTTP_CODE" = "200"
           grep -q 'EXECUTE remote assets migration' /tmp/idemaclima-assets-output.txt
