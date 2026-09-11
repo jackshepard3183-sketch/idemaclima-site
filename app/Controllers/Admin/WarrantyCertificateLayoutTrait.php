@@ -18,8 +18,8 @@ trait WarrantyCertificateLayoutTrait
             'accent'=>'#7dbf0a','badge'=>'#ff8f00','panel'=>'#f7f9fb','text'=>'#141a26','muted'=>'#627085',
             'title'=>'Certificato ufficiale','eyebrow'=>'Estensione di garanzia','coverage'=>'Copertura {anni} anni totali {formula}',
             'customer_title'=>'Dati intestatario','product_title'=>'Prodotto registrato','serials_title'=>'Numeri di serie',
-            'legal_text'=>'IDEMA Clima S.r.l. attesta l’estensione della garanzia per {sistema}, relativa alla combinazione {combinazione}, alle condizioni riportate nel documento di garanzia di riferimento pubblicato sul sito www.idemaclima.it nella sezione garanzia.',
-            'footer_company'=>'IDEMA CLIMA® S.r.l. - P. IVA 03293510966',
+            'legal_text'=>'Idema Clima S.r.l. attesta l’estensione della garanzia per {sistema}, relativa alla combinazione {combinazione}, alle condizioni riportate nel documento di garanzia di riferimento pubblicato sul sito www.idemaclima.it nella sezione garanzia.',
+            'footer_company'=>'Idema Clima S.r.l. - P. IVA 03293510966',
             'footer_address'=>'S.S. dei Giovi, 31 - 22070 Vertemate con Minoprio (CO) - www.idemaclima.it',
             'font_scale'=>1.0,'density'=>1.0,'show_logo'=>1,'show_badge'=>1,
             'blocks'=>['customer'=>1,'product'=>1,'legal'=>1],'order'=>['customer','product','legal'],
@@ -35,6 +35,9 @@ trait WarrantyCertificateLayoutTrait
             $saved=is_string($raw)?json_decode($raw,true):null;
             if(!is_array($saved)) return $defaults;
             $layout=array_replace($defaults,array_intersect_key($saved,$defaults));
+            foreach (['legal_text','footer_company'] as $companyField) {
+                $layout[$companyField]=str_replace(['IDEMA Clima S.r.l.','IDEMA CLIMA® S.r.l.'], 'Idema Clima S.r.l.', (string)$layout[$companyField]);
+            }
             $layout['blocks']=array_replace($defaults['blocks'],is_array($saved['blocks']??null)?$saved['blocks']:[]);
             $order=is_array($saved['order']??null)?array_values(array_intersect($saved['order'],['customer','product','legal'])):[];
             $layout['order']=array_values(array_unique(array_merge($order,$defaults['order'])));
