@@ -146,7 +146,7 @@ trait WarrantyCertificateActionsTrait
         $number = trim((string)$row['certificate_number']);
         $subject = 'Certificato di estensione garanzia IDEMA - '.$number;
         $customer = trim((string)$row['customer_first_name'].' '.(string)$row['customer_last_name']);
-        $body = "Gentile {$customer},\r\n\r\nin allegato trova il certificato di estensione della garanzia IDEMA relativo alla registrazione verificata dal nostro reparto assistenza.\r\n\r\nCordiali saluti\r\nIDEMA Clima S.r.l.";
+        $body = "Gentile {$customer},\r\n\r\nin allegato trova il certificato di estensione della garanzia IDEMA relativo alla registrazione verificata dal nostro reparto assistenza.\r\n\r\nCordiali saluti\r\nIdema Clima S.r.l.";
         $safeName = preg_replace('/[^A-Za-z0-9._-]/','_', (string)$row['file_name']) ?: 'Certificato-Garanzia-IDEMA.pdf';
         $attachment = chunk_split(base64_encode((string)file_get_contents($file)));
         $headers = [
