@@ -18,7 +18,7 @@ final class ProductsController
     public static function index(): void
     {
         AdminAuth::requireLogin();
-        $sql = 'SELECT p.id,p.name,p.slug,p.product_role,p.refrigerant,p.status,p.content_status,p.published,p.sort_order,c.name category_name,parent.name category_group,COUNT(DISTINCT m.id) model_count,COUNT(DISTINCT pcl.category_id) secondary_category_count FROM products p JOIN product_categories c ON c.id=p.category_id LEFT JOIN product_categories parent ON parent.id=c.parent_id LEFT JOIN product_models m ON m.product_id=p.id LEFT JOIN product_category_links pcl ON pcl.product_id=p.id GROUP BY p.id,p.name,p.slug,p.product_role,p.refrigerant,p.status,p.content_status,p.published,p.sort_order,c.name,parent.name,parent.sort_order ORDER BY COALESCE(parent.sort_order,c.sort_order),COALESCE(parent.name,c.name),c.sort_order,c.name,p.sort_order,p.name';
+        $sql = 'SELECT p.id,p.name,p.slug,p.product_role,p.refrigerant,p.status,p.content_status,p.published,p.sort_order,c.name category_name,parent.name category_group,COUNT(DISTINCT m.id) model_count,COUNT(DISTINCT pcl.category_id) secondary_category_count,COUNT(DISTINCT dl.document_id) document_count FROM products p JOIN product_categories c ON c.id=p.category_id LEFT JOIN product_categories parent ON parent.id=c.parent_id LEFT JOIN product_models m ON m.product_id=p.id LEFT JOIN product_category_links pcl ON pcl.product_id=p.id LEFT JOIN document_links dl ON dl.product_id=p.id GROUP BY p.id,p.name,p.slug,p.product_role,p.refrigerant,p.status,p.content_status,p.published,p.sort_order,c.name,parent.name,parent.sort_order ORDER BY COALESCE(parent.sort_order,c.sort_order),COALESCE(parent.name,c.name),c.sort_order,c.name,p.sort_order,p.name';
         $products = Database::connection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
@@ -38,7 +38,7 @@ final class ProductsController
         }
         $categories = $pdo->query('SELECT id,name FROM product_categories ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC);
         $secondaryCategoryIds = [];
-        $models = [];
+        $models = []; $documents = [];
         $features = $specifications = $accessories = [];
         if ($id) {
             $s = $pdo->prepare('SELECT category_id FROM product_category_links WHERE product_id=? ORDER BY category_id');
@@ -53,6 +53,7 @@ final class ProductsController
                 $s->execute([$id]);
                 ${$key} = $s->fetchAll(PDO::FETCH_ASSOC);
             }
+            $s=$pdo->prepare('SELECT d.id,d.title,d.filename,dt.name type_name FROM document_links dl JOIN documents d ON d.id=dl.document_id JOIN document_types dt ON dt.id=d.document_type_id WHERE dl.product_id=? ORDER BY dt.sort_order,dt.name,d.sort_order,d.title');$s->execute([$id]);$documents=$s->fetchAll(PDO::FETCH_ASSOC);
         }
         $errors = [];
         $user = AdminAuth::user();
@@ -276,3 +277,5 @@ final class ProductsController
         if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}
     }
 }
+
+

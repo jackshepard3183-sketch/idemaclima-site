@@ -17,12 +17,13 @@ final class MediaLibraryController
     public static function index():void
     {
         AdminAuth::requireLogin(); self::syncExisting();
-        $pdo=Database::connection(); $q=trim((string)($_GET['q']??'')); $category=(string)($_GET['category']??'');
+        $pdo=Database::connection(); $q=trim((string)($_GET['q']??'')); $category=(string)($_GET['category']??''); $sort=(string)($_GET['sort']??'newest');
         $where=['archived_at IS NULL'];$params=[];
         if(in_array($category,['images','documents'],true)){$where[]='category=?';$params[]=$category;}
         if($q!==''){$where[]='(title LIKE ? OR filename LIKE ? OR alt_text LIKE ?)';$needle='%'.$q.'%';array_push($params,$needle,$needle,$needle);}
         $page=max(1,Validator::int($_GET['page']??1));$perPage=48;$count=$pdo->prepare('SELECT COUNT(*) FROM media_assets WHERE '.implode(' AND ',$where));$count->execute($params);$total=(int)$count->fetchColumn();$pages=max(1,(int)ceil($total/$perPage));$page=min($page,$pages);
-        $sql='SELECT * FROM media_assets WHERE '.implode(' AND ',$where).' ORDER BY created_at DESC,id DESC LIMIT '.$perPage.' OFFSET '.(($page-1)*$perPage);$stmt=$pdo->prepare($sql);$stmt->execute($params);$assets=$stmt->fetchAll(PDO::FETCH_ASSOC);
+        $orders=['az'=>'title ASC,id ASC','za'=>'title DESC,id DESC','oldest'=>'created_at ASC,id ASC','newest'=>'created_at DESC,id DESC'];if(!isset($orders[$sort]))$sort='newest';
+        $sql='SELECT * FROM media_assets WHERE '.implode(' AND ',$where).' ORDER BY '.$orders[$sort].' LIMIT '.$perPage.' OFFSET '.(($page-1)*$perPage);$stmt=$pdo->prepare($sql);$stmt->execute($params);$assets=$stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach($assets as &$asset)$asset['usage_count']=self::usageCount($pdo,(string)$asset['file_path']);unset($asset);
         $title='Media Library';$user=AdminAuth::user();$csrf=Security::csrfToken();$notice=(string)($_GET['notice']??'');$error=(string)($_GET['error']??'');
         require dirname(__DIR__,2).'/Views/admin/media_library.php';
