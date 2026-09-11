@@ -18,7 +18,7 @@ final class IncentivesMailService
         $body="È stata ricevuta una nuova richiesta EasyTool.\n\n";
         foreach(['Nome'=>trim((string)($request['first_name']??'')).' '.trim((string)($request['last_name']??'')),'Azienda'=>$request['company']??'','Località'=>trim((string)($request['postal_code']??'')).' '.trim((string)($request['city']??'')).' ('.trim((string)($request['province']??'')).')','Regione'=>$request['region']??'','Telefono'=>$request['phone']??'','Email'=>$request['email']??'','Profilo'=>$request['role']??''] as $label=>$value){$value=self::clean((string)$value);if($value!=='')$body.=$label.': '.$value."\n";}
         $body.="\nAccedi al pannello IDEMA per gestire la richiesta.\n";
-        $from=filter_var($settings['sender_email']??'',FILTER_VALIDATE_EMAIL)?$settings['sender_email']:'no-reply@rappresentanzeguanzirolisas.it';$name=self::clean((string)($settings['sender_name']??'IDEMA Clima'));
+        $from=filter_var($settings['sender_email']??'',FILTER_VALIDATE_EMAIL)?$settings['sender_email']:'no-reply@rappresentanzeguanzirolisas.it';$name=self::clean((string)($settings['sender_name']??'Idema Clima Srl'));if(in_array(strtolower($name),['idema clima','idema sito web'],true))$name='Idema Clima Srl';
         $headers=['From: '.$name.' <'.$from.'>','Content-Type: text/plain; charset=UTF-8','X-Mailer: IDEMA Website'];$reply=(string)($request['email']??'');if(filter_var($reply,FILTER_VALIDATE_EMAIL))$headers[]='Reply-To: '.$reply;
         $subject='Nuova richiesta EasyTool';$encoded=function_exists('mb_encode_mimeheader')?mb_encode_mimeheader($subject,'UTF-8'):$subject;
         foreach($recipients as $recipient)if(!@mail($recipient,$encoded,$body,implode("\r\n",$headers)))error_log('IDEMA EasyTool email not sent');
