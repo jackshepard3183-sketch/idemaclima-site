@@ -187,11 +187,7 @@ jobs:
           put /tmp/$ASSET_FILE -o /www.rappresentanzeguanzirolisas.it/idemaclima/$ASSET_FILE
           bye
           EOF
-          HTTP_CODE="$(curl --silent --show-error --max-time 900 --request POST \\
-            --header "X-IDEMA-ASSET-TOKEN: $ASSET_TOKEN" \\
-            --output /tmp/idemaclima-assets-output.txt \\
-            --write-out '%{http_code}' \\
-            "https://www.rappresentanzeguanzirolisas.it/idemaclima/$ASSET_FILE")"
+          HTTP_CODE="$(curl --silent --show-error --max-time 900 --request POST --header "X-IDEMA-ASSET-TOKEN: $ASSET_TOKEN" --output /tmp/idemaclima-assets-output.txt --write-out '%{http_code}' "https://www.rappresentanzeguanzirolisas.it/idemaclima/$ASSET_FILE")"
           cat /tmp/idemaclima-assets-output.txt
           test "$HTTP_CODE" = "200"
           grep -q 'EXECUTE remote assets migration' /tmp/idemaclima-assets-output.txt
