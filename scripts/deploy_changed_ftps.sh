@@ -48,7 +48,40 @@ EOF
   return 1
 }
 
-while IFS=$'\t' read -r status first second; do
+# Brand assets and their consuming views are intentionally deployed together.
+# This prevents partial staging updates when rapid consecutive commits cancel older runs.
+for required_path in \
+  app/Views/public/_layout_start.php \
+  app/Views/public/_layout_end.php \
+  app/Views/public/warranty/form.php \
+  public/brand-assets/idema-logo-96.png.php \
+  public/brand-assets/idema-logo-180.png.php \
+  public/brand-assets/idema-logo-512.png.php \
+  public/brand-assets/idema-logo-nero.png.php \
+  public/brand-assets/idema-clima.png.php \
+  public/brand-assets/garanzia-10anni.png.php \
+  public/brand-assets/garanzia-5anni.png.php
+do
+  printf 'M\t%s\n' "$required_path" >> "$changed_list"
+done
+
+while IFS=
+  [[ -n "$status" ]] || continue
+  path="${second:-$first}"
+  if [[ "$status" == D* ]]; then
+    lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
+set ftp:ssl-allow yes
+set ssl:verify-certificate yes
+set ssl:check-hostname no
+rm -f "$remote_root/$first"
+bye
+EOF
+  elif is_managed_path "$path"; then
+    transfer_and_verify "$path"
+  fi
+done < "$changed_list"
+
+\t' read -r status first second; do
   [[ -n "$status" ]] || continue
   path="${second:-$first}"
   if [[ "$status" == D* ]]; then
