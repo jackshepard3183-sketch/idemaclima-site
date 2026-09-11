@@ -7,7 +7,7 @@ $header = file_get_contents($root . '/app/Views/public/_layout_start.php');
 $footer = file_get_contents($root . '/app/Views/public/_layout_end.php');
 
 $checks = [
-    'home hero excluded from shared internal hero selector' => !str_contains($typography, ':where(.home-hero'),
+    'home hero excluded from shared internal hero selector' => !str_contains($typography, ':is(.home-hero'),
     'internal heroes share rhythm' => str_contains($typography, '.faq-hero,.wifi-hero){padding:60px 0 68px'),
     'repeated labels share typography' => str_contains($typography, '.faq-eyebrow,.wifi-eyebrow){font-family:var(--font-body)'),
     'mobile internal hero rhythm exists' => str_contains($typography, 'padding:44px 0 48px'),
