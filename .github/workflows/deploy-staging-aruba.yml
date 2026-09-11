@@ -36,7 +36,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: warranty-certificate-sample
-          path: /tmp/idemaclima-warranty-certificate-sample.pdf
+          path: /tmp/idemaclima-warranty-certificate-*.pdf
           if-no-files-found: error
           retention-days: 1
 
