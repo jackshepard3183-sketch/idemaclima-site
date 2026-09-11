@@ -65,80 +65,8 @@ jobs:
           : "${FTP_SERVER:?Missing ARUBA_FTP_SERVER secret}"
           : "${FTP_USERNAME:?Missing ARUBA_FTP_USERNAME secret}"
           : "${FTP_PASSWORD:?Missing ARUBA_FTP_PASSWORD secret}"
-          rm -rf /tmp/idemaclima-remote
-          mkdir -p /tmp/idemaclima-remote
-
-          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<'EOF'
-          set ftp:ssl-allow yes
-          set ssl:verify-certificate yes
-          # Aruba presents a valid shared certificate whose CN differs from
-          # the customer FTP alias. Keep CA verification enabled and relax
-          # only the hostname comparison for this FTPS endpoint.
-          set ssl:check-hostname no
-          set net:max-retries 2
-          set net:timeout 20
-          mkdir -p /www.rappresentanzeguanzirolisas.it/idemaclima
-          cd /www.rappresentanzeguanzirolisas.it/idemaclima
-          mirror -R --delete --verbose --parallel=1 --transfer-all \
-            --exclude='(^|/)\.env$' \
-            --exclude='^DEPLOY_SHA256SUMS\.txt$' \
-            --exclude='^storage/private(/|$)' \
-            --exclude='^public/uploads(/|$)' \
-            build/idemaclima-staging/ ./
-          lcd /tmp/idemaclima-remote
-          mirror --verbose --parallel=1 \
-            --exclude='(^|/)\.env$' \
-            --exclude='^DEPLOY_SHA256SUMS\.txt$' \
-            --exclude='^storage/private(/|$)' \
-            --exclude='^public/uploads(/|$)' \
-            ./ ./
-          bye
-          EOF
-
-          verify_deploy_integrity() {
-            local attempt source relative remote
-            local -a mismatches
-            for attempt in 1 2 3; do
-              mismatches=()
-              while IFS= read -r -d '' source; do
-                relative="${source#build/idemaclima-staging/}"
-                remote="/tmp/idemaclima-remote/$relative"
-                if [[ ! -f "$remote" ]] || ! cmp -s "$source" "$remote"; then
-                  mismatches+=("$relative")
-                fi
-              done < <(find build/idemaclima-staging -type f \
-                ! -name 'DEPLOY_SHA256SUMS.txt' \
-                ! -path '*/storage/private/*' \
-                ! -path '*/public/uploads/*' -print0)
-
-              if (( ${#mismatches[@]} == 0 )); then
-                echo "Remote integrity verified."
-                return 0
-              fi
-
-              echo "Integrity retry $attempt: ${#mismatches[@]} file(s)."
-              for relative in "${mismatches[@]}"; do
-                source="build/idemaclima-staging/$relative"
-                remote="/tmp/idemaclima-remote/$relative"
-                mkdir -p "$(dirname "$remote")"
-                rm -f "$remote"
-                lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
-                set ftp:ssl-allow yes
-                set ssl:verify-certificate yes
-                set ssl:check-hostname no
-                set net:max-retries 2
-                set net:timeout 20
-                put "$source" -o "/www.rappresentanzeguanzirolisas.it/idemaclima/$relative"
-                get "/www.rappresentanzeguanzirolisas.it/idemaclima/$relative" -o "$remote"
-                bye
-          EOF
-              done
-            done
-
-            printf 'Integrity mismatch after retries: %s\n' "${mismatches[@]}" >&2
-            return 1
-          }
-          verify_deploy_integrity
+          FTP_SERVER="$FTP_SERVER" FTP_USERNAME="$FTP_USERNAME" FTP_PASSWORD="$FTP_PASSWORD" \
+            bash scripts/deploy_changed_ftps.sh
 
           # Aruba does not expose SSH. Run pending migrations through a
           # short-lived, randomly named and signed wrapper, then remove it.

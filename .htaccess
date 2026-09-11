@@ -2,6 +2,12 @@ Options -Indexes
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
+# Never expose application internals from the project web root. The single
+# legacy frontend asset below remains reachable until it is moved to /public.
+RewriteRule ^app/(?!Views/public/technical_sheets/technical-interactions\.js$) - [F,L,NC]
+RewriteRule ^(?:config|database|deploy|scripts|storage|tests|vendor)(?:/|$) - [F,L,NC]
+RewriteRule ^(?:\.env(?:\..*)?|composer\.(?:json|lock)|phpunit\.xml|README(?:\..*)?|DEPLOY_SHA256SUMS\.txt)$ - [F,L,NC]
+
 RewriteRule ^$ public/index.php [L,QSA]
 
 # Public files live under /public while the project root is the web directory.
