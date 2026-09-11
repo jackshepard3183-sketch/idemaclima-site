@@ -4,14 +4,25 @@ $isMono=$family['parent_slug']==='linea-residenziale-r32'&&$family['name']==='Mo
 $isMulti=$family['parent_slug']==='linea-residenziale-r32'&&$family['name']==='Multi Split';
 $productGroups=[''=>$products];
 if($isMulti){
-    $labels=['outdoor_unit'=>'Unità esterne','indoor_unit'=>'Unità interne','complete_system'=>'Sistemi completi','accessory'=>'Accessori','controller'=>'Comandi e controlli','tank'=>'Serbatoi','other'=>'Altri prodotti'];
+    $groupOrder=['Unità esterne','Unità interne a parete','Unità interne a cassetta','Unità interne canalizzate','Unità interne console','Unità interne soffitto/pavimento','Accessori','Altri prodotti'];
     $productGroups=[];
     foreach($products as $product){
-        $label=$labels[(string)($product['product_role']??'other')]??'Altri prodotti';
+        $name=strtoupper(trim((string)$product['name']));
+        $role=(string)($product['product_role']??'');
+        $label=match(true){
+            $role==='accessory'=>'Accessori',
+            preg_match('/^[2-5]M/', $name)===1=>'Unità esterne',
+            preg_match('/^(IS|WT)/', $name)===1=>'Unità interne a parete',
+            str_starts_with($name,'IQ')=>'Unità interne a cassetta',
+            str_starts_with($name,'IF')=>'Unità interne canalizzate',
+            str_starts_with($name,'IU')=>'Unità interne console',
+            str_starts_with($name,'IT')=>'Unità interne soffitto/pavimento',
+            default=>'Altri prodotti',
+        };
         $productGroups[$label][]=$product;
     }
     $ordered=[];
-    foreach(array_values($labels) as $label)if(isset($productGroups[$label]))$ordered[$label]=$productGroups[$label];
+    foreach($groupOrder as $label)if(isset($productGroups[$label]))$ordered[$label]=$productGroups[$label];
     $productGroups=$ordered+$productGroups;
 }
 ?>
