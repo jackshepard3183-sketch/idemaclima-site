@@ -77,6 +77,8 @@ for required_path in \
   public/brand-assets/garanzia-10anni.png.php \
   public/brand-assets/garanzia-5anni.png.php \
   app/Controllers/Admin/WarrantyCertificateActionsTrait.php \
+  app/Controllers/Admin/WarrantyCertificateLayoutTrait.php \
+  app/Views/admin/warranty_certificate_layout.php \
   app/Views/public/contact/form.php \
   app/Views/public/editorial/incentives_easytool_form.php \
   app/Views/public/campus/cat_register.php \
