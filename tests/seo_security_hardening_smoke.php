@@ -24,6 +24,7 @@ $checks = [
     [$layout, 'meta name="description"', 'meta description'],
     [$seoController, 'sitemap.xml', 'riferimento sitemap robots'],
     [$seoController, 'archived_at IS NULL', 'sitemap esclude archiviati'],
+    [$seoController, 'EXISTS (SELECT 1 FROM products', 'sitemap esclude serie prodotto vuote'],
     [$routes, "'/sitemap.xml'", 'route sitemap'],
     [$routes, "'/robots.txt'", 'route robots'],
     [$redirects, 'resolveFinalTarget', 'flatten redirect chain'],

@@ -3,7 +3,7 @@ $categoryMeta = [
  'linea-residenziale-r32'=>['Comfort domestico','Climatizzatori Mono Split, Multi Split e Multi PRO per la casa, con gas refrigerante R32 a basso impatto ambientale.','home',['Mono Split','Multi Split','Multi Pro','Accessori']],
  'linea-commerciale-r32'=>['Uffici & negozi','Soluzioni dedicate a uffici, negozi, ristoranti e ambienti professionali. Cassette, canalizzati, console e soffitto/pavimento.','building',['Unità esterne','Unità interne','Accessori']],
  'linea-vrf'=>['Sistemi industriali','Atomix R32, Mini VRF Monoventola, VRF Side Discharge e VRF Top Discharge per grandi edifici a flusso variabile.','factory',['Atomix R32','Mini VRF Monoventola','Unità interne','VRF Side Discharge','VRF Top Discharge','Accessori']],
- 'linea-idronica'=>['Pompe di calore','Terminali idronici, pompe di calore monoblocco, sistemi All-in-One e scaldacqua per riscaldamento e ACS.','droplets',['Terminali idronici','PdC Monoblocco','PdC All-in-One','Scaldacqua']],
+ 'linea-idronica'=>['Pompe di calore','Pompe di calore monoblocco, sistemi All-in-One e scaldacqua per riscaldamento e produzione di acqua calda sanitaria.','droplets',['PdC Monoblocco','PdC All-in-One','Scaldacqua']],
  'altri-prodotti'=>['Aria pulita',"Recuperatori di calore con scambio entalpico, purificatori d'aria HEPA e barriere a lama d'aria.",'wind',['Recuperatori di calore','Purificatori d’aria','Barriere a lama d’aria']],
 ];
 $categoryOrder=['linea-residenziale-r32'=>0,'linea-commerciale-r32'=>1,'linea-vrf'=>2,'linea-idronica'=>3,'altri-prodotti'=>4];
