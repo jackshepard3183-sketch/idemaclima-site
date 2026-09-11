@@ -50,7 +50,7 @@ final class ContactsAnalyticsController
         $totals=$pdo->query("SELECT event_type,COUNT(*) total FROM document_events GROUP BY event_type")->fetchAll(PDO::FETCH_KEY_PAIR);
         $top=$pdo->query("SELECT d.id,d.title,COUNT(*) downloads FROM document_events e JOIN documents d ON d.id=e.document_id WHERE e.event_type='download' GROUP BY d.id,d.title ORDER BY downloads DESC LIMIT 25")->fetchAll(PDO::FETCH_ASSOC);
         $settings=$pdo->query('SELECT * FROM analytics_settings WHERE id=1')->fetch(PDO::FETCH_ASSOC)?:[];
-        self::view('analytics',['title'=>'Statistiche','totals'=>$totals,'top'=>$top,'settings'=>$settings]);
+        self::view('analytics',['title'=>'Analytics e integrazioni','totals'=>$totals,'top'=>$top,'settings'=>$settings]);
     }
 
     public static function saveAnalytics(): void

@@ -1,4 +1,5 @@
 <?php
+$title='Schede tecniche — Prodotti e modelli';
 $tree=[];
 foreach($products as $p){
     $group=(string)($p['category_group']?:$p['category_name']);
