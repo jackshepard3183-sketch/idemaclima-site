@@ -15,7 +15,7 @@ $checks=[
  [$family,'group-conto-termico','badge Conto termico azzurro'],
  [$family,'group-manuali','badge Manuali neutro'],
  [$controller,"['Schede tecniche','Tabelle rese','Detrazioni fiscali','Conto termico','Manuali']",'ordine documenti server-side'],
- [$controller,"stripos($name,'tabella')!==false=>'Tabelle rese'",'normalizzazione Tabella rese singolare'],
+ [$controller,"stripos(\$name,'tabella')!==false=>'Tabelle rese'",'normalizzazione Tabella rese singolare'],
  [$controller,'if (!self::hasDedicatedPage($product))','redirect prodotti non dedicati'],
  [$search,"\$dedicated?'Apri pagina':'Apri accordion'",'risultati ricerca coerenti'],
  [$product,'group-tabelle-rese','colore Tabelle rese Mono Split'],
