@@ -11,5 +11,11 @@ body :is(.section-label,.technical-eyebrow,.ts-eyebrow,.catalog-eyebrow,.catalog
 body :is(.event-card,.reference-card,.catalog-card,.support-main-card,.resource-card,.warranty-series-card,.campus-path){border-radius:22px}
 body :is(.section-head h2,.gallery-heading h2,.support-section-head h2,.inc-book h2){line-height:1.1;letter-spacing:-.02em}
 body :is(.event-info p,.reference-system,.catalog-group-head p,.support-main-card p,.resource-card p,.inc-card p,.campus-path p){line-height:1.65}
+body :is(.contact-form,.warranty-form,.easy-form,.contact-info){border-radius:22px}
+body :is(.contact-form,.warranty-form,.easy-form){padding:30px}
+body :is(.contact-form,.warranty-form,.easy-form) :is(input,select,textarea){min-height:44px;border-radius:12px}
+body :is(.contact-form,.warranty-form,.easy-form) textarea{min-height:132px;line-height:1.55}
+body :is(.contact-form,.warranty-form,.easy-form) label{line-height:1.45}
 @media(max-width:800px){body :is(.hero,.technical-hero,.ts-hero,.catalog-hero,.gallery-hero,.album-hero,.references-hero,.project-hero,.support-hero,.inc-hero,.faq-hero,.wifi-hero){padding:44px 0 48px}body :is(.technical-hero-description,.ts-subtitle,.catalog-hero-description,.gallery-hero p:last-child,.album-hero-description,.references-hero p:last-child,.project-hero p:last-child,.support-hero p:last-child,.inc-hero p:last-child,.faq-hero p:last-child,.wifi-hero p:last-child,.hero>.wrap>p:last-child){font-size:16px;line-height:1.62}}
+@media(max-width:620px){body :is(.contact-form,.warranty-form,.easy-form){padding:22px}}
 </style>

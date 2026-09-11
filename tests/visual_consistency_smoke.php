@@ -14,6 +14,8 @@ $checks = [
     'header uses complete technical sheets label' => substr_count($header, '>Schede tecniche</a>') === 2,
     'footer uses complete technical sheets label' => substr_count($footer, '>Schede tecniche</a>') === 1,
     'footer uses consistent price list label' => substr_count($footer, '>Listino prezzi</a>') === 1,
+    'repeated public forms share geometry' => str_contains($typography, '.contact-form,.warranty-form,.easy-form,.contact-info){border-radius:22px'),
+    'repeated public fields share dimensions' => str_contains($typography, 'min-height:44px;border-radius:12px'),
 ];
 
 foreach ($checks as $label => $passed) {
