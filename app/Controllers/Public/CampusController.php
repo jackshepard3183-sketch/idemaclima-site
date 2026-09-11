@@ -30,6 +30,13 @@ final class CampusController
 
     public static function event(string $slug): void
     {
+        // Keep the public events index reachable even on hosts where the
+        // generic /campus/{slug} route is cached ahead of the exact route.
+        if ($slug === 'eventi-aperti') {
+            self::openEvents();
+            return;
+        }
+
         $pdo = Database::connection();
         $stmt = $pdo->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="public" AND e.published=1 LIMIT 1');
         $stmt->execute([$slug]);
