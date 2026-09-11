@@ -11,7 +11,7 @@ if($isMulti){
         $role=(string)($product['product_role']??'');
         $label=match(true){
             $role==='accessory'=>'Accessori',
-            preg_match('/^[2-5]M/', $name)===1=>'Unità esterne',
+            (preg_match('/^[2-5]M/', $name)===1||str_starts_with($name,'MWTF'))=>'Unità esterne',
             preg_match('/^(IS|WT)/', $name)===1=>'Unità interne a parete',
             str_starts_with($name,'IQ')=>'Unità interne a cassetta',
             str_starts_with($name,'IF')=>'Unità interne canalizzate',
