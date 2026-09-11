@@ -65,7 +65,7 @@ do
   printf 'M\t%s\n' "$required_path" >> "$changed_list"
 done
 
-while IFS=
+while IFS=$'\t' read -r status first second; do
   [[ -n "$status" ]] || continue
   path="${second:-$first}"
   if [[ "$status" == D* ]]; then
@@ -80,20 +80,3 @@ EOF
     transfer_and_verify "$path"
   fi
 done < "$changed_list"
-
-\t' read -r status first second; do
-  [[ -n "$status" ]] || continue
-  path="${second:-$first}"
-  if [[ "$status" == D* ]]; then
-    lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
-set ftp:ssl-allow yes
-set ssl:verify-certificate yes
-set ssl:check-hostname no
-rm -f "$remote_root/$first"
-bye
-EOF
-  elif is_managed_path "$path"; then
-    transfer_and_verify "$path"
-  fi
-done < "$changed_list"
-
