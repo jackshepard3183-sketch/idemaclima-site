@@ -18,4 +18,14 @@ body :is(.contact-form,.warranty-form,.easy-form) textarea{min-height:132px;line
 body :is(.contact-form,.warranty-form,.easy-form) label{line-height:1.45}
 @media(max-width:800px){body :is(.hero,.technical-hero,.ts-hero,.catalog-hero,.gallery-hero,.album-hero,.references-hero,.project-hero,.support-hero,.inc-hero,.faq-hero,.wifi-hero){padding:44px 0 48px}body :is(.technical-hero-description,.ts-subtitle,.catalog-hero-description,.gallery-hero p:last-child,.album-hero-description,.references-hero p:last-child,.project-hero p:last-child,.support-hero p:last-child,.inc-hero p:last-child,.faq-hero p:last-child,.wifi-hero p:last-child,.hero>.wrap>p:last-child){font-size:16px;line-height:1.62}}
 @media(max-width:620px){body :is(.contact-form,.warranty-form,.easy-form){padding:22px}}
+@media(max-width:620px){
+body :is(.hero-actions,.warranty-doc-links){align-items:stretch;flex-direction:column}
+body :is(.hero-actions,.warranty-doc-links)>:is(a,button){width:100%;text-align:center}
+body .doc{align-items:flex-start;gap:12px}
+body .doc>span:first-child{min-width:0}
+body .doc-open{flex:0 0 auto;white-space:nowrap}
+body :is(.section-label,.technical-eyebrow,.ts-eyebrow,.catalog-eyebrow,.catalog-section-label,.gallery-eyebrow,.gallery-section-label,.album-eyebrow,.references-eyebrow,.project-label,.support-eyebrow,.support-section-label,.inc-eyebrow,.inc-label,.faq-eyebrow,.wifi-eyebrow){letter-spacing:.16em}
+body :is(.privacy-check,.easy-check,.check){line-height:1.55}
+body :is(.references-cta-box,.event-block,.registration){padding-left:22px;padding-right:22px}
+}
 </style>

@@ -16,6 +16,8 @@ $checks = [
     'footer uses consistent price list label' => substr_count($footer, '>Listino prezzi</a>') === 1,
     'repeated public forms share geometry' => str_contains($typography, '.contact-form,.warranty-form,.easy-form,.contact-info){border-radius:22px'),
     'repeated public fields share dimensions' => str_contains($typography, 'min-height:44px;border-radius:12px'),
+    'mobile calls to action stack safely' => str_contains($typography, '.hero-actions,.warranty-doc-links){align-items:stretch;flex-direction:column'),
+    'mobile document rows protect action labels' => str_contains($typography, '.doc-open{flex:0 0 auto;white-space:nowrap}'),
 ];
 
 foreach ($checks as $label => $passed) {
