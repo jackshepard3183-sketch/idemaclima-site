@@ -186,11 +186,11 @@ trait WarrantyCertificatePdfTrait
                 $flow(58,537,$cursor-15,8.5,[['text'=>$legal]]);$cursor-=74+$gap;
             }
         }
-        $textRight(537,97,8.5,'Idema Clima srl',true);
-        if($signatureData!=='') $commands[]='q 80 0 0 57 451 49 cm /Im3 Do Q';
-        $line(58,47,537,47);
-        $textCenter(297.5,31,7.2,$layout['footer_company'],true,$mutedColor);
-        $textCenter(297.5,19,6.8,$layout['footer_address'],false,$mutedColor);
+        $textRight(537,97,8.5,'Idema Clima Srl',true);
+        if($signatureData!=='') $commands[]='q 66 0 0 47 468 41 cm /Im3 Do Q';
+        $line(58,33,537,33);
+        $textCenter(297.5,19,7.2,$layout['footer_company'],true,$mutedColor);
+        $textCenter(297.5,8,6.8,$layout['footer_address'],false,$mutedColor);
 
         $stream=implode("\n",$commands);
         $logoObject=$logoData!==false
