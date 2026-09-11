@@ -76,6 +76,7 @@ $router->get('/garanzia', [WarrantyController::class, 'form']);
 $router->post('/garanzia', [WarrantyController::class, 'register']);
 
 $router->get('/campus', [CampusController::class, 'index']);
+$router->get('/campus/eventi-aperti', [CampusController::class, 'openEvents']);
 $router->get('/campus/cat/login', [CatAuthController::class, 'loginForm']);
 $router->post('/campus/cat/login', [CatAuthController::class, 'login']);
 $router->get('/campus/cat/registrazione', [CatAuthController::class, 'registerForm']);
