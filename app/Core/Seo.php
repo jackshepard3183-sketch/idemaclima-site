@@ -9,7 +9,8 @@ final class Seo
     /** @return array{title:string,description:string,canonical:string,robots:string} */
     public static function meta(string $title, ?string $description = null, ?string $canonicalPath = null, string $robots = 'index,follow'): array
     {
-        $site = trim((string)($_ENV['SITE_NAME'] ?? getenv('SITE_NAME') ?: 'IDEMA Clima'));
+        $site = trim((string)($_ENV['SITE_NAME'] ?? getenv('SITE_NAME') ?: 'Idema Clima Srl'));
+        if (in_array(mb_strtolower($site), ['idema clima', 'idema clima srl'], true)) $site = 'Idema Clima Srl';
         $siteUrl = self::publicBaseUrl();
         $cleanTitle = trim($title);
         $fullTitle = $cleanTitle === '' ? $site : ($cleanTitle === $site ? $site : $cleanTitle . ' | ' . $site);
