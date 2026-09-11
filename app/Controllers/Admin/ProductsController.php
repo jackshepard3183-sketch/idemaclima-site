@@ -30,7 +30,7 @@ final class ProductsController
         AdminAuth::requireLogin();
         $pdo = Database::connection();
         $id = Validator::int($_GET['id'] ?? 0);
-        $product = ['id'=>0,'category_id'=>'','name'=>'','slug'=>'','description'=>'','product_role'=>'complete_system','refrigerant'=>'','status'=>'active','content_status'=>'draft','image_path'=>'','sort_order'=>0,'published'=>0];
+        $product = ['id'=>0,'category_id'=>'','name'=>'','slug'=>'','description'=>'','product_role'=>'complete_system','refrigerant'=>'','status'=>'active','content_status'=>'draft','image_path'=>'','source_catalog_url'=>'','source_catalog_page'=>'','sort_order'=>0,'published'=>0];
         if ($id) {
             $s = $pdo->prepare('SELECT * FROM products WHERE id=?');
             $s->execute([$id]);
@@ -104,6 +104,9 @@ final class ProductsController
         $contentStatus = (string)($_POST['content_status'] ?? 'draft');
         if (!in_array($contentStatus, ['draft','published','hidden'], true)) $errors[] = 'Stato contenuto non valido.';
         $published = $contentStatus === 'published' ? 1 : 0;
+        $sourceCatalogUrl = trim((string)($_POST['source_catalog_url'] ?? ''));
+        $sourceCatalogPage = Validator::int($_POST['source_catalog_page'] ?? 0) ?: null;
+        if ($sourceCatalogUrl !== '' && (!filter_var($sourceCatalogUrl, FILTER_VALIDATE_URL) || mb_strlen($sourceCatalogUrl) > 1000)) $errors[] = 'URL catalogo/listino non valido.';
 
         $q = $pdo->prepare('SELECT id FROM products WHERE slug=? AND id<>?');
         $q->execute([$slug, $id]);
@@ -121,7 +124,7 @@ final class ProductsController
 
         if ($errors) {
             if ($uploaded) Upload::removeManaged($uploaded['path']);
-            $product = ['id'=>$id,'category_id'=>$categoryId,'name'=>$name,'slug'=>$slug,'description'=>$description,'product_role'=>$role,'refrigerant'=>$refrigerant,'status'=>$status,'content_status'=>$contentStatus,'image_path'=>$image,'sort_order'=>$sort,'published'=>$published];
+            $product = ['id'=>$id,'category_id'=>$categoryId,'name'=>$name,'slug'=>$slug,'description'=>$description,'product_role'=>$role,'refrigerant'=>$refrigerant,'status'=>$status,'content_status'=>$contentStatus,'image_path'=>$image,'source_catalog_url'=>$sourceCatalogUrl,'source_catalog_page'=>$sourceCatalogPage,'sort_order'=>$sort,'published'=>$published];
             $categories = $pdo->query('SELECT id,name FROM product_categories ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC);
             $models = [];
             if ($id) {
@@ -138,13 +141,13 @@ final class ProductsController
         try {
             $pdo->beginTransaction();
             if ($id) {
-                $s = $pdo->prepare('UPDATE products SET category_id=?,name=?,slug=?,description=?,product_role=?,refrigerant=?,status=?,content_status=?,image_path=?,sort_order=?,published=? WHERE id=?');
-                $s->execute([$categoryId,$name,$slug,$description,$role,$refrigerant,$status,$contentStatus,$image,$sort,$published,$id]);
+                $s = $pdo->prepare('UPDATE products SET category_id=?,name=?,slug=?,description=?,product_role=?,refrigerant=?,status=?,content_status=?,image_path=?,source_catalog_url=?,source_catalog_page=?,sort_order=?,published=? WHERE id=?');
+                $s->execute([$categoryId,$name,$slug,$description,$role,$refrigerant,$status,$contentStatus,$image,$sourceCatalogUrl?:null,$sourceCatalogPage,$sort,$published,$id]);
                 $entityId = $id;
                 $action = 'product.update';
             } else {
-                $s = $pdo->prepare('INSERT INTO products(category_id,name,slug,description,product_role,refrigerant,status,content_status,image_path,sort_order,published) VALUES(?,?,?,?,?,?,?,?,?,?,?)');
-                $s->execute([$categoryId,$name,$slug,$description,$role,$refrigerant,$status,$contentStatus,$image,$sort,$published]);
+                $s = $pdo->prepare('INSERT INTO products(category_id,name,slug,description,product_role,refrigerant,status,content_status,image_path,source_catalog_url,source_catalog_page,sort_order,published) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)');
+                $s->execute([$categoryId,$name,$slug,$description,$role,$refrigerant,$status,$contentStatus,$image,$sourceCatalogUrl?:null,$sourceCatalogPage,$sort,$published]);
                 $entityId = (int)$pdo->lastInsertId();
                 $action = 'product.create';
             }
@@ -223,6 +226,15 @@ final class ProductsController
         exit;
     }
 
+    public static function unlinkDocument(): void
+    {
+        AdminAuth::requireLogin(); self::csrf();
+        $productId=Validator::int($_POST['product_id']??0);$documentId=Validator::int($_POST['document_id']??0);
+        Database::connection()->prepare('DELETE FROM document_links WHERE product_id=? AND document_id=?')->execute([$productId,$documentId]);
+        Audit::log('product.document.unlink','product',$productId,['document_id'=>$documentId]);
+        header('Location: /idemaclima/admin/products/form?id='.$productId);exit;
+    }
+
     public static function duplicate(): void
     {
         AdminAuth::requireLogin(); self::csrf();
@@ -277,5 +289,4 @@ final class ProductsController
         if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}
     }
 }
-
 

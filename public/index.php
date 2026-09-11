@@ -105,6 +105,7 @@ $router->get('/admin/products/form', [ProductsController::class, 'form']);
 $router->post('/admin/products/save', [ProductsController::class, 'save']);
 $router->post('/admin/products/duplicate', [ProductsController::class, 'duplicate']);
 $router->post('/admin/products/delete', [ProductsController::class, 'delete']);
+$router->post('/admin/products/document/unlink', [ProductsController::class, 'unlinkDocument']);
 $router->post('/admin/models/save', [ProductsController::class, 'saveModel']);
 $router->get('/admin/media', [MediaLibraryController::class, 'index']);
 $router->post('/admin/media/upload', [MediaLibraryController::class, 'upload']);

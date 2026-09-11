@@ -12,8 +12,8 @@
   <div class="wrap footer-company"><p>Cap. Soc. € 250.000 i.v. — Part. IVA / Cod. Fisc. / R.I. Milano <strong>03293510966</strong> — REA Milano <strong>1664622</strong></p><p>Iscriz. Reg. RAEE <strong>IT14030000008296</strong> — Iscriz. Reg. PA <strong>IT19080P00005580</strong></p></div>
   <div class="wrap footer-legal"><span>© <?= date('Y') ?> Idema Clima S.r.l. — Tutti i diritti riservati</span><span class="footer-links"><a href="https://www.iubenda.com/privacy-policy/38092343/full-legal" target="_blank" rel="noopener">Privacy Policy</a><a href="https://www.iubenda.com/privacy-policy/38092343/cookie-policy" target="_blank" rel="noopener">Cookie Policy</a><?php if(!empty($iubendaActive)): ?><a href="#" class="iubenda-cs-preferences-link">Preferenze cookie</a><?php endif; ?></span></div>
 </footer>
+<style>.content form label,.easy-form label,.warranty-form label,.contact-form label{font-family:inherit;font-size:14px;font-weight:600;line-height:1.4}.content form label small,.easy-form label small,.warranty-form label small{font-weight:400}</style>
 <script src="/idemaclima/public/mobile-menu.js?v=20260901-2" defer></script>
 </body>
 </html>
-
 
