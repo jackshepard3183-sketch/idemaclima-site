@@ -1,7 +1,7 @@
 <footer class="footer">
   <div class="wrap footer-main">
     <div class="footer-brand">
-      <img class="footer-logo" src="https://idemaclima.lovable.app/__l5e/assets-v1/bf199d72-bef2-4ba2-960b-2f757349320f/logo-idema-clima.svg" alt="IDEMA CLIMA">
+      <img class="footer-logo" src="/idemaclima/public/brand-assets/idema-clima.png.php" alt="IDEMA CLIMA">
       <p class="footer-copy">IDEMA CLIMA® progetta e distribuisce climatizzatori d'aria, pompe di calore e sistemi VRF ad alta efficienza energetica. Affidabilità, qualità e assistenza diretta dal 2003.</p>
       <img class="footer-green-logo" src="https://www.idemaclima.it/wp-content/uploads/yootheme/cache/83/OltreilGreen_Logo-83ff8c96.webp" alt="Oltre il Green — IDEMA CLIMA®" loading="lazy">
       <div class="footer-social" aria-label="Canali social IDEMA CLIMA"><a href="https://www.facebook.com/idemaclimasrl/" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3Z"/></svg></a><a href="https://www.instagram.com/idemaclimasrl/" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg></a><a href="https://www.linkedin.com/company/idemaclimasrl" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6ZM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a></div>
