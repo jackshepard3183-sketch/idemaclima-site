@@ -60,7 +60,19 @@ for required_path in \
   public/brand-assets/idema-logo-nero.png.php \
   public/brand-assets/idema-clima.png.php \
   public/brand-assets/garanzia-10anni.png.php \
-  public/brand-assets/garanzia-5anni.png.php
+  public/brand-assets/garanzia-5anni.png.php \
+  app/Controllers/Admin/WarrantyCertificatePdfTrait.php \
+  app/Controllers/Admin/WarrantyCertificateActionsTrait.php \
+  app/Views/public/contact/form.php \
+  app/Views/public/editorial/incentives_easytool_form.php \
+  app/Views/public/campus/cat_register.php \
+  app/Views/public/campus/event.php \
+  app/Views/public/warranty/form_fields.php \
+  app/Core/Seo.php \
+  app/Services/CampusMailService.php \
+  app/Services/ContactMailService.php \
+  app/Services/IncentivesMailService.php \
+  app/Services/WarrantyService.php
 do
   printf 'M\t%s\n' "$required_path" >> "$changed_list"
 done
