@@ -22,5 +22,8 @@ $checks=[
 ];
 foreach($checks as [$haystack,$needle,$label])if(!str_contains($haystack,$needle))throw new RuntimeException('Check Schede tecniche fallito: '.$label);
 foreach(['product-page-link','inline-description'] as $forbidden)if(str_contains($family,'class="'.$forbidden.'"'))throw new RuntimeException('Elemento non consentito negli accordion: '.$forbidden);
-if(str_contains($index,"['Terminali idronici','PdC Monoblocco'"))throw new RuntimeException('La serie vuota Terminali idronici non deve comparire nei badge pubblici.');
+$migration=file_get_contents($root.'/database/migrations/042_complete_technical_sheet_sections.sql');
+if(!is_string($migration)||$migration==='')throw new RuntimeException('Migration di completamento Schede tecniche non leggibile.');
+foreach(['Terminali idronici','Purificatori d’aria','Barriere a lama d’aria','Distribuzione aria'] as $name)if(!str_contains($index.$migration,$name))throw new RuntimeException('Sezione tecnica mancante: '.$name);
+if(!str_contains($index,'/schede-tecniche/dichiarazioni-conformita-ce'))throw new RuntimeException('Accesso alle dichiarazioni CE mancante.');
 fwrite(STDOUT,"Technical sheets closure smoke OK\n");
