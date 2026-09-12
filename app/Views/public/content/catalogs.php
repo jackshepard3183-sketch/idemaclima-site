@@ -1,6 +1,6 @@
 <?php
 $catalogGroups = [
- 'guide'=>['name'=>'Cataloghi e gamme.','description'=>'Cataloghi generali e linee complete IDEMA®.','items'=>[]],
+ 'guide'=>['name'=>'Cataloghi generali','description'=>'Cataloghi generali e linee complete IDEMA®.','items'=>[]],
  'prodotto'=>['name'=>'Cataloghi di prodotto','description'=>'Documentazione dedicata ai singoli modelli e alle serie principali.','items'=>[]],
  'tecnico'=>['name'=>'Documentazione tecnica','description'=>'Schemi dimensionali e materiale di approfondimento per progettisti e installatori.','items'=>[]],
  'accessori'=>['name'=>'Accessori e sistemi','description'=>'Sistemi di zonificazione, kit e accessori per gli impianti IDEMA®.','items'=>[]],
