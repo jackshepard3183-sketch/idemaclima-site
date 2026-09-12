@@ -1,7 +1,7 @@
 <style>
 .faq-hero{padding:62px 0 70px;background:var(--gradient-cool);border-bottom:1px solid var(--border)}
-.faq-eyebrow{color:var(--primary-deep);font-size:12px;font-weight:600;letter-spacing:.3em;text-transform:uppercase}
-.faq-hero h1{margin:10px 0 17px;font-size:clamp(44px,6vw,68px);line-height:1}
+.faq-eyebrow{display:flex;align-items:center;gap:8px;color:var(--primary-deep);font-size:12px;font-weight:600;letter-spacing:.3em;text-transform:uppercase}
+.faq-hero h1{max-width:900px;margin:11px 0 18px;font-size:clamp(42px,6vw,68px);line-height:1.04}
 .faq-hero p{max-width:850px;margin:0;color:var(--muted-foreground);font-size:18px;line-height:1.7}
 .faq-content{padding:64px 0 96px}
 .faq-layout{display:grid;grid-template-columns:minmax(260px,1fr) minmax(0,2.2fr);gap:38px;align-items:start}
