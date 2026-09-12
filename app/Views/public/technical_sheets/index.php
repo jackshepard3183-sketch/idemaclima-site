@@ -1,4 +1,5 @@
 <?php
+// Distribuzione atomica 042: sezioni tecniche storiche complete.
 // Le etichette descrivono soltanto famiglie che hanno prodotti pubblicati.
 $categoryMeta = [
  'linea-residenziale-r32'=>['Comfort domestico','Climatizzatori Mono Split, Multi Split e Multi PRO per la casa, con gas refrigerante R32 a basso impatto ambientale.','home',['Mono Split','Multi Split','Multi Pro','Accessori']],

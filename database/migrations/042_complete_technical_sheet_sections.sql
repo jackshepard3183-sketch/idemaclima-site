@@ -1,4 +1,5 @@
 -- Completa le famiglie storiche delle Schede tecniche mantenendo la gerarchia
+-- Rilascio atomico staging: 2026-09-12.
 -- Linea -> Famiglia -> Prodotto e rende autonoma la navigazione dello staging.
 
 INSERT INTO product_categories(parent_id,name,slug,sort_order,content_status,published)
