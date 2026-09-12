@@ -1,5 +1,5 @@
 <?php
-// Mantiene il layout Lovable e completa unicamente i contenuti informativi.
+// Mantiene il layout Lovable, i contenuti originali e le CTA alle schede tecniche.
 $slug=(string)($page['slug']??'detrazioni-e-incentivi');
 $requestPath=(string)(parse_url($_SERVER['REQUEST_URI']??'',PHP_URL_PATH)??'');
 $marker='/detrazioni-e-incentivi/';
