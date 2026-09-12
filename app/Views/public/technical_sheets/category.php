@@ -4,7 +4,8 @@ $categoryMeta=[
  'linea-commerciale-r32'=>['Uffici & negozi','Soluzioni dedicate a uffici, negozi, ristoranti e ambienti professionali. Cassette, canalizzati, console e soffitto/pavimento.',['Unità esterne','Unità interne','Accessori']],
  'linea-vrf'=>['Sistemi industriali','Atomix R32, Mini VRF Monoventola, VRF Side Discharge e VRF Top Discharge per grandi edifici a flusso variabile.',['Atomix R32','Mini VRF Monoventola','VRF Side Discharge','VRF Top Discharge','Unità interne','Accessori']],
  'linea-idronica'=>['Pompe di calore','Pompe di calore monoblocco, sistemi All-in-One e scaldacqua per riscaldamento e produzione di acqua calda sanitaria.',['Terminali idronici','PdC Monoblocco','PdC All-in-One','Scaldacqua']],
- 'altri-prodotti'=>['Aria pulita','Recuperatori di calore con scambio entalpico per il ricambio e il trattamento efficiente dell’aria.',['Recuperatori di calore']],
+ 'altri-prodotti'=>['Aria pulita','Recuperatori di calore, purificatori d’aria e barriere a lama d’aria per il trattamento efficiente degli ambienti.',['Recuperatori di calore','Purificatori d’aria','Barriere a lama d’aria']],
+ 'distribuzione-aria'=>['Distribuzione aria','Kit completi, sistemi di zonificazione e componenti per la distribuzione dell’aria.',['Sistemi e componenti']],
 ];
 $m=$categoryMeta[$category['slug']]??['Linea di prodotto','Seleziona una famiglia per consultare prodotti, modelli e documentazione tecnica.',[]];
 $familyIcons=[
@@ -21,7 +22,11 @@ $familyIcons=[
  'pdc monoblocco'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><circle cx="9" cy="13" r="4"/><path d="M15 9h3M15 13h3M15 17h3M9 9v4l3 2"/></svg>',
  'pdc all-in-one'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M8 7h8M8 17h8"/><circle cx="12" cy="12" r="3"/></svg>',
  'scaldacqua'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="5"/><path d="M12 7c-2 2.2-3 3.5-3 5a3 3 0 0 0 6 0c0-1.5-1-2.8-3-5zM10 19h4"/></svg>',
- 'recuperatori di calore'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h11M12 5l3 3-3 3M20 16H9M12 13l-3 3 3 3"/><path d="M4 4v16M20 4v16"/></svg>'
+ 'recuperatori di calore'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h11M12 5l3 3-3 3M20 16H9M12 13l-3 3 3 3"/><path d="M4 4v16M20 4v16"/></svg>',
+ 'terminali idronici'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M7 8h10M7 12h10M8 20c1-1.5 2-1.5 3 0M13 20c1-1.5 2-1.5 3 0"/></svg>',
+ 'purificatori d’aria'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.8 2.8 8.1 7 10 4.2-1.9 7-5.2 7-10V6z"/><path d="M9 11c1.5-2 4.5-2 6 0-1.5 2-4.5 2-6 0zM12 7v2M8 8l1.4 1M16 8l-1.4 1"/></svg>',
+ 'barriere a lama d’aria'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3h11v18M8 7h5"/><path d="M18 7h3M17 11h4M18 15h3"/><path d="m19 5 2 2-2 2M19 9l2 2-2 2M19 13l2 2-2 2"/></svg>',
+ 'sistemi e componenti'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v5H4zM7 10v4M12 10v4M17 10v4"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>'
 ];
 $order=array_flip(array_map(static fn($v)=>strtolower($v),$m[2]));
 usort($families,static fn($a,$b)=>($order[strtolower($a['name'])]??99)<=>($order[strtolower($b['name'])]??99));
