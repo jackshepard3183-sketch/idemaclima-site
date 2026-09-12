@@ -36,7 +36,7 @@ trait WarrantyCertificateLayoutTrait
             if(!is_array($saved)) return $defaults;
             $layout=array_replace($defaults,array_intersect_key($saved,$defaults));
             foreach (['legal_text','footer_company'] as $companyField) {
-                $layout[$companyField]=(string)preg_replace('/IDEMA CLIMA(?:®)? S\\.r\\.l\\./i','Idema Clima S.r.l.',(string)$layout[$companyField]);
+                $layout[$companyField]=str_replace(['IDEMA Clima S.r.l.','IDEMA CLIMA® S.r.l.'], 'Idema Clima S.r.l.', (string)$layout[$companyField]);
             }
             $layout['blocks']=array_replace($defaults['blocks'],is_array($saved['blocks']??null)?$saved['blocks']:[]);
             $order=is_array($saved['order']??null)?array_values(array_intersect($saved['order'],['customer','product','legal'])):[];

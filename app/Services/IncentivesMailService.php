@@ -14,7 +14,7 @@ final class IncentivesMailService
         $settings=self::settings();if(!self::enabled($settings))return;
         $raw=(string)($settings['incentives_recipients']??'');$recipients=preg_split('/[;,\s]+/',trim($raw))?:[];
         $recipients=array_values(array_unique(array_filter($recipients,static fn(string $email):bool=>(bool)filter_var($email,FILTER_VALIDATE_EMAIL))));
-        if(!$recipients)$recipients=['commerciale.tre@idemaclima.it'];
+        if(!$recipients)return;
         $body="È stata ricevuta una nuova richiesta EasyTool.\n\n";
         foreach(['Nome'=>trim((string)($request['first_name']??'')).' '.trim((string)($request['last_name']??'')),'Azienda'=>$request['company']??'','Località'=>trim((string)($request['postal_code']??'')).' '.trim((string)($request['city']??'')).' ('.trim((string)($request['province']??'')).')','Regione'=>$request['region']??'','Telefono'=>$request['phone']??'','Email'=>$request['email']??'','Profilo'=>$request['role']??''] as $label=>$value){$value=self::clean((string)$value);if($value!=='')$body.=$label.': '.$value."\n";}
         $body.="\nAccedi al pannello IDEMA per gestire la richiesta.\n";

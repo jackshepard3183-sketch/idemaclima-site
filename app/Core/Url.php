@@ -80,22 +80,6 @@ final class Url
             $html
         ) ?? $html;
 
-        $html = preg_replace_callback(
-            "#https://(?:www\\.)?idemaclima\\.it/wp-content/uploads/[^\\s\\\"'<>]+|https://idemaclima\\.lovable\\.app/__l5e/assets-v1/[^\\s\\\"'<>]+#i",
-            static function (array $m): string {
-                $remote = (string)$m[0];
-                $path = (string)parse_url($remote, PHP_URL_PATH);
-                $base = rawurldecode(basename($path));
-                $base = preg_replace('/[^a-z0-9._-]+/i', '-', $base) ?: 'asset';
-                $extension = strtolower(pathinfo($base, PATHINFO_EXTENSION));
-                if (!in_array($extension, ['pdf','png','jpg','jpeg','webp','gif','svg'], true)) return $remote;
-                $filename = substr(hash('sha256', $remote), 0, 16) . '-' . $base;
-                $local = dirname(__DIR__, 2) . '/public/uploads/mirrored/' . $filename;
-                return is_file($local) ? self::to('/uploads/mirrored/' . $filename) : $remote;
-            },
-            $html
-        ) ?? $html;
-
         return $html;
     }
 }

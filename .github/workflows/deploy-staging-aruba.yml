@@ -142,59 +142,6 @@ jobs:
           cleanup_migration_wrapper
           trap - EXIT
 
-      - name: Mirror remote assets into staging
-        env:
-          FTP_SERVER: ${{ secrets.ARUBA_FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.ARUBA_FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.ARUBA_FTP_PASSWORD }}
-        run: |
-          set -euo pipefail
-          ASSET_TOKEN="$(openssl rand -hex 32)"
-          ASSET_FILE="idemaclima-assets-$(openssl rand -hex 24).php"
-          export ASSET_TOKEN ASSET_FILE
-          cat > "/tmp/$ASSET_FILE" <<'PHP'
-          <?php
-          declare(strict_types=1);
-          ini_set('display_errors', '1');
-          error_reporting(E_ALL);
-          set_time_limit(900);
-          if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
-              || !hash_equals('__TOKEN__', (string)($_SERVER['HTTP_X_IDEMA_ASSET_TOKEN'] ?? ''))) {
-              http_response_code(404);
-              exit;
-          }
-          $argv = [__FILE__, '--execute'];
-          $_SERVER['argv'] = $argv;
-          $_SERVER['argc'] = 2;
-          require __DIR__ . '/scripts/mirror_remote_assets.php';
-          PHP
-          sed -i "s/__TOKEN__/$ASSET_TOKEN/" "/tmp/$ASSET_FILE"
-          cleanup_asset_wrapper() {
-            lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF || true
-            set ftp:ssl-allow yes
-            set ssl:verify-certificate yes
-            set ssl:check-hostname no
-            rm -f /www.rappresentanzeguanzirolisas.it/idemaclima/$ASSET_FILE
-            bye
-          EOF
-            rm -f "/tmp/$ASSET_FILE"
-          }
-          trap cleanup_asset_wrapper EXIT
-          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
-          set ftp:ssl-allow yes
-          set ssl:verify-certificate yes
-          set ssl:check-hostname no
-          put /tmp/$ASSET_FILE -o /www.rappresentanzeguanzirolisas.it/idemaclima/$ASSET_FILE
-          bye
-          EOF
-          HTTP_CODE="$(curl --silent --show-error --max-time 900 --request POST --header "X-IDEMA-ASSET-TOKEN: $ASSET_TOKEN" --output /tmp/idemaclima-assets-output.txt --write-out '%{http_code}' "https://www.rappresentanzeguanzirolisas.it/idemaclima/$ASSET_FILE")"
-          echo "Asset migration HTTP $HTTP_CODE"
-          cat /tmp/idemaclima-assets-output.txt
-          test "$HTTP_CODE" = "200"
-          grep -q 'EXECUTE remote assets migration' /tmp/idemaclima-assets-output.txt
-          cleanup_asset_wrapper
-          trap - EXIT
-
       - name: Verify public staging endpoint
         run: |
           curl --fail --silent --show-error --location \

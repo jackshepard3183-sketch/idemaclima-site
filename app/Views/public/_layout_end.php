@@ -1,7 +1,7 @@
 <footer class="footer">
   <div class="wrap footer-main">
     <div class="footer-brand">
-      <img class="footer-logo" src="/idemaclima/public/brand-assets/IDEMA-CLIMA_srl_327x200_bianco.png" alt="IDEMA CLIMA">
+      <img class="footer-logo" src="/idemaclima/public/brand-assets/idema-clima.png.php" alt="IDEMA CLIMA">
       <p class="footer-copy">IDEMA CLIMA® progetta e distribuisce climatizzatori d'aria, pompe di calore e sistemi VRF ad alta efficienza energetica. Affidabilità, qualità e assistenza diretta dal 2003.</p>
       <img class="footer-green-logo" src="https://www.idemaclima.it/wp-content/uploads/yootheme/cache/83/OltreilGreen_Logo-83ff8c96.webp" alt="Oltre il Green — IDEMA CLIMA®" loading="lazy">
       <div class="footer-social" aria-label="Canali social IDEMA CLIMA"><a href="https://www.facebook.com/idemaclimasrl/" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3Z"/></svg></a><a href="https://www.instagram.com/idemaclimasrl/" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg></a><a href="https://www.linkedin.com/company/idemaclimasrl" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6ZM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a></div>
@@ -12,8 +12,6 @@
   <div class="wrap footer-company"><p>Cap. Soc. € 250.000 i.v. — Part. IVA / Cod. Fisc. / R.I. Milano <strong>03293510966</strong> — REA Milano <strong>1664622</strong></p><p>Iscriz. Reg. RAEE <strong>IT14030000008296</strong> — Iscriz. Reg. PA <strong>IT19080P00005580</strong></p></div>
   <div class="wrap footer-legal"><span>© <?= date('Y') ?> Idema Clima S.r.l. — Tutti i diritti riservati</span><span class="footer-links"><a href="https://www.iubenda.com/privacy-policy/38092343/full-legal" target="_blank" rel="noopener">Privacy Policy</a><a href="https://www.iubenda.com/privacy-policy/38092343/cookie-policy" target="_blank" rel="noopener">Cookie Policy</a><?php if(!empty($iubendaActive)): ?><a href="#" class="iubenda-cs-preferences-link">Preferenze cookie</a><?php endif; ?></span></div>
 </footer>
-<style>.content form label,.easy-form label,.warranty-form label,.contact-form label{font-family:inherit;font-size:14px;font-weight:600;line-height:1.4}.content form label small,.easy-form label small,.warranty-form label small{font-weight:400}</style>
 <script src="/idemaclima/public/mobile-menu.js?v=20260901-2" defer></script>
 </body>
 </html>
-

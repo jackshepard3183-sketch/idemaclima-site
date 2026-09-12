@@ -17,8 +17,7 @@ final class CategoriesController
     public static function index(): void
     {
         AdminAuth::requireLogin();
-        $sort=(string)($_GET['sort']??'order');$dir=strtolower((string)($_GET['dir']??'asc'))==='desc'?'DESC':'ASC';$columns=['name'=>'c.name','parent'=>'p.name','slug'=>'c.slug','order'=>'c.sort_order','status'=>'c.content_status'];$sort=isset($columns[$sort])?$sort:'order';
-        $categories = Database::connection()->query('SELECT c.*, p.name parent_name FROM product_categories c LEFT JOIN product_categories p ON p.id=c.parent_id ORDER BY '.$columns[$sort].' '.$dir.',c.sort_order,c.name')->fetchAll(PDO::FETCH_ASSOC);
+        $categories = Database::connection()->query('SELECT c.*, p.name parent_name FROM product_categories c LEFT JOIN product_categories p ON p.id=c.parent_id ORDER BY c.sort_order,c.name')->fetchAll(PDO::FETCH_ASSOC);
         $user = AdminAuth::user(); $csrf = Security::csrfToken();
         require dirname(__DIR__, 2) . '/Views/admin/categories.php';
     }
@@ -70,5 +69,3 @@ final class CategoriesController
         $user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/category_form.php';
     }
 }
-
-

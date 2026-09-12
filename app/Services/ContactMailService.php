@@ -13,7 +13,7 @@ final class ContactMailService
     {
         $settings=self::settings();if(!self::enabled($settings))return;
         $raw=(string)($settings['contacts_recipients']??'');$recipients=preg_split('/[;,\s]+/',trim($raw))?:[];
-        $recipients=array_values(array_unique(array_filter($recipients,static fn(string $email):bool=>(bool)filter_var($email,FILTER_VALIDATE_EMAIL))));if(!$recipients)$recipients=['commerciale.tre@idemaclima.it'];
+        $recipients=array_values(array_unique(array_filter($recipients,static fn(string $email):bool=>(bool)filter_var($email,FILTER_VALIDATE_EMAIL))));if(!$recipients)return;
         $body="È stata ricevuta una nuova richiesta dal modulo Contatti.\n\n";
         foreach(['Nome'=>trim((string)($request['first_name']??'')).' '.trim((string)($request['last_name']??'')),'Località'=>trim((string)($request['postal_code']??'')).' '.trim((string)($request['city']??'')).' ('.trim((string)($request['province']??'')).')','Regione'=>$request['region']??'','Telefono'=>$request['phone']??'','Email'=>$request['email']??'','Oggetto'=>$request['subject']??'','Messaggio'=>$request['message']??'','Allegato'=>$attachmentName??''] as $label=>$value){$value=self::clean((string)$value);if($value!=='')$body.=$label.': '.$value."\n";}
         $body.="\nAccedi al pannello IDEMA per gestire la richiesta e scaricare l’eventuale allegato.\n";
