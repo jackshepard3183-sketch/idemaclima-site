@@ -28,4 +28,4 @@ body :is(.section-label,.technical-eyebrow,.ts-eyebrow,.catalog-eyebrow,.catalog
 body :is(.privacy-check,.easy-check,.check){line-height:1.55}
 body :is(.references-cta-box,.event-block,.registration){padding-left:22px;padding-right:22px}
 }
-body .wifi-accordion summary{font-family:var(--font-display);font-size:17px;font-weight:600}\n</style>
+body .wifi-accordion summary{font-family:var(--font-display);font-size:17px;font-weight:600}\nbody :is(.wifi-nav strong,.wifi-os h3,.wifi-foundation-card h3,.wifi-step h3){font-family:var(--font-display);font-weight:700}\n</style>
