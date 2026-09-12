@@ -84,6 +84,9 @@ for required_path in \
   app/Views/public/campus/cat_register.php \
   app/Views/public/campus/event.php \
   app/Views/public/warranty/form_fields.php \
+  scripts/mirror_remote_assets.php \
+  database/import/rendered_asset_sources.txt \
+  app/Core/Url.php \
   app/Core/Seo.php \
   app/Services/CampusMailService.php \
   app/Services/ContactMailService.php \
