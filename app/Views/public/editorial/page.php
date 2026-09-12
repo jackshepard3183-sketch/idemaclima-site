@@ -3,6 +3,11 @@ $editorialSlug=(string)($page['slug']??'');
 if($editorialSlug==='faq'){require __DIR__.'/faq.php';return;}
 if($editorialSlug==='configurazione-wi-fi'){require __DIR__.'/wifi.php';return;}
 if(str_starts_with($editorialSlug,'detrazioni-e-incentivi')){require __DIR__.'/incentives.php';return;}
+if($editorialSlug==='schede-tecniche/dichiarazioni-conformita-ce'){
+ $ceOrder=['Linea Residenziale','Linea Commerciale','Linea VRF','Linea Idronica','Altri prodotti','Accessori'];
+ $ordered=[];foreach($ceOrder as $label)if(isset($documentGroups[$label]))$ordered[$label]=$documentGroups[$label];
+ $documentGroups=$ordered+$documentGroups;
+}
 ?>
 <style>
 .section-label{color:var(--primary-deep);font-size:12px;font-weight:600;letter-spacing:.3em;text-transform:uppercase}.editorial-body{max-width:900px;margin-bottom:34px;padding:30px;border:1px solid var(--border);border-radius:26px;background:#fff;color:var(--muted-foreground);font-size:16px;line-height:1.75}.editorial-section{margin-top:34px}.editorial-section h2{font-size:28px}.editorial-panel{padding:26px;border:1px solid var(--border);border-radius:24px;background:#fff;color:var(--muted-foreground);line-height:1.7}.faq-list{display:grid;gap:13px}.faq-item{padding:0;border:1px solid var(--border);border-radius:20px;background:#fff;overflow:hidden}.faq-item summary{padding:20px 24px;cursor:pointer;color:var(--foreground);font-family:Sora;font-size:16px;font-weight:600;list-style:none}.faq-item summary::-webkit-details-marker{display:none}.faq-item summary:after{content:'+';float:right;color:var(--primary-deep);font-size:22px}.faq-item[open] summary:after{content:'−'}.faq-answer{padding:0 24px 22px;color:var(--muted-foreground);line-height:1.7}.editorial-docs{display:grid;gap:12px}
