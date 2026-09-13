@@ -78,6 +78,7 @@ final class CampusController
         }
         $uploaded=Upload::contentImage('cover_image_file','campus',$errors);
         $cover=$uploaded['path']??$existingImage;
+        if($cover==='')$cover=self::defaultCover($audience);
         $data=['id'=>$id,'title'=>$title,'slug'=>$slug,'audience'=>$audience,'category'=>$category,'location'=>$location,'address'=>$address,'starts_at'=>$starts??'','ends_at'=>$ends??'','short_description'=>$short,'speaker'=>$speaker,'description'=>$description,'program'=>$program,'cover_image'=>$cover,'max_seats'=>$maxSeats,'waitlist_enabled'=>Validator::bool($_POST['waitlist_enabled']??0),'registration_open'=>Validator::bool($_POST['registration_open']??0),'registration_deadline'=>$deadline,'published'=>Validator::bool($_POST['published']??0),'cancelled'=>Validator::bool($_POST['cancelled']??0),'sort_order'=>Validator::int($_POST['sort_order']??0)];
         if($errors){
             if($uploaded)Upload::removeManaged($uploaded['path']);
@@ -202,6 +203,13 @@ final class CampusController
             throw $e;
         }
         header('Location:/idemaclima/admin/cat/users');exit;
+    }
+
+    private static function defaultCover(string $audience): string
+    {
+        return $audience==='cat'
+            ? '/idemaclima/brand-assets/campus-eventi-cat.webp'
+            : '/idemaclima/brand-assets/campus-eventi-aperti.webp';
     }
 
     private static function strongPassword(string $password): bool

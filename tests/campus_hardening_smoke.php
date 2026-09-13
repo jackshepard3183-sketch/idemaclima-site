@@ -15,9 +15,10 @@ $eventsMigration = file_get_contents($root . '/database/migrations/028_seed_camp
 $actions = file_get_contents($root . '/app/Controllers/Admin/CampusActionsController.php');
 $indexView = file_get_contents($root . '/app/Views/public/campus/index.php');
 $catIndexView = file_get_contents($root . '/app/Views/public/campus/cat_index.php');
+$openEventsView = file_get_contents($root . '/app/Views/public/campus/open_events.php');
 $registrationsView = file_get_contents($root . '/app/Views/admin/campus_registrations.php');
 
-foreach ([$admin,$public,$auth,$eventForm,$catForm,$eventView,$migration,$completeMigration,$eventsMigration,$actions,$indexView,$catIndexView,$registrationsView] as $content) {
+foreach ([$admin,$public,$auth,$eventForm,$catForm,$eventView,$migration,$completeMigration,$eventsMigration,$actions,$indexView,$catIndexView,$openEventsView,$registrationsView] as $content) {
     if (!is_string($content) || $content === '') throw new RuntimeException('File Campus/CAT non leggibile.');
 }
 
@@ -51,6 +52,10 @@ $checks = [
     [$eventsMigration, "ON DUPLICATE KEY UPDATE", 'import eventi idempotente'],
     [$eventsMigration, "registration_open = VALUES(registration_open)", 'iscrizioni storiche chiuse'],
     [$catIndexView, "Storico attività", 'storico attività CAT separato'],
+    [$catIndexView, "campus-eventi-cat.webp", 'cover predefinita Eventi CAT'],
+    [$catIndexView, "event-date-badge", 'badge data Eventi CAT'],
+    [$openEventsView, "campus-eventi-aperti.webp", 'cover predefinita Eventi aperti'],
+    [$admin, "defaultCover", 'cover automatica per tipologia'],
     [$registrationsView, "Tutti gli stati", 'filtro stato iscrizioni'],
 ];
 
