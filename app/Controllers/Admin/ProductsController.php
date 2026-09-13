@@ -30,7 +30,7 @@ final class ProductsController
         AdminAuth::requireLogin();
         $pdo = Database::connection();
         $id = Validator::int($_GET['id'] ?? 0);
-        $product = ['id'=>0,'category_id'=>'','name'=>'','slug'=>'','description'=>'','product_role'=>'complete_system','refrigerant'=>'','status'=>'active','content_status'=>'draft','image_path'=>'','source_catalog_url'=>'','source_catalog_page'=>'','sort_order'=>0,'published'=>0];
+        $product = ['id'=>0,'category_id'=>'','name'=>'','slug'=>'','description'=>'','tagline'=>'','badges_text'=>'','warranty_label'=>'','product_role'=>'complete_system','refrigerant'=>'','status'=>'active','content_status'=>'draft','image_path'=>'','source_catalog_url'=>'','source_catalog_page'=>'','sort_order'=>0,'published'=>0];
         if ($id) {
             $s = $pdo->prepare('SELECT * FROM products WHERE id=?');
             $s->execute([$id]);
@@ -93,6 +93,7 @@ final class ProductsController
         $slug = Validator::slug((string)($_POST['slug'] ?? ''));
         if ($slug === '') $slug = Validator::slug($name);
         $description = trim((string)($_POST['description'] ?? ''));
+        $tagline=trim((string)($_POST['tagline']??''));$badgesText=trim((string)($_POST['badges_text']??''));$warrantyLabel=trim((string)($_POST['warranty_label']??''));
         $roles = ['complete_system','outdoor_unit','indoor_unit','accessory','tank','controller','other'];
         $role = (string)($_POST['product_role'] ?? 'complete_system');
         if (!in_array($role, $roles, true)) $errors[] = 'Ruolo non valido.';
@@ -124,7 +125,7 @@ final class ProductsController
 
         if ($errors) {
             if ($uploaded) Upload::removeManaged($uploaded['path']);
-            $product = ['id'=>$id,'category_id'=>$categoryId,'name'=>$name,'slug'=>$slug,'description'=>$description,'product_role'=>$role,'refrigerant'=>$refrigerant,'status'=>$status,'content_status'=>$contentStatus,'image_path'=>$image,'source_catalog_url'=>$sourceCatalogUrl,'source_catalog_page'=>$sourceCatalogPage,'sort_order'=>$sort,'published'=>$published];
+            $product = ['id'=>$id,'category_id'=>$categoryId,'name'=>$name,'slug'=>$slug,'description'=>$description,'tagline'=>$tagline,'badges_text'=>$badgesText,'warranty_label'=>$warrantyLabel,'product_role'=>$role,'refrigerant'=>$refrigerant,'status'=>$status,'content_status'=>$contentStatus,'image_path'=>$image,'source_catalog_url'=>$sourceCatalogUrl,'source_catalog_page'=>$sourceCatalogPage,'sort_order'=>$sort,'published'=>$published];
             $categories = $pdo->query('SELECT id,name FROM product_categories ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC);
             $models = [];
             if ($id) {
@@ -141,13 +142,13 @@ final class ProductsController
         try {
             $pdo->beginTransaction();
             if ($id) {
-                $s = $pdo->prepare('UPDATE products SET category_id=?,name=?,slug=?,description=?,product_role=?,refrigerant=?,status=?,content_status=?,image_path=?,source_catalog_url=?,source_catalog_page=?,sort_order=?,published=? WHERE id=?');
-                $s->execute([$categoryId,$name,$slug,$description,$role,$refrigerant,$status,$contentStatus,$image,$sourceCatalogUrl?:null,$sourceCatalogPage,$sort,$published,$id]);
+                $s = $pdo->prepare('UPDATE products SET category_id=?,name=?,slug=?,description=?,tagline=?,badges_text=?,warranty_label=?,product_role=?,refrigerant=?,status=?,content_status=?,image_path=?,source_catalog_url=?,source_catalog_page=?,sort_order=?,published=? WHERE id=?');
+                $s->execute([$categoryId,$name,$slug,$description,$tagline?:null,$badgesText?:null,$warrantyLabel?:null,$role,$refrigerant,$status,$contentStatus,$image,$sourceCatalogUrl?:null,$sourceCatalogPage,$sort,$published,$id]);
                 $entityId = $id;
                 $action = 'product.update';
             } else {
-                $s = $pdo->prepare('INSERT INTO products(category_id,name,slug,description,product_role,refrigerant,status,content_status,image_path,source_catalog_url,source_catalog_page,sort_order,published) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)');
-                $s->execute([$categoryId,$name,$slug,$description,$role,$refrigerant,$status,$contentStatus,$image,$sourceCatalogUrl?:null,$sourceCatalogPage,$sort,$published]);
+                $s = $pdo->prepare('INSERT INTO products(category_id,name,slug,description,tagline,badges_text,warranty_label,product_role,refrigerant,status,content_status,image_path,source_catalog_url,source_catalog_page,sort_order,published) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+                $s->execute([$categoryId,$name,$slug,$description,$tagline?:null,$badgesText?:null,$warrantyLabel?:null,$role,$refrigerant,$status,$contentStatus,$image,$sourceCatalogUrl?:null,$sourceCatalogPage,$sort,$published]);
                 $entityId = (int)$pdo->lastInsertId();
                 $action = 'product.create';
             }
@@ -195,15 +196,15 @@ final class ProductsController
             http_response_code(422);
             exit('Prodotto e codice modello validi sono obbligatori');
         }
-        $name = trim((string)($_POST['name'] ?? ''));
+        $name=trim((string)($_POST['name']??''));$coolingKw=self::decimalOrNull($_POST['cooling_kw']??null);$seer=self::decimalOrNull($_POST['seer']??null);$seerClass=trim((string)($_POST['seer_class']??''));$heatingKw=self::decimalOrNull($_POST['heating_kw']??null);$scop=self::decimalOrNull($_POST['scop']??null);$scopClass=trim((string)($_POST['scop_class']??''));$indoorCode=trim((string)($_POST['indoor_unit_code']??''));$outdoorCode=trim((string)($_POST['outdoor_unit_code']??''));
         $sort = Validator::int($_POST['sort_order'] ?? 0);
         $contentStatus = (string)($_POST['content_status'] ?? 'published');
         if (!in_array($contentStatus, ['draft','published','hidden'], true)) $contentStatus = 'draft';
         $published = $contentStatus === 'published' ? 1 : 0;
         try {
             if ($id) {
-                $s = $pdo->prepare('UPDATE product_models SET code=?,name=?,content_status=?,sort_order=?,published=? WHERE id=? AND product_id=?');
-                $s->execute([$code,$name?:null,$contentStatus,$sort,$published,$id,$productId]);
+                $s = $pdo->prepare('UPDATE product_models SET code=?,name=?,cooling_kw=?,seer=?,seer_class=?,heating_kw=?,scop=?,scop_class=?,indoor_unit_code=?,outdoor_unit_code=?,content_status=?,sort_order=?,published=? WHERE id=? AND product_id=?');
+                $s->execute([$code,$name?:null,$coolingKw,$seer,$seerClass?:null,$heatingKw,$scop,$scopClass?:null,$indoorCode?:null,$outdoorCode?:null,$contentStatus,$sort,$published,$id,$productId]);
                 if ($s->rowCount() === 0) {
                     $exists = $pdo->prepare('SELECT 1 FROM product_models WHERE id=? AND product_id=?');
                     $exists->execute([$id,$productId]);
@@ -212,8 +213,8 @@ final class ProductsController
                 $entityId = $id;
                 $action = 'model.update';
             } else {
-                $s = $pdo->prepare('INSERT INTO product_models(product_id,code,name,content_status,sort_order,published) VALUES(?,?,?,?,?,?)');
-                $s->execute([$productId,$code,$name?:null,$contentStatus,$sort,$published]);
+                $s = $pdo->prepare('INSERT INTO product_models(product_id,code,name,cooling_kw,seer,seer_class,heating_kw,scop,scop_class,indoor_unit_code,outdoor_unit_code,content_status,sort_order,published) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+                $s->execute([$productId,$code,$name?:null,$coolingKw,$seer,$seerClass?:null,$heatingKw,$scop,$scopClass?:null,$indoorCode?:null,$outdoorCode?:null,$contentStatus,$sort,$published]);
                 $entityId = (int)$pdo->lastInsertId();
                 $action = 'model.create';
             }
@@ -274,9 +275,11 @@ final class ProductsController
         foreach($features as $label){$label=trim($label);if($label!=='')$q->execute([$productId,mb_substr($label,0,255),$order++]);}
         $specs=preg_split('/\R/u',(string)($input['specifications_text']??''))?:[];$q=$pdo->prepare('INSERT INTO product_specifications(product_id,specification_key,specification_value,sort_order) VALUES(?,?,?,?)');$order=0;
         foreach($specs as $line){[$key,$value]=array_pad(explode('|',$line,2),2,'');$key=trim($key);$value=trim($value);if($key!==''&&$value!=='')$q->execute([$productId,mb_substr($key,0,160),mb_substr($value,0,255),$order++]);}
-        $items=preg_split('/\R/u',(string)($input['accessories_text']??''))?:[];$q=$pdo->prepare('INSERT INTO product_accessories(product_id,code,name,description,sort_order,published) VALUES(?,?,?,?,?,1)');$order=0;
-        foreach($items as $line){[$code,$name,$description]=array_pad(explode('|',$line,3),3,'');$name=trim($name);if($name!=='')$q->execute([$productId,trim($code)?:null,mb_substr($name,0,200),trim($description)?:null,$order++]);}
+        $items=preg_split('/\R/u',(string)($input['accessories_text']??''))?:[];$q=$pdo->prepare('INSERT INTO product_accessories(product_id,code,name,description,availability_label,sort_order,published) VALUES(?,?,?,?,?,?,1)');$order=0;
+        foreach($items as $line){[$code,$name,$description,$availability]=array_pad(explode('|',$line,4),4,'');$name=trim($name);if($name!=='')$q->execute([$productId,trim($code)?:null,mb_substr($name,0,200),trim($description)?:null,trim($availability)?:null,$order++]);}
     }
+
+    private static function decimalOrNull(mixed $value):?string{$value=str_replace(',','.',trim((string)$value));return $value!==''&&is_numeric($value)?$value:null;}
 
     private static function uniqueSlug(PDO $pdo,string $base):string
     {

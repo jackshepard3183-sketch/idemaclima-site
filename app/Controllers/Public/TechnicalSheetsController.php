@@ -178,7 +178,7 @@ final class TechnicalSheetsController
         $stmt->execute([(int)$product['id']]);
         $secondaryCategories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $stmt = $pdo->prepare('SELECT id, code, name, sort_order FROM product_models WHERE product_id = ? AND published = 1 ORDER BY sort_order, code');
+        $stmt = $pdo->prepare('SELECT id, code, name, cooling_kw, seer, seer_class, heating_kw, scop, scop_class, indoor_unit_code, outdoor_unit_code, sort_order FROM product_models WHERE product_id = ? AND published = 1 ORDER BY sort_order, code');
         $stmt->execute([(int)$product['id']]);
         $models = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -190,7 +190,7 @@ final class TechnicalSheetsController
         $stmt->execute([(int)$product['id']]);
         $specifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $stmt = $pdo->prepare('SELECT code, name, description, sort_order FROM product_accessories WHERE product_id = ? AND published = 1 ORDER BY sort_order, id');
+        $stmt = $pdo->prepare('SELECT code, name, description, availability_label, sort_order FROM product_accessories WHERE product_id = ? AND published = 1 ORDER BY sort_order, id');
         $stmt->execute([(int)$product['id']]);
         $accessories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
