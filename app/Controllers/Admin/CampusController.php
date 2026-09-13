@@ -208,8 +208,8 @@ final class CampusController
     private static function defaultCover(string $audience): string
     {
         return $audience==='cat'
-            ? '/idemaclima/brand-assets/campus-eventi-cat.webp'
-            : '/idemaclima/brand-assets/campus-eventi-aperti.webp';
+            ? '/idemaclima/public/brand-assets/campus-eventi-cat.webp'
+            : '/idemaclima/public/brand-assets/campus-eventi-aperti.webp';
     }
 
     private static function strongPassword(string $password): bool
