@@ -162,7 +162,16 @@ trait WarrantyCertificatePdfTrait
         $combination=(string)($r['combination'] ?? $r['code']);
         $series=str_contains($combination,'ISPT')?'Serie ISPT-R32':(str_contains($combination,'WTMC')?(str_contains($combination,'BLK')?'Serie WTMC-R32 COLOR':'Serie WTMC-R32'):'Serie WTZ-R32');
         $systemDescription = (int)$r['warranty_years'].' ANNI TOTALI'.($formula!==''?' ('.$formulaDisplay.')':'').' - '.strtoupper($type.' '.$series);
-        $fullCombination = (($r['outer_unit']??'')!==''?(string)$r['outer_unit'].' + ':'').$combination;
+        $fullCombination = $combination;
+        if (($r['product_type'] ?? '') === 'multi' && trim((string)($r['outer_unit'] ?? '')) !== '') {
+            $outerUnit = trim((string)$r['outer_unit']);
+            $combinationParts = array_values(array_filter(array_map('trim', preg_split('/\\s*\\+\\s*/', $combination) ?: [])));
+            $containsOuterUnit = false;
+            foreach ($combinationParts as $part) {
+                if (strcasecmp($part, $outerUnit) === 0) { $containsOuterUnit = true; break; }
+            }
+            if (!$containsOuterUnit) $fullCombination = $outerUnit.'+'.$combination;
+        }
         $cursor=589.0; $gap=12.0*(float)$layout['density'];
         foreach($layout['order'] as $block){
             if(empty($layout['blocks'][$block]))continue;
