@@ -111,9 +111,11 @@ final class WarrantyController
         $stmt = $pdo->prepare('SELECT status FROM warranty_registrations WHERE id=?');
         $stmt->execute([$id]); $currentStatus = $stmt->fetchColumn();
         if ($currentStatus === false) { http_response_code(404); exit('Registrazione non trovata'); }
-        $stmt = $pdo->prepare('SELECT 1 FROM product_models WHERE id=? AND published=1');
+        $stmt = $pdo->prepare('SELECT code FROM product_models WHERE id=? AND published=1');
         $stmt->execute([$modelId]);
-        if (!$stmt->fetchColumn()) { http_response_code(422); exit('Modello non valido.'); }
+        $selectedModelCode = $stmt->fetchColumn();
+        if ($selectedModelCode === false) { http_response_code(422); exit('Modello non valido.'); }
+        if ($productType === 'mono' && $outerUnit === '') $outerUnit = (string)$selectedModelCode;
         $stmt = $pdo->prepare('SELECT file_path FROM warranty_generated_certificates WHERE registration_id=?');
         $stmt->execute([$id]); $certificatePath = $stmt->fetchColumn() ?: null;
 
@@ -135,7 +137,8 @@ final class WarrantyController
         try {
             $newStatus = $currentStatus === 'issued' ? 'approved' : $currentStatus;
             $stmt = $pdo->prepare('UPDATE warranty_registrations SET model_id=?,customer_first_name=?,customer_last_name=?,fiscal_code=?,email=?,phone=?,address=?,postal_code=?,city=?,province=?,region=?,invoice_date=?,status=? WHERE id=?');
-            $stmt->execute([$modelId,$data['customer_first_name'],$data['customer_last_name'],$data['fiscal_code'],$data['email'],$phone ?: null,$data['address'],$data['postal_code'],$data['city'],strtoupper($data['province']),$data['region'],$data['invoice_date'],$newStatus,$id]);
+            $upper = static fn(string $value): string => function_exists('mb_strtoupper') ? mb_strtoupper(trim($value), 'UTF-8') : strtoupper(trim($value));
+            $stmt->execute([$modelId,$data['customer_first_name'],$data['customer_last_name'],$data['fiscal_code'],$data['email'],$phone ?: null,$data['address'],$data['postal_code'],$upper($data['city']),$upper($data['province']),$upper($data['region']),$data['invoice_date'],$newStatus,$id]);
             $updateSerial = $pdo->prepare('UPDATE warranty_units SET serial_number=? WHERE id=? AND registration_id=?');
             foreach ($serials as $unitId => $serial) {
                 $serial = trim((string)$serial);
