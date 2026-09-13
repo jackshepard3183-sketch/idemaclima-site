@@ -66,6 +66,7 @@ final class MonoSplitImportController
     {
         $pdo=Database::connection();$pdo->beginTransaction();
         try{
+            $pdo->prepare('UPDATE products SET source_catalog_url=?,source_catalog_page=? WHERE id=?')->execute([$input['source_url'],$input['source_page'],$input['product_id']]);
             if($data['description']!=='')$pdo->prepare('UPDATE products SET description=? WHERE id=?')->execute([$data['description'],$input['product_id']]);
             $maps=['features'=>['product_features','INSERT INTO product_features(product_id,label,sort_order) VALUES(?,?,?)'],'specifications'=>['product_specifications','INSERT INTO product_specifications(product_id,specification_key,specification_value,sort_order) VALUES(?,?,?,?)'],'accessories'=>['product_accessories','INSERT INTO product_accessories(product_id,code,name,description,sort_order,published) VALUES(?,?,?,?,?,1)']];
             foreach($maps as $key=>[$table,$sql]){if($data[$key]===[])continue;$pdo->prepare("DELETE FROM {$table} WHERE product_id=?")->execute([$input['product_id']]);$q=$pdo->prepare($sql);$sort=0;foreach($data[$key] as $line){if($key==='features')$q->execute([$input['product_id'],$line,$sort++]);elseif($key==='specifications'){[$a,$b]=array_map('trim',explode('|',$line,2));$q->execute([$input['product_id'],$a,$b,$sort++]);}else{[$a,$b,$c]=array_map('trim',array_pad(explode('|',$line,3),3,''));$q->execute([$input['product_id'],$a?:null,$b,$c?:null,$sort++]);}}}
