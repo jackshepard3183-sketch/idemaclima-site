@@ -211,7 +211,9 @@ trait WarrantyCertificateActionsTrait
             $system = (string)($r['outer_unit'] ?? $r['combination'] ?? $r['code']);
         } else {
             $model = trim((string)($r['combination'] ?? $r['code']));
-            if (preg_match('/^(.+?)-R32$/i', $model, $match)) {
+            if (str_contains($model, '+')) {
+                $system = preg_replace('/\\s*\\+\\s*/', '_', $model) ?? $model;
+            } elseif (preg_match('/^(.+?)-R32$/i', $model, $match)) {
                 $system = $match[1] . 'UI-R32_' . $match[1] . 'UE-R32';
             } else {
                 $system = $model;
