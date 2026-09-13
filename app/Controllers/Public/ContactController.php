@@ -41,7 +41,7 @@ final class ContactController
         self::maxLen($old,'first_name',120,'Nome',$errors);
         self::maxLen($old,'last_name',120,'Cognome',$errors);
         self::maxLen($old,'region',120,'Regione',$errors);
-        self::maxLen($old,'province',8,'Provincia',$errors);
+        self::maxLen($old,'province',120,'Provincia',$errors);
         self::maxLen($old,'city',120,'Città',$errors);
         self::maxLen($old,'postal_code',12,'CAP',$errors);
         self::maxLen($old,'email',190,'Email',$errors);
