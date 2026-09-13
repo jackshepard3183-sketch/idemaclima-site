@@ -1,0 +1,21 @@
+INSERT INTO site_settings(setting_group,setting_key,setting_value,updated_by) VALUES
+('general','company_name','Idema Clima Srl',NULL),
+('general','registered_office','Corso di Porta Vittoria, 50 - 20122 Milano',NULL),
+('general','operational_office','S.S. dei Giovi, 31 - 22070 Vertemate con Minoprio (CO)',NULL),
+('general','phone','031 888 1637',NULL),
+('general','email','info@idemaclima.it',NULL),
+('general','pec','idemaclimasrl@legalmail.it',NULL),
+('general','company_data','Capitale sociale € 250.000 i.v.\nPartita IVA / Codice Fiscale / Registro Imprese Milano 03293510966\nREA Milano 1664622\nRegistro RAEE IT14030000008296\nRegistro PA IT19080P00005580',NULL),
+('general','facebook_url','https://www.facebook.com/idemaclimasrl/',NULL),
+('general','instagram_url','https://www.instagram.com/idemaclimasrl/',NULL),
+('general','linkedin_url','https://www.linkedin.com/company/idemaclimasrl',NULL),
+('site','copyright','Copyright © 2026 Idema Clima Srl. Tutti i diritti riservati.',NULL),
+('site','privacy_url','https://www.iubenda.com/privacy-policy/38092343/full-legal',NULL),
+('site','cookie_url','https://www.iubenda.com/privacy-policy/38092343/cookie-policy',NULL),
+('site','price_list_url','https://www.rappresentanzeguanzirolisas.it/idemaclima/uploads/mirrored/bfc5b0bf6600b357-LISTINO_PREZZI_IDEMA_2026.pdf',NULL),
+('site','seo_title','Idema Clima Srl — Climatizzatori e pompe di calore ad alta efficienza',NULL),
+('site','seo_description','Climatizzatori, pompe di calore e soluzioni IDEMA CLIMA® per il comfort e l’efficienza energetica.',NULL),
+('site','maintenance_mode','0',NULL),
+('email','sender_name','Idema Clima Srl',NULL),
+('email','sender_email','no-reply@rappresentanzeguanzirolisas.it',NULL)
+ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value),updated_by=NULL,updated_at=CURRENT_TIMESTAMP;

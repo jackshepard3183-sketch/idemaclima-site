@@ -43,7 +43,7 @@ final class MonoSplitImportController
         $parts=parse_url($input['source_url']);$host=strtolower((string)($parts['host']??''));$scheme=strtolower((string)($parts['scheme']??''));
         if($scheme!=='https'||!in_array($host,['idemaclima.it','www.idemaclima.it','www.rappresentanzeguanzirolisas.it'],true))throw new \RuntimeException('Sono accettati solo cataloghi IDEMA o file presenti sullo staging.');
         if(mb_strlen($input['source_text'])<20||mb_strlen($input['source_text'])>60000)throw new \RuntimeException('Incolla il testo della pagina indicata (da 20 a 60.000 caratteri).');
-        $pdo=Database::connection();$s=$pdo->prepare("SELECT p.id FROM products p JOIN product_categories c ON c.id=p.category_id LEFT JOIN product_categories parent ON parent.id=c.parent_id WHERE p.id=? AND (UPPER(c.name) LIKE '%MONO%' OR UPPER(parent.name) LIKE '%MONO%')");$s->execute([$input['product_id']]);if(!$s->fetchColumn())throw new \RuntimeException('Il prodotto selezionato non appartiene alla sezione Mono Split.');
+        $pdo=Database::connection();$s=$pdo->prepare("SELECT id FROM products WHERE id=? AND name IN ('ISPT-R32','ISAX-R32','ISZZ-R32','WTZ-R32','WTMC-R32','WTMC-R32 COLOR')");$s->execute([$input['product_id']]);if(!$s->fetchColumn())throw new \RuntimeException('Il prodotto selezionato non appartiene ai sei Mono Split correnti.');
     }
 
     private static function parse(string $text):array
@@ -75,6 +75,6 @@ final class MonoSplitImportController
 
     private static function render(array $data):void
     {
-        extract($data,EXTR_SKIP);$pdo=Database::connection();$products=$pdo->query("SELECT p.id,p.name,c.name family_name FROM products p JOIN product_categories c ON c.id=p.category_id LEFT JOIN product_categories parent ON parent.id=c.parent_id WHERE UPPER(c.name) LIKE '%MONO%' OR UPPER(parent.name) LIKE '%MONO%' ORDER BY c.sort_order,p.sort_order,p.name")->fetchAll(PDO::FETCH_ASSOC);$title='Importa pagina Mono Split';$user=AdminAuth::user();$csrf=Security::csrfToken();$imported=isset($_GET['imported']);require dirname(__DIR__,2).'/Views/admin/mono_split_import.php';
+        extract($data,EXTR_SKIP);$pdo=Database::connection();$products=$pdo->query("SELECT p.id,p.name,c.name family_name FROM products p JOIN product_categories c ON c.id=p.category_id WHERE p.name IN ('ISPT-R32','ISAX-R32','ISZZ-R32','WTZ-R32','WTMC-R32','WTMC-R32 COLOR') ORDER BY FIELD(p.name,'ISPT-R32','ISAX-R32','ISZZ-R32','WTZ-R32','WTMC-R32','WTMC-R32 COLOR')")->fetchAll(PDO::FETCH_ASSOC);$title='Importa pagina Mono Split';$user=AdminAuth::user();$csrf=Security::csrfToken();$imported=isset($_GET['imported']);require dirname(__DIR__,2).'/Views/admin/mono_split_import.php';
     }
 }
