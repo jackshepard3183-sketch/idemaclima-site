@@ -28,6 +28,7 @@ transfer_and_verify() {
     rm -f "$remote_copy"
     lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
 set ftp:ssl-allow yes
+set ftp:use-type yes
 set ssl:verify-certificate yes
 set ssl:check-hostname no
 set net:max-retries 2
@@ -40,6 +41,7 @@ EOF
     if cmp -s "$source" "$remote_copy"; then
       lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
 set ftp:ssl-allow yes
+set ftp:use-type yes
 set ssl:verify-certificate yes
 set ssl:check-hostname no
 mv "$remote_tmp" "$remote"
@@ -53,6 +55,7 @@ EOF
   done
   lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF || true
 set ftp:ssl-allow yes
+set ftp:use-type yes
 set ssl:verify-certificate yes
 set ssl:check-hostname no
 rm -f "$remote_tmp"
@@ -106,6 +109,7 @@ while IFS=$'\t' read -r status first second; do
   if [[ "$status" == D* ]]; then
     lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
 set ftp:ssl-allow yes
+set ftp:use-type yes
 set ssl:verify-certificate yes
 set ssl:check-hostname no
 rm -f "$remote_root/$first"
