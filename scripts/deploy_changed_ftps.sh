@@ -32,6 +32,7 @@ set ssl:verify-certificate yes
 set ssl:check-hostname no
 set net:max-retries 2
 set net:timeout 20
+quote TYPE I
 mkdir -p "$(dirname "$remote")"
 put "$source" -o "$remote_tmp"
 get "$remote_tmp" -o "$remote_copy"
@@ -77,6 +78,8 @@ for required_path in \
   public/brand-assets/garanzia-10anni.png.php \
   public/brand-assets/garanzia-5anni.png.php \
   public/brand-assets/campus-logo-colorato.webp \
+  public/brand-assets/campus-eventi-aperti.webp \
+  public/brand-assets/campus-eventi-cat.webp \
   public/brand-assets/campus-casa-ecologica.webp \
   public/brand-assets/campus-sala-corsi.webp \
   app/Views/public/campus/index.php \
