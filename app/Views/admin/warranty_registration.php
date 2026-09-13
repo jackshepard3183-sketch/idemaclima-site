@@ -22,12 +22,12 @@
 <label>Telefono<input name="phone" maxlength="50" value="<?= htmlspecialchars((string)$registration['phone']) ?>"></label>
 <label>Indirizzo<input name="address" maxlength="255" value="<?= htmlspecialchars((string)$registration['address']) ?>" required></label>
 <label>Regione<input name="region" maxlength="120" value="<?= htmlspecialchars((string)$registration['region']) ?>" required></label>
-<label>Provincia<input name="province" maxlength="8" value="<?= htmlspecialchars((string)$registration['province']) ?>" required></label>
+<label>Provincia<input name="province" maxlength="120" value="<?= htmlspecialchars((string)$registration['province']) ?>" required></label>
 <label>CAP<input name="postal_code" maxlength="12" value="<?= htmlspecialchars((string)$registration['postal_code']) ?>" required></label>
 <label>Città<input name="city" maxlength="120" value="<?= htmlspecialchars((string)$registration['city']) ?>" required></label>
 <?php foreach($units as $u): ?><label><?= htmlspecialchars($u['unit_type']==='outdoor'?'Seriale unità esterna':'Seriale unità interna') ?><input name="unit_serials[<?= (int)$u['id'] ?>]" maxlength="160" value="<?= htmlspecialchars((string)$u['serial_number']) ?>" required></label><?php endforeach; ?>
 <label>Tipologia sistema<select name="product_type"><option value="mono" <?= ($details['product_type']??'mono')==='mono'?'selected':'' ?>>Mono Split</option><option value="multi" <?= ($details['product_type']??'')==='multi'?'selected':'' ?>>Multi Split</option></select></label>
-<label>Unità esterna / modello principale<input name="outer_unit" maxlength="80" value="<?= htmlspecialchars((string)($details['outer_unit']??'')) ?>"></label>
+<label>Unità esterna / modello principale<input name="outer_unit" maxlength="80" value="<?= htmlspecialchars((string)($details['outer_unit'] ?: (($details['product_type']??'mono') === 'mono' ? ($details['combination']??$registration['code']) : ''))) ?>"></label>
 <label class="full">Combinazione<input name="combination" maxlength="255" value="<?= htmlspecialchars((string)($details['combination']??$registration['code'])) ?>" required></label>
 </div>
 <button class="btn" type="submit">Salva correzioni</button>
