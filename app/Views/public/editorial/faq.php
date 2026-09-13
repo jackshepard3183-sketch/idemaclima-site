@@ -22,7 +22,7 @@
 @media(max-width:600px){.faq-aside{grid-template-columns:1fr}.faq-aside .faq-help:first-child{grid-column:auto}.faq-list-lovable{padding:5px 16px}.faq-row summary{font-size:15px}}
 </style>
 <section class="faq-hero"><div class="wrap">
-<span class="faq-eyebrow">Domande e risposte</span>
+<span class="faq-eyebrow">— Domande e risposte</span>
 <h1>FAQ</h1>
 <p>Le risposte alle domande più frequenti su installazione, garanzia, manutenzione ed efficienza energetica dei climatizzatori IDEMA.</p>
 </div></section>
