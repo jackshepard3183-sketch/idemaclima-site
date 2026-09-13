@@ -106,6 +106,10 @@ final class WarrantyController
 
         $province = trim((string)($old['province'] ?? ''));
         if (!preg_match("/^[\\p{L}.' -]{2,120}$/u", $province)) $errors[] = 'Provincia non valida.';
+        $upper = static fn(string $value): string => function_exists('mb_strtoupper') ? mb_strtoupper(trim($value), 'UTF-8') : strtoupper(trim($value));
+        $city = $upper((string)($old['city'] ?? ''));
+        $province = $upper($province);
+        $region = $upper((string)($old['region'] ?? ''));
 
         $invoice = DateTimeImmutable::createFromFormat('!Y-m-d', $invoiceDate);
         $dateErrors = DateTimeImmutable::getLastErrors();
@@ -214,9 +218,9 @@ final class WarrantyController
                 $phone !== '' ? $phone : null,
                 $old['address'],
                 $postal,
-                strtoupper((string)$old['city']),
+                $city,
                 $province,
-                $old['region'],
+                $region,
                 $invoiceDate,
                 $invoiceFile['path'] ?? null,
                 $fgasFile['path'] ?? null,
@@ -226,7 +230,8 @@ final class WarrantyController
             $detail = $pdo->prepare(
                 'INSERT INTO warranty_registration_details (registration_id, product_type, outer_unit, combination) VALUES (?,?,?,?)'
             );
-            $detail->execute([$registrationId, $productType, $outerUnit !== '' ? $outerUnit : null, $combination]);
+            $mainModel = $productType === 'multi' ? $outerUnit : $combination;
+            $detail->execute([$registrationId, $productType, $mainModel !== '' ? $mainModel : null, $combination]);
 
             $unit = $pdo->prepare('INSERT INTO warranty_units (registration_id, model_id, unit_type, serial_number) VALUES (?,?,?,?)');
             $unit->execute([$registrationId, $modelId, 'outdoor', trim((string)$old['outdoor_serial'])]);
