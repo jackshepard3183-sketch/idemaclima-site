@@ -4,7 +4,7 @@
 $upcoming=array_values(array_filter($events,static fn(array $event):bool=>strtotime((string)$event['starts_at'])>=time()&&!(int)$event['cancelled']));
 $history=array_values(array_filter($events,static fn(array $event):bool=>strtotime((string)$event['starts_at'])<time()||(int)$event['cancelled']));
 $months=['01'=>'GEN','02'=>'FEB','03'=>'MAR','04'=>'APR','05'=>'MAG','06'=>'GIU','07'=>'LUG','08'=>'AGO','09'=>'SET','10'=>'OTT','11'=>'NOV','12'=>'DIC'];
-$renderEvent=static function(array $event)use($months):void{$cancelled=(int)$event['cancelled']===1;$timestamp=strtotime((string)$event['starts_at']);$cover=!empty($event['cover_image'])?(string)$event['cover_image']:'/idemaclima/public/brand-assets/campus-eventi-cat.webp'; ?>
+$renderEvent=static function(array $event)use($months):void{$cancelled=(int)$event['cancelled']===1;$timestamp=strtotime((string)$event['starts_at']);$cover=!empty($event['cover_image'])?(string)$event['cover_image']:'/idemaclima/public/brand-assets/campus-eventi-cat.webp.php'; ?>
   <a class="event-card" href="/idemaclima/campus/cat/<?=e($event['slug'])?>">
     <div class="event-cover"><img src="<?=e($cover)?>" alt="<?=e($event['title'])?>"><span class="event-date-badge"><strong><?=date('d',$timestamp)?></strong><span><?=$months[date('m',$timestamp)]?></span></span></div>
     <div class="event-info"><span class="section-label"><?=e($event['category']?:'Evento CAT')?></span>

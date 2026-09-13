@@ -52,9 +52,9 @@ $checks = [
     [$eventsMigration, "ON DUPLICATE KEY UPDATE", 'import eventi idempotente'],
     [$eventsMigration, "registration_open = VALUES(registration_open)", 'iscrizioni storiche chiuse'],
     [$catIndexView, "Storico attività", 'storico attività CAT separato'],
-    [$catIndexView, "campus-eventi-cat.webp", 'cover predefinita Eventi CAT'],
+    [$catIndexView, "campus-eventi-cat.webp.php", 'cover predefinita Eventi CAT'],
     [$catIndexView, "event-date-badge", 'badge data Eventi CAT'],
-    [$openEventsView, "campus-eventi-aperti.webp", 'cover predefinita Eventi aperti'],
+    [$openEventsView, "campus-eventi-aperti.webp.php", 'cover predefinita Eventi aperti'],
     [$admin, "defaultCover", 'cover automatica per tipologia'],
     [$registrationsView, "Tutti gli stati", 'filtro stato iscrizioni'],
 ];
