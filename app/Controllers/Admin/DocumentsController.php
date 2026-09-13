@@ -18,8 +18,24 @@ final class DocumentsController
     public static function index(): void
     {
         AdminAuth::requireLogin();
-        $sql = 'SELECT d.id,d.title,d.filename,d.file_path,d.document_year,d.revision,d.published,d.sort_order,t.name type_name FROM documents d JOIN document_types t ON t.id=d.document_type_id ORDER BY d.sort_order,d.created_at DESC,d.id DESC';
-        $documents = Database::connection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $pdo = Database::connection();
+        $q = trim((string)($_GET['q'] ?? ''));
+        $typeId = Validator::int($_GET['type'] ?? 0);
+        $status = (string)($_GET['status'] ?? '');
+        $sort = (string)($_GET['sort'] ?? 'order');
+        $dir = strtolower((string)($_GET['dir'] ?? 'asc')) === 'desc' ? 'DESC' : 'ASC';
+        $sortColumns = ['title'=>'d.title','type'=>'t.name','filename'=>'d.filename','year'=>'d.document_year','revision'=>'d.revision','status'=>'d.published','order'=>'d.sort_order'];
+        $sort = isset($sortColumns[$sort]) ? $sort : 'order';
+        $where = []; $params = [];
+        if ($q !== '') { $where[] = '(d.title LIKE ? OR d.filename LIKE ? OR d.revision LIKE ?)'; $like = '%'.$q.'%'; array_push($params,$like,$like,$like); }
+        if ($typeId > 0) { $where[] = 'd.document_type_id=?'; $params[] = $typeId; }
+        if (in_array($status,['published','hidden'],true)) { $where[] = 'd.published=?'; $params[] = $status === 'published' ? 1 : 0; }
+        $sql = 'SELECT d.id,d.title,d.filename,d.file_path,d.document_year,d.revision,d.published,d.sort_order,t.name type_name FROM documents d JOIN document_types t ON t.id=d.document_type_id'
+            .($where ? ' WHERE '.implode(' AND ',$where) : '')
+            .' ORDER BY '.$sortColumns[$sort].' '.$dir.',d.sort_order,d.title,d.id DESC';
+        $stmt = $pdo->prepare($sql); $stmt->execute($params);
+        $documents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $types = $pdo->query('SELECT id,name FROM document_types WHERE active=1 ORDER BY sort_order,name')->fetchAll(PDO::FETCH_ASSOC);
         $user = AdminAuth::user();
         $csrf = Security::csrfToken();
         require dirname(__DIR__, 2) . '/Views/admin/documents.php';
