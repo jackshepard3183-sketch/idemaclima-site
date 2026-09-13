@@ -1,6 +1,9 @@
 -- Riallineamento backend dopo le migrazioni incrementali già registrate.
 -- Non modifica pagine o contenuti grafici del frontend.
 
+ALTER TABLE products ADD COLUMN source_catalog_url VARCHAR(1000) NULL AFTER image_path;
+ALTER TABLE products ADD COLUMN source_catalog_page SMALLINT UNSIGNED NULL AFTER source_catalog_url;
+
 UPDATE product_categories SET sort_order=CASE name
  WHEN 'Linea Residenziale R32' THEN 10
  WHEN 'Linea Commerciale R32' THEN 20
