@@ -290,3 +290,5 @@ final class ProductsController
     }
 }
 
+
+/* deploy-sync 2026-09-13 */

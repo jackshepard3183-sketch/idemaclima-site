@@ -79,3 +79,5 @@ final class MonoSplitImportController
         extract($data,EXTR_SKIP);$pdo=Database::connection();$products=$pdo->query("SELECT p.id,p.name,c.name family_name FROM products p JOIN product_categories c ON c.id=p.category_id WHERE c.name='Mono Split' AND p.name IN ('ISPT-R32','ISAX-R32','ISZZ-R32','WTZ-R32','WTMC-R32','WTMC-R32 COLOR') ORDER BY FIELD(p.name,'ISPT-R32','ISAX-R32','ISZZ-R32','WTZ-R32','WTMC-R32','WTMC-R32 COLOR')")->fetchAll(PDO::FETCH_ASSOC);$title='Importa pagina Mono Split';$user=AdminAuth::user();$csrf=Security::csrfToken();$imported=isset($_GET['imported']);require dirname(__DIR__,2).'/Views/admin/mono_split_import.php';
     }
 }
+
+/* deploy-sync 2026-09-13 */

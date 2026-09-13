@@ -15,3 +15,5 @@
 <?php if(!$documents): ?><tr><td colspan="7" class="muted">Nessun documento corrisponde ai filtri selezionati.</td></tr><?php endif; ?>
 </tbody></table></div>
 <?php require __DIR__.'/_layout_end.php'; ?>
+
+<?php /* deploy-sync 2026-09-13 */ ?>

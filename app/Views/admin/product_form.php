@@ -18,3 +18,5 @@
 <?php require __DIR__.'/_layout_end.php'; ?>
 <?php if((int)$product['id']):?><script>document.querySelectorAll('a[href*="/admin/documents/form?id="]').forEach(function(a){var id=(a.href.match(/[?&]id=(\d+)/)||[])[1];if(!id)return;a.textContent='Sostituisci / cambia tipo';var f=document.createElement('form');f.method='post';f.action='/idemaclima/admin/products/document/unlink';f.style.display='inline';f.onsubmit=function(){return confirm('Rimuovere questo PDF dal prodotto? Il file resterà nella libreria documenti.')};f.innerHTML='<input type="hidden" name="_csrf" value="<?=htmlspecialchars($csrf,ENT_QUOTES,'UTF-8')?>"><input type="hidden" name="product_id" value="<?=(int)$product['id']?>"><input type="hidden" name="document_id" value="'+id+'"><button class="danger" type="submit">Rimuovi</button>';a.parentNode.appendChild(document.createTextNode(' '));a.parentNode.appendChild(f)})</script><?php endif;?>
 
+
+<?php /* deploy-sync 2026-09-13 */ ?>
