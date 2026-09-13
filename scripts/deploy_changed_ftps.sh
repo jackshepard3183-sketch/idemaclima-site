@@ -76,6 +76,10 @@ for required_path in \
   public/brand-assets/idema-clima.png.php \
   public/brand-assets/garanzia-10anni.png.php \
   public/brand-assets/garanzia-5anni.png.php \
+  public/brand-assets/campus-logo-colorato.webp \
+  public/brand-assets/campus-casa-ecologica.webp \
+  public/brand-assets/campus-sala-corsi.webp \
+  app/Views/public/campus/index.php \
   app/Controllers/Admin/WarrantyCertificateActionsTrait.php \
   app/Controllers/Admin/WarrantyCertificateLayoutTrait.php \
   app/Views/admin/warranty_certificate_layout.php \
