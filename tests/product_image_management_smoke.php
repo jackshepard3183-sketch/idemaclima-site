@@ -12,4 +12,6 @@ foreach(['ICZ-R32','ITXI-R32','IMIHQ4CN18','ISZ(Z)-R32'] as $name)if(!str_contai
 $verifiedMore=file_get_contents($root.'/database/migrations/060_seed_more_verified_catalog_image_candidates.sql');
 if(!is_string($verifiedMore)||$verifiedMore==='')throw new RuntimeException('Secondo gruppo di candidate catalogo mancante.');
 foreach(['ITZ-R32','IQZZI-R32','IMI2-Q4CDN1','IFZI-R32','IDV-V100WDN1(D)'] as $name)if(!str_contains($verifiedMore,$name))throw new RuntimeException('Candidata verificata mancante: '.$name);
+$pathFix=file_get_contents($root.'/database/migrations/061_fix_catalog_candidate_public_paths.sql');
+if(!is_string($pathFix)||!str_contains($pathFix,"/assets/product-images/"))throw new RuntimeException('Correzione percorso pubblico candidate mancante.');
 fwrite(STDOUT,"Product image management smoke OK\n");
