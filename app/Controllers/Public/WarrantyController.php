@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Core\PrivateUpload;
 use App\Core\RateLimiter;
 use App\Core\Security;
+use App\Core\Validator;
 use App\Services\WarrantyService;
 use DateTimeImmutable;
 use Throwable;
@@ -106,10 +107,9 @@ final class WarrantyController
 
         $province = trim((string)($old['province'] ?? ''));
         if (!preg_match("/^[\\p{L}.' -]{2,120}$/u", $province)) $errors[] = 'Provincia non valida.';
-        $upper = static fn(string $value): string => function_exists('mb_strtoupper') ? mb_strtoupper(trim($value), 'UTF-8') : strtoupper(trim($value));
-        $city = $upper((string)($old['city'] ?? ''));
-        $province = $upper($province);
-        $region = $upper((string)($old['region'] ?? ''));
+        $city = Validator::naturalText($old['city'] ?? '');
+        $province = Validator::provinceCode($province);
+        $region = Validator::naturalText($old['region'] ?? '');
 
         $invoice = DateTimeImmutable::createFromFormat('!Y-m-d', $invoiceDate);
         $dateErrors = DateTimeImmutable::getLastErrors();
@@ -211,12 +211,12 @@ final class WarrantyController
                 $rule['registration_days_limit'],
                 (int)$rule['invoice_required'],
                 (int)$rule['fgas_required'],
-                $old['customer_first_name'],
-                $old['customer_last_name'],
+                Validator::naturalText($old['customer_first_name']),
+                Validator::naturalText($old['customer_last_name']),
                 $fiscal,
                 strtolower((string)$old['email']),
                 $phone !== '' ? $phone : null,
-                $old['address'],
+                Validator::naturalText($old['address']),
                 $postal,
                 $city,
                 $province,
