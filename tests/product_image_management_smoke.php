@@ -8,6 +8,9 @@ foreach(['to_review','insufficient','recovered','missing_catalog','approved'] as
 foreach(['/admin/product-images','ProductImagesController','Rinomina, approva e assegna','Media Library'] as $needle)if(!str_contains($router.$layout.$view,$needle))throw new RuntimeException('Workflow immagini mancante: '.$needle);
 foreach(['copyProductImage','product_name','source_path','Rinomina, approva e assegna'] as $needle)if(!str_contains($controller.$view.file_get_contents($root.'/app/Core/Upload.php'),$needle))throw new RuntimeException('Rinomina immagine prodotto mancante: '.$needle);
 foreach(['replace_existing','Sostituisci il file esistente','Esiste già un file diverso'] as $needle)if(!str_contains($controller.$view.file_get_contents($root.'/app/Core/Upload.php'),$needle))throw new RuntimeException('Conferma sostituzione immagine mancante: '.$needle);
+foreach(['imagewebp','imagecopyresampled','600 / $sourceWidth','convertito in WebP su tela 600×600'] as $needle)if(!str_contains($view.file_get_contents($root.'/app/Core/Upload.php'),$needle))throw new RuntimeException('Normalizzazione immagine prodotto mancante: '.$needle);
+$productController=file_get_contents($root.'/app/Controllers/Admin/ProductsController.php');$productForm=file_get_contents($root.'/app/Views/admin/product_form.php');
+foreach(['copyProductImage','replace_existing_image','WebP su tela 600×600'] as $needle)if(!str_contains($productController.$productForm,$needle))throw new RuntimeException('Normalizzazione immagine nel prodotto mancante: '.$needle);
 $verified=file_get_contents($root.'/database/migrations/059_seed_verified_catalog_image_candidates.sql');
 if(!is_string($verified)||$verified==='')throw new RuntimeException('Candidate catalogo verificate mancanti.');
 foreach(['ICZ-R32','ITXI-R32','IMIHQ4CN18','ISZ(Z)-R32'] as $name)if(!str_contains($verified,$name))throw new RuntimeException('Candidata verificata mancante: '.$name);

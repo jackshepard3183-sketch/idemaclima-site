@@ -85,8 +85,11 @@ final class Upload
         }
         $imageInfo = @getimagesize($source);
         $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
-        $extension = $extensions[(string)($imageInfo['mime'] ?? '')] ?? null;
-        if ($extension === null) throw new RuntimeException('Il file candidato non è un’immagine valida.');
+        $sourceMime = (string)($imageInfo['mime'] ?? '');
+        if (!isset($extensions[$sourceMime])) throw new RuntimeException('Il file candidato non è un’immagine valida.');
+        if (!function_exists('imagecreatetruecolor') || !function_exists('imagewebp')) {
+            throw new RuntimeException('La normalizzazione WebP non è disponibile sul server.');
+        }
 
         $base = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $model) ?: 'prodotto';
         $base = strtolower((string)preg_replace('/[^a-zA-Z0-9]+/', '-', $base));
@@ -96,20 +99,54 @@ final class Upload
         if (!is_dir($absoluteDir) && !mkdir($absoluteDir, 0755, true) && !is_dir($absoluteDir)) {
             throw new RuntimeException('Impossibile creare la cartella delle immagini prodotto.');
         }
-        $filename = $base . '.' . $extension;
+        $filename = $base . '.webp';
         $destination = $absoluteDir . '/' . $filename;
-        $differentExisting = is_file($destination) && hash_file('sha256', $destination) !== hash_file('sha256', $source);
+        $loader = match ($sourceMime) {
+            'image/jpeg' => 'imagecreatefromjpeg',
+            'image/png' => 'imagecreatefrompng',
+            'image/webp' => 'imagecreatefromwebp',
+        };
+        if (!function_exists($loader)) throw new RuntimeException('Il formato dell’immagine non è supportato dal server.');
+        $sourceImage = @$loader($source);
+        if ($sourceImage === false) throw new RuntimeException('Impossibile leggere l’immagine candidata.');
+        $canvas = imagecreatetruecolor(600, 600);
+        if ($canvas === false) {
+            imagedestroy($sourceImage);
+            throw new RuntimeException('Impossibile preparare l’immagine prodotto.');
+        }
+        imagealphablending($canvas, false);
+        imagesavealpha($canvas, true);
+        $transparent = imagecolorallocatealpha($canvas, 255, 255, 255, 127);
+        imagefill($canvas, 0, 0, $transparent);
+        $sourceWidth = (int)$imageInfo[0];
+        $sourceHeight = (int)$imageInfo[1];
+        $scale = min(600 / $sourceWidth, 600 / $sourceHeight, 1);
+        $targetWidth = max(1, (int)round($sourceWidth * $scale));
+        $targetHeight = max(1, (int)round($sourceHeight * $scale));
+        $targetX = (int)floor((600 - $targetWidth) / 2);
+        $targetY = (int)floor((600 - $targetHeight) / 2);
+        imagecopyresampled($canvas, $sourceImage, $targetX, $targetY, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
+        $temporary = $absoluteDir . '/.' . $base . '-' . bin2hex(random_bytes(6)) . '.webp';
+        $written = imagewebp($canvas, $temporary, 88);
+        imagedestroy($canvas);
+        imagedestroy($sourceImage);
+        if (!$written) throw new RuntimeException('Impossibile convertire l’immagine in WebP.');
+        $differentExisting = is_file($destination) && hash_file('sha256', $destination) !== hash_file('sha256', $temporary);
         if ($differentExisting && !$replaceExisting) {
+            @unlink($temporary);
             throw new RuntimeException('Esiste già un file diverso chiamato “' . $filename . '”. Se vuoi sostituirlo, seleziona “Sostituisci il file esistente” e ripeti l’approvazione.');
         }
         if ($differentExisting) {
-            $temporary = $absoluteDir . '/.' . $base . '-' . bin2hex(random_bytes(6)) . '.tmp';
-            if (!copy($source, $temporary) || !rename($temporary, $destination)) {
+            if (!rename($temporary, $destination)) {
                 if (is_file($temporary)) @unlink($temporary);
                 throw new RuntimeException('Impossibile sostituire l’immagine già esistente.');
             }
         }
-        if (!is_file($destination) && !copy($source, $destination)) throw new RuntimeException('Impossibile creare l’immagine associata al prodotto.');
+        elseif (is_file($destination)) @unlink($temporary);
+        elseif (!rename($temporary, $destination)) {
+            @unlink($temporary);
+            throw new RuntimeException('Impossibile creare l’immagine associata al prodotto.');
+        }
         @chmod($destination, 0644);
         return $relativeDir . '/' . $filename;
     }

@@ -121,7 +121,18 @@ final class ProductsController
         }
 
         $uploaded = Upload::image('image_file', $errors);
-        $image = $uploaded['path'] ?? $existingImage;
+        $image = $existingImage;
+        $imageUploaded = false;
+        if ($uploaded && !$errors) {
+            try {
+                $image = Upload::copyProductImage($uploaded['path'], $name, isset($_POST['replace_existing_image']) && $_POST['replace_existing_image'] === '1');
+                $imageUploaded = true;
+                if ($image !== $uploaded['path']) Upload::removeManaged($uploaded['path']);
+                $uploaded = null;
+            } catch (\Throwable $e) {
+                $errors[] = $e->getMessage();
+            }
+        }
 
         if ($errors) {
             if ($uploaded) Upload::removeManaged($uploaded['path']);
@@ -174,7 +185,7 @@ final class ProductsController
             throw $e;
         }
 
-        if ($uploaded && $existingImage && $existingImage !== $image) Upload::removeManaged($existingImage);
+        if ($imageUploaded && $existingImage && $existingImage !== $image) Upload::removeManaged($existingImage);
         header('Location: /idemaclima/admin/products/form?id=' . $entityId);
         exit;
     }
