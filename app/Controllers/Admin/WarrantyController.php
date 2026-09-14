@@ -96,6 +96,7 @@ final class WarrantyController
         $data = [];
         foreach ($required as $field) {
             $data[$field] = trim((string)($_POST[$field] ?? ''));
+            if ($field === 'combination') $data[$field] = strtoupper($data[$field]);
             if ($data[$field] === '') { http_response_code(422); exit('Compila tutti i campi obbligatori.'); }
         }
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) { http_response_code(422); exit('Email non valida.'); }
@@ -103,7 +104,7 @@ final class WarrantyController
         $phone = trim((string)($_POST['phone'] ?? ''));
         $productType = (string)($_POST['product_type'] ?? 'mono');
         if (!in_array($productType, ['mono','multi'], true)) $productType = 'mono';
-        $outerUnit = trim((string)($_POST['outer_unit'] ?? ''));
+        $outerUnit = strtoupper(trim((string)($_POST['outer_unit'] ?? '')));
         $serials = is_array($_POST['unit_serials'] ?? null) ? $_POST['unit_serials'] : [];
 
         $pdo = Database::connection();
@@ -140,7 +141,7 @@ final class WarrantyController
             $stmt->execute([$modelId,Validator::naturalText($data['customer_first_name']),Validator::naturalText($data['customer_last_name']),strtoupper($data['fiscal_code']),strtolower($data['email']),$phone ?: null,Validator::naturalText($data['address']),strtoupper($data['postal_code']),Validator::naturalText($data['city']),Validator::provinceCode($data['province']),Validator::naturalText($data['region']),$data['invoice_date'],$newStatus,$id]);
             $updateSerial = $pdo->prepare('UPDATE warranty_units SET serial_number=? WHERE id=? AND registration_id=?');
             foreach ($serials as $unitId => $serial) {
-                $serial = trim((string)$serial);
+                $serial = strtoupper(trim((string)$serial));
                 if ($serial === '') throw new \RuntimeException('I numeri di serie non possono essere vuoti.');
                 $updateSerial->execute([$serial,(int)$unitId,$id]);
             }
