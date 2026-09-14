@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Core\PrivateUpload;
 use App\Core\RateLimiter;
 use App\Core\Security;
+use App\Core\Validator;
 use App\Services\ContactMailService;
 use Throwable;
 
@@ -63,8 +64,8 @@ final class ContactController
             $pdo=Database::connection();
             $s=$pdo->prepare('INSERT INTO contact_submissions(first_name,last_name,region,province,city,postal_code,email,phone,subject,message,attachment_path,attachment_name,attachment_mime,privacy_accepted_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())');
             $s->execute([
-                $old['first_name'],$old['last_name'],$old['region'],strtoupper((string)$old['province']),strtoupper((string)$old['city']),(string)$old['postal_code'],
-                strtolower((string)$old['email']),(string)$old['phone'],$old['subject'],$old['message'],
+                Validator::naturalText($old['first_name']),Validator::naturalText($old['last_name']),Validator::naturalText($old['region']),Validator::provinceCode($old['province']),Validator::naturalText($old['city']),strtoupper((string)$old['postal_code']),
+                strtolower((string)$old['email']),(string)$old['phone'],Validator::naturalText($old['subject']),trim((string)$old['message']),
                 $attachment['path']??null,$attachment['original_name']??null,$attachment['mime']??null
             ]);
             ContactMailService::notify($old, $attachment['original_name']??null);
