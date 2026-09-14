@@ -188,7 +188,7 @@ final class ProductsController
         }
         $productId = Validator::int($_POST['product_id'] ?? 0);
         $id = Validator::int($_POST['id'] ?? 0);
-        $code = trim((string)($_POST['code'] ?? ''));
+        $code = strtoupper(trim((string)($_POST['code'] ?? '')));
         $pdo = Database::connection();
         $p = $pdo->prepare('SELECT 1 FROM products WHERE id=?');
         $p->execute([$productId]);
@@ -196,7 +196,7 @@ final class ProductsController
             http_response_code(422);
             exit('Prodotto e codice modello validi sono obbligatori');
         }
-        $name=trim((string)($_POST['name']??''));$coolingKw=self::decimalOrNull($_POST['cooling_kw']??null);$seer=self::decimalOrNull($_POST['seer']??null);$seerClass=trim((string)($_POST['seer_class']??''));$heatingKw=self::decimalOrNull($_POST['heating_kw']??null);$scop=self::decimalOrNull($_POST['scop']??null);$scopClass=trim((string)($_POST['scop_class']??''));$indoorCode=trim((string)($_POST['indoor_unit_code']??''));$outdoorCode=trim((string)($_POST['outdoor_unit_code']??''));
+        $name=trim((string)($_POST['name']??''));$coolingKw=self::decimalOrNull($_POST['cooling_kw']??null);$seer=self::decimalOrNull($_POST['seer']??null);$seerClass=trim((string)($_POST['seer_class']??''));$heatingKw=self::decimalOrNull($_POST['heating_kw']??null);$scop=self::decimalOrNull($_POST['scop']??null);$scopClass=trim((string)($_POST['scop_class']??''));$indoorCode=strtoupper(trim((string)($_POST['indoor_unit_code']??'')));$outdoorCode=strtoupper(trim((string)($_POST['outdoor_unit_code']??'')));
         $sort = Validator::int($_POST['sort_order'] ?? 0);
         $contentStatus = (string)($_POST['content_status'] ?? 'published');
         if (!in_array($contentStatus, ['draft','published','hidden'], true)) $contentStatus = 'draft';
@@ -276,7 +276,7 @@ final class ProductsController
         $specs=preg_split('/\R/u',(string)($input['specifications_text']??''))?:[];$q=$pdo->prepare('INSERT INTO product_specifications(product_id,specification_key,specification_value,sort_order) VALUES(?,?,?,?)');$order=0;
         foreach($specs as $line){[$key,$value]=array_pad(explode('|',$line,2),2,'');$key=trim($key);$value=trim($value);if($key!==''&&$value!=='')$q->execute([$productId,mb_substr($key,0,160),mb_substr($value,0,255),$order++]);}
         $items=preg_split('/\R/u',(string)($input['accessories_text']??''))?:[];$q=$pdo->prepare('INSERT INTO product_accessories(product_id,code,name,description,availability_label,sort_order,published) VALUES(?,?,?,?,?,?,1)');$order=0;
-        foreach($items as $line){[$code,$name,$description,$availability]=array_pad(explode('|',$line,4),4,'');$name=trim($name);if($name!=='')$q->execute([$productId,trim($code)?:null,mb_substr($name,0,200),trim($description)?:null,trim($availability)?:null,$order++]);}
+        foreach($items as $line){[$code,$name,$description,$availability]=array_pad(explode('|',$line,4),4,'');$name=trim($name);if($name!=='')$q->execute([$productId,strtoupper(trim($code))?:null,mb_substr($name,0,200),trim($description)?:null,trim($availability)?:null,$order++]);}
     }
 
     private static function decimalOrNull(mixed $value):?string{$value=str_replace(',','.',trim((string)$value));return $value!==''&&is_numeric($value)?$value:null;}
