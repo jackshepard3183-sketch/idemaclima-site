@@ -73,7 +73,7 @@ final class Upload
         return str_replace(dirname(__DIR__, 2) . '/public', '', $copy);
     }
 
-    public static function copyProductImage(string $publicPath, string $model): string
+    public static function copyProductImage(string $publicPath, string $model, bool $replaceExisting = false): string
     {
         if ($publicPath === '' || (!str_starts_with($publicPath, '/uploads/') && !str_starts_with($publicPath, '/assets/product-images/'))) {
             throw new RuntimeException('Il percorso dell’immagine candidata non è gestibile.');
@@ -98,9 +98,16 @@ final class Upload
         }
         $filename = $base . '.' . $extension;
         $destination = $absoluteDir . '/' . $filename;
-        for ($suffix = 2; is_file($destination) && hash_file('sha256', $destination) !== hash_file('sha256', $source); $suffix++) {
-            $filename = $base . '-' . $suffix . '.' . $extension;
-            $destination = $absoluteDir . '/' . $filename;
+        $differentExisting = is_file($destination) && hash_file('sha256', $destination) !== hash_file('sha256', $source);
+        if ($differentExisting && !$replaceExisting) {
+            throw new RuntimeException('Esiste già un file diverso chiamato “' . $filename . '”. Se vuoi sostituirlo, seleziona “Sostituisci il file esistente” e ripeti l’approvazione.');
+        }
+        if ($differentExisting) {
+            $temporary = $absoluteDir . '/.' . $base . '-' . bin2hex(random_bytes(6)) . '.tmp';
+            if (!copy($source, $temporary) || !rename($temporary, $destination)) {
+                if (is_file($temporary)) @unlink($temporary);
+                throw new RuntimeException('Impossibile sostituire l’immagine già esistente.');
+            }
         }
         if (!is_file($destination) && !copy($source, $destination)) throw new RuntimeException('Impossibile creare l’immagine associata al prodotto.');
         @chmod($destination, 0644);
