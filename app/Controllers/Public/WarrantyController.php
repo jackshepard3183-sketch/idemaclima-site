@@ -52,10 +52,10 @@ final class WarrantyController
         $errors = [];
 
         $productType = (string)($old['product_type'] ?? '');
-        $outerUnit = $productType === 'multi' ? (string)($old['multi_outer'] ?? '') : '';
-        $combination = $productType === 'mono'
+        $outerUnit = $productType === 'multi' ? strtoupper(trim((string)($old['multi_outer'] ?? ''))) : '';
+        $combination = strtoupper(trim($productType === 'mono'
             ? (string)($old['mono_combination'] ?? '')
-            : (string)($old['multi_combination'] ?? '');
+            : (string)($old['multi_combination'] ?? '')));
 
         if (!in_array($productType, ['mono', 'multi'], true)) $errors[] = 'Seleziona la tipologia di sistema.';
         if ($combination === '' || mb_strlen($combination) > 255 || !preg_match('/^[A-Z0-9+ .\-x]+$/i', $combination)) {
@@ -129,7 +129,7 @@ final class WarrantyController
 
         $indoorSerials = [];
         for ($index = 1; $index <= 3; $index++) {
-            $serial = trim((string)($old['indoor_serial_' . $index] ?? ''));
+            $serial = strtoupper(trim((string)($old['indoor_serial_' . $index] ?? '')));
             if ($serial !== '') $indoorSerials[] = $serial;
         }
 
@@ -234,7 +234,7 @@ final class WarrantyController
             $detail->execute([$registrationId, $productType, $mainModel !== '' ? $mainModel : null, $combination]);
 
             $unit = $pdo->prepare('INSERT INTO warranty_units (registration_id, model_id, unit_type, serial_number) VALUES (?,?,?,?)');
-            $unit->execute([$registrationId, $modelId, 'outdoor', trim((string)$old['outdoor_serial'])]);
+            $unit->execute([$registrationId, $modelId, 'outdoor', strtoupper(trim((string)$old['outdoor_serial']))]);
             foreach ($indoorSerials as $serial) {
                 $unit->execute([$registrationId, null, 'indoor', $serial]);
             }
