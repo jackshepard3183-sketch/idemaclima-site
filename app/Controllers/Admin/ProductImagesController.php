@@ -26,7 +26,7 @@ final class ProductImagesController
         foreach($items as &$item){[$item['current_width'],$item['current_height']]=self::dimensions((string)($item['image_path']??''));} unset($item);
         $media=$pdo->query("SELECT id,title,file_path FROM media_assets WHERE category='images' AND archived_at IS NULL ORDER BY title,filename")->fetchAll(PDO::FETCH_ASSOC);
         $summary=array_fill_keys(self::STATUSES,0); foreach($items as $item)$summary[(string)$item['review_status']]++;
-        $user=AdminAuth::user(); $csrf=Security::csrfToken(); $saved=isset($_GET['saved']); $approved=isset($_GET['approved']); $removed=isset($_GET['removed']); $error=trim((string)($_GET['error']??''));
+        $user=AdminAuth::user(); $csrf=Security::csrfToken(); $saved=isset($_GET['saved']); $approved=isset($_GET['approved']); $removed=isset($_GET['removed']); $candidateRemoved=isset($_GET['candidate_removed']); $error=trim((string)($_GET['error']??''));
         require dirname(__DIR__,2).'/Views/admin/product_images.php';
     }
 
@@ -59,6 +59,19 @@ final class ProductImagesController
         try{$pdo->prepare('UPDATE products SET image_path=? WHERE id=?')->execute([$assigned,$productId]);$pdo->prepare("UPDATE product_image_reviews SET original_image_path=COALESCE(original_image_path,?),candidate_path=?,candidate_width=?,candidate_height=?,review_status='approved',approved_at=CURRENT_TIMESTAMP,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=?")->execute([$current?:null,$assigned,$width,$height,AdminAuth::id(),$productId]);Audit::log('product_image.approve','product',$productId,['previous_path'=>$current,'source_path'=>$candidate,'approved_path'=>$assigned,'replaced_existing'=>$replaceExisting]);$pdo->commit();}
         catch(\Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
         header('Location: /idemaclima/admin/product-images?approved=1'); exit;
+    }
+
+    public static function removeCandidate(): void
+    {
+        AdminAuth::requireLogin(); self::csrf(); $pdo=Database::connection(); $productId=Validator::int($_POST['product_id']??0); $review=self::review($pdo,$productId);
+        if(!$review||(int)$review['protected']===1)self::redirectError('Le immagini dei 6 Mono Split sono protette.');
+        $candidate=(string)($review['candidate_path']??'');
+        if($review['review_status']==='approved'||$candidate==='')self::redirectError('Non risulta presente un’immagine candidata da rimuovere.');
+        $pdo->prepare("UPDATE product_image_reviews SET candidate_path=NULL,candidate_width=NULL,candidate_height=NULL,review_status='to_review',reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=?")->execute([AdminAuth::id(),$productId]);
+        Audit::log('product_image.remove_candidate','product',$productId,['removed_path'=>$candidate]);
+        $q=$pdo->prepare('SELECT (SELECT COUNT(*) FROM products WHERE image_path=?)+(SELECT COUNT(*) FROM product_image_reviews WHERE candidate_path=? OR original_image_path=?)+(SELECT COUNT(*) FROM media_assets WHERE file_path=?)');
+        $q->execute([$candidate,$candidate,$candidate,$candidate]);if((int)$q->fetchColumn()===0)Upload::removeManaged($candidate);
+        header('Location: /idemaclima/admin/product-images?candidate_removed=1'); exit;
     }
 
     public static function removeAssigned(): void
