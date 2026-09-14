@@ -111,6 +111,7 @@ $router->post('/admin/products/document/unlink', [ProductsController::class, 'un
 $router->get('/admin/product-images', [ProductImagesController::class, 'index']);
 $router->post('/admin/product-images/save', [ProductImagesController::class, 'save']);
 $router->post('/admin/product-images/approve', [ProductImagesController::class, 'approve']);
+$router->post('/admin/product-images/remove-assigned', [ProductImagesController::class, 'removeAssigned']);
 $router->post('/admin/models/save', [ProductsController::class, 'saveModel']);
 $router->get('/admin/media', [MediaLibraryController::class, 'index']);
 $router->post('/admin/media/upload', [MediaLibraryController::class, 'upload']);
