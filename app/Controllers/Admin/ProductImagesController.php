@@ -52,8 +52,10 @@ final class ProductImagesController
         AdminAuth::requireLogin(); self::csrf(); $pdo=Database::connection(); $productId=Validator::int($_POST['product_id']??0); $review=self::review($pdo,$productId);
         if(!$review||(int)$review['protected']===1)self::redirectError('Le immagini dei 6 Mono Split sono protette.');
         $candidate=(string)($review['candidate_path']??''); if($candidate==='')self::redirectError('Carica o seleziona prima un’immagine candidata.');
-        $current=(string)($review['product_image_path']??''); $pdo->beginTransaction();
-        try{$pdo->prepare('UPDATE products SET image_path=? WHERE id=?')->execute([$candidate,$productId]);$pdo->prepare("UPDATE product_image_reviews SET original_image_path=COALESCE(original_image_path,?),review_status='approved',approved_at=CURRENT_TIMESTAMP,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=?")->execute([$current?:null,AdminAuth::id(),$productId]);Audit::log('product_image.approve','product',$productId,['previous_path'=>$current,'approved_path'=>$candidate]);$pdo->commit();}
+        try{$assigned=Upload::copyProductImage($candidate,(string)$review['product_name']);}
+        catch(\Throwable $e){self::redirectError($e->getMessage());}
+        [$width,$height]=self::dimensions($assigned);$current=(string)($review['product_image_path']??''); $pdo->beginTransaction();
+        try{$pdo->prepare('UPDATE products SET image_path=? WHERE id=?')->execute([$assigned,$productId]);$pdo->prepare("UPDATE product_image_reviews SET original_image_path=COALESCE(original_image_path,?),candidate_path=?,candidate_width=?,candidate_height=?,review_status='approved',approved_at=CURRENT_TIMESTAMP,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=?")->execute([$current?:null,$assigned,$width,$height,AdminAuth::id(),$productId]);Audit::log('product_image.approve','product',$productId,['previous_path'=>$current,'source_path'=>$candidate,'approved_path'=>$assigned]);$pdo->commit();}
         catch(\Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
         header('Location: /idemaclima/admin/product-images?approved=1'); exit;
     }
@@ -65,7 +67,7 @@ final class ProductImagesController
     }
     private static function review(PDO $pdo,int $productId): array|false
     {
-        self::syncProducts($pdo);$q=$pdo->prepare('SELECT r.*,p.image_path product_image_path FROM product_image_reviews r JOIN products p ON p.id=r.product_id WHERE r.product_id=?');$q->execute([$productId]);return $q->fetch(PDO::FETCH_ASSOC);
+        self::syncProducts($pdo);$q=$pdo->prepare('SELECT r.*,p.name product_name,p.image_path product_image_path FROM product_image_reviews r JOIN products p ON p.id=r.product_id WHERE r.product_id=?');$q->execute([$productId]);return $q->fetch(PDO::FETCH_ASSOC);
     }
     private static function dimensions(string $path): array
     {

@@ -73,6 +73,40 @@ final class Upload
         return str_replace(dirname(__DIR__, 2) . '/public', '', $copy);
     }
 
+    public static function copyProductImage(string $publicPath, string $model): string
+    {
+        if ($publicPath === '' || (!str_starts_with($publicPath, '/uploads/') && !str_starts_with($publicPath, '/assets/product-images/'))) {
+            throw new RuntimeException('Il percorso dell’immagine candidata non è gestibile.');
+        }
+        $publicRoot = realpath(dirname(__DIR__, 2) . '/public');
+        $source = realpath(dirname(__DIR__, 2) . '/public' . $publicPath);
+        if ($publicRoot === false || $source === false || !str_starts_with($source, $publicRoot . DIRECTORY_SEPARATOR) || !is_file($source)) {
+            throw new RuntimeException('Il file dell’immagine candidata non è disponibile sul server.');
+        }
+        $imageInfo = @getimagesize($source);
+        $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        $extension = $extensions[(string)($imageInfo['mime'] ?? '')] ?? null;
+        if ($extension === null) throw new RuntimeException('Il file candidato non è un’immagine valida.');
+
+        $base = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $model) ?: 'prodotto';
+        $base = strtolower((string)preg_replace('/[^a-zA-Z0-9]+/', '-', $base));
+        $base = substr(trim($base, '-'), 0, 100) ?: 'prodotto';
+        $relativeDir = '/uploads/products/' . date('Y') . '/' . date('m');
+        $absoluteDir = dirname(__DIR__, 2) . '/public' . $relativeDir;
+        if (!is_dir($absoluteDir) && !mkdir($absoluteDir, 0755, true) && !is_dir($absoluteDir)) {
+            throw new RuntimeException('Impossibile creare la cartella delle immagini prodotto.');
+        }
+        $filename = $base . '.' . $extension;
+        $destination = $absoluteDir . '/' . $filename;
+        for ($suffix = 2; is_file($destination) && hash_file('sha256', $destination) !== hash_file('sha256', $source); $suffix++) {
+            $filename = $base . '-' . $suffix . '.' . $extension;
+            $destination = $absoluteDir . '/' . $filename;
+        }
+        if (!is_file($destination) && !copy($source, $destination)) throw new RuntimeException('Impossibile creare l’immagine associata al prodotto.');
+        @chmod($destination, 0644);
+        return $relativeDir . '/' . $filename;
+    }
+
     private static function safeBucket(string $bucket): string
     {
         $bucket = strtolower(trim($bucket));
