@@ -137,8 +137,7 @@ final class WarrantyController
         try {
             $newStatus = $currentStatus === 'issued' ? 'approved' : $currentStatus;
             $stmt = $pdo->prepare('UPDATE warranty_registrations SET model_id=?,customer_first_name=?,customer_last_name=?,fiscal_code=?,email=?,phone=?,address=?,postal_code=?,city=?,province=?,region=?,invoice_date=?,status=? WHERE id=?');
-            $upper = static fn(string $value): string => function_exists('mb_strtoupper') ? mb_strtoupper(trim($value), 'UTF-8') : strtoupper(trim($value));
-            $stmt->execute([$modelId,$data['customer_first_name'],$data['customer_last_name'],$data['fiscal_code'],$data['email'],$phone ?: null,$data['address'],$data['postal_code'],$upper($data['city']),$upper($data['province']),$upper($data['region']),$data['invoice_date'],$newStatus,$id]);
+            $stmt->execute([$modelId,Validator::naturalText($data['customer_first_name']),Validator::naturalText($data['customer_last_name']),strtoupper($data['fiscal_code']),strtolower($data['email']),$phone ?: null,Validator::naturalText($data['address']),strtoupper($data['postal_code']),Validator::naturalText($data['city']),Validator::provinceCode($data['province']),Validator::naturalText($data['region']),$data['invoice_date'],$newStatus,$id]);
             $updateSerial = $pdo->prepare('UPDATE warranty_units SET serial_number=? WHERE id=? AND registration_id=?');
             foreach ($serials as $unitId => $serial) {
                 $serial = trim((string)$serial);
