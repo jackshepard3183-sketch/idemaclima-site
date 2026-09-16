@@ -41,7 +41,13 @@ final class WarrantyService
                AND (wr.valid_to IS NULL OR wr.valid_to >= CURRENT_DATE)
              ORDER BY p.name, pm.sort_order, pm.code'
         );
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $models = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $unique = [];
+        foreach ($models as $model) {
+            $key = strtoupper(trim((string)$model['product_name'])) . "\0" . strtoupper(trim((string)$model['code']));
+            if (!isset($unique[$key])) $unique[$key] = $model;
+        }
+        return array_values($unique);
     }
 
     public static function modelIdFromCombination(PDO $pdo, string $combination): int
