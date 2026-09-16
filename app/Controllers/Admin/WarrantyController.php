@@ -48,7 +48,15 @@ final class WarrantyController
         $stmt->execute([$id]); $certificate = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
         $stmt = $pdo->prepare('SELECT action,metadata,created_at FROM audit_log WHERE entity_type="warranty_registration" AND entity_id=? ORDER BY created_at DESC,id DESC LIMIT 100');
         $stmt->execute([$id]); $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $models = $pdo->query('SELECT pm.id,pm.code,p.name product_name FROM product_models pm JOIN products p ON p.id=pm.product_id WHERE pm.published=1 ORDER BY p.name,pm.code')->fetchAll(PDO::FETCH_ASSOC);
+        $modelRows = $pdo->query('SELECT pm.id,pm.code,p.name product_name FROM product_models pm JOIN products p ON p.id=pm.product_id WHERE pm.published=1 ORDER BY p.name,pm.code')->fetchAll(PDO::FETCH_ASSOC);
+        $modelsByKey = [];
+        foreach ($modelRows as $model) {
+            $key = strtoupper(trim((string)$model['product_name'])) . "\0" . strtoupper(trim((string)$model['code']));
+            if (!isset($modelsByKey[$key]) || (int)$model['id'] === (int)$registration['model_id']) {
+                $modelsByKey[$key] = $model;
+            }
+        }
+        $models = array_values($modelsByKey);
         $title = 'Garanzia #' . $id; $user = AdminAuth::user(); $csrf = Security::csrfToken();
         require dirname(__DIR__, 2) . '/Views/admin/warranty_registration.php';
     }
