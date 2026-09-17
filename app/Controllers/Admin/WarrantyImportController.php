@@ -2,7 +2,11 @@
 declare(strict_types=1);
 
 
+
+
 namespace App\Controllers\Admin;
+
+
 
 
 use App\Auth\AdminAuth;
@@ -12,6 +16,8 @@ use App\Services\WarrantyService;
 use PDO;
 use RuntimeException;
 use Throwable;
+
+
 
 
 final class WarrantyImportController
@@ -24,6 +30,8 @@ final class WarrantyImportController
         $csrf = Security::csrfToken();
         require dirname(__DIR__, 2) . '/Views/admin/warranty_import.php';
     }
+
+
 
 
     public static function run(): void
@@ -68,7 +76,7 @@ final class WarrantyImportController
                     'invoice_date'=>(string)($item['invoice_date'] ?? ''),
                     'invoice_file'=>$invoicePath,
                     'fgas_file'=>$fgasPath,
-file_get_contents($url, false, $context)                    'privacy_accepted_at'=>(string)($item['source_created_at'] ?? date('Y-m-d H:i:s')),
+                    'privacy_accepted_at'=>(string)($item['source_created_at'] ?? date('Y-m-d H:i:s')),
                     'status'=>'pending',
                     'warranty_years'=>10,
                     'extension_formula'=>null,
