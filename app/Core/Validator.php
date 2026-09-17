@@ -44,14 +44,9 @@ final class Validator
 
     public static function naturalText(mixed $value): string
     {
-        $value = preg_replace('/\\s+/u', ' ', trim((string) $value)) ?? trim((string) $value);
+        $value = preg_replace('/\s+/u', ' ', trim((string) $value)) ?? trim((string) $value);
         if ($value === '') return '';
-        $upper = mb_strtoupper($value, 'UTF-8');
-        $lower = mb_strtolower($value, 'UTF-8');
-        if ($value === $upper || $value === $lower) {
-            return mb_convert_case($lower, MB_CASE_TITLE, 'UTF-8');
-        }
-        return $value;
+        return mb_strtoupper($value, 'UTF-8');
     }
 
 
