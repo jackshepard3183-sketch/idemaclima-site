@@ -59,12 +59,16 @@ final class WarrantyImportController
         $raw = file_get_contents((string)$_FILES['manifest']['tmp_name']);
         $payload = json_decode((string)$raw, true);
         if (!is_array($payload) || !is_array($payload['items'] ?? null)) { http_response_code(422); exit('Manifest non valido.'); }
-        set_time_limit(0);
-        $pdo = Database::connection();
-        $columns = array_column($pdo->query('SHOW COLUMNS FROM warranty_registrations')->fetchAll(PDO::FETCH_ASSOC), 'Field');
-        self::cleanupOrphanedImports($pdo);
-        self::normalizeExistingImportedNames($pdo);
         $done = 0; $skipped = 0; $errors = [];
+        try {
+            if (function_exists('set_time_limit')) @set_time_limit(0);
+            $pdo = Database::connection();
+            $columns = array_column($pdo->query('SHOW COLUMNS FROM warranty_registrations')->fetchAll(PDO::FETCH_ASSOC), 'Field');
+        } catch (Throwable $e) {
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode(['imported'=>0, 'skipped'=>0, 'errors'=>['Preparazione importazione: ' . $e->getMessage()]], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);
+            return;
+        }
         foreach ($payload['items'] as $item) {
             if (!is_array($item)) continue;
             $sourceId = (int)($item['source_id'] ?? 0);
