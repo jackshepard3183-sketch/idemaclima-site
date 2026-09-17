@@ -4,7 +4,15 @@ declare(strict_types=1);
 
 
 
+
+
+
+
 namespace App\Controllers\Admin;
+
+
+
+
 
 
 
@@ -16,6 +24,10 @@ use App\Services\WarrantyService;
 use PDO;
 use RuntimeException;
 use Throwable;
+
+
+
+
 
 
 
@@ -34,6 +46,10 @@ final class WarrantyImportController
 
 
 
+
+
+
+
     public static function run(): void
     {
         AdminAuth::requireLogin();
@@ -45,12 +61,16 @@ final class WarrantyImportController
         set_time_limit(0);
         $pdo = Database::connection();
         $columns = array_column($pdo->query('SHOW COLUMNS FROM warranty_registrations')->fetchAll(PDO::FETCH_ASSOC), 'Field');
+        self::cleanupOrphanedImports($pdo);
         $done = 0; $skipped = 0; $errors = [];
         foreach ($payload['items'] as $item) {
             if (!is_array($item)) continue;
             $sourceId = (int)($item['source_id'] ?? 0);
+            $invoicePath = null;
+            $fgasPath = null;
             try {
                 if ($sourceId < 1) throw new RuntimeException('ID WPForms mancante');
+                $sourceCreatedAt = self::normalizeWpformsDate((string)($item['source_created_at'] ?? ''));
                 $check = $pdo->prepare('SELECT id FROM warranty_registrations WHERE source_wpforms_id=? LIMIT 1');
                 $check->execute([$sourceId]);
                 if ($check->fetchColumn()) { $skipped++; continue; }
@@ -76,7 +96,7 @@ final class WarrantyImportController
                     'invoice_date'=>(string)($item['invoice_date'] ?? ''),
                     'invoice_file'=>$invoicePath,
                     'fgas_file'=>$fgasPath,
-                    'privacy_accepted_at'=>(string)($item['source_created_at'] ?? date('Y-m-d H:i:s')),
+                    'privacy_accepted_at'=>$sourceCreatedAt,
                     'status'=>'pending',
                     'warranty_years'=>10,
                     'extension_formula'=>null,
@@ -86,7 +106,7 @@ final class WarrantyImportController
                     'fgas_required_snapshot'=>1,
                     'import_review_warning'=>trim((string)($item['review_warning'] ?? '')) ?: null,
                     'imported_at'=>date('Y-m-d H:i:s'),
-                    'created_at'=>(string)($item['source_created_at'] ?? date('Y-m-d H:i:s')),
+                    'created_at'=>$sourceCreatedAt,
                 ];
                 $data = array_intersect_key($data, array_flip($columns));
                 $names = array_keys($data);
@@ -105,6 +125,8 @@ final class WarrantyImportController
                 $done++;
             } catch (Throwable $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
+                self::removeImportedDocument($invoicePath);
+                self::removeImportedDocument($fgasPath);
                 $errors[] = '#' . $sourceId . ': ' . $e->getMessage();
             }
         }
@@ -151,6 +173,51 @@ final class WarrantyImportController
         return $relative;
     }
 
+
+    private static function normalizeWpformsDate(string $value): string
+    {
+        $value = trim($value);
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $value)) return $value;
+        if (!preg_match('/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})\s+(\d{1,2}):(\d{2})$/u', $value, $m)) {
+            throw new RuntimeException('Data WPForms non valida: ' . $value);
+        }
+        $months = [
+            'gennaio'=>1,'febbraio'=>2,'marzo'=>3,'aprile'=>4,'maggio'=>5,'giugno'=>6,
+            'luglio'=>7,'agosto'=>8,'settembre'=>9,'ottobre'=>10,'novembre'=>11,'dicembre'=>12,
+        ];
+        $month = $months[strtolower($m[2])] ?? 0;
+        $day = (int)$m[1]; $year = (int)$m[3]; $hour = (int)$m[4]; $minute = (int)$m[5];
+        if ($month < 1 || !checkdate($month, $day, $year) || $hour > 23 || $minute > 59) {
+            throw new RuntimeException('Data WPForms non valida: ' . $value);
+        }
+        return sprintf('%04d-%02d-%02d %02d:%02d:00', $year, $month, $day, $hour, $minute);
+    }
+
+
+    private static function cleanupOrphanedImports(PDO $pdo): void
+    {
+        $used = [];
+        $rows = $pdo->query('SELECT invoice_file, fgas_file FROM warranty_registrations')->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as $row) {
+            foreach (['invoice_file','fgas_file'] as $field) {
+                $path = trim((string)($row[$field] ?? ''));
+                if ($path !== '') $used[$path] = true;
+            }
+        }
+        $directory = dirname(__DIR__, 3) . '/storage/private/warranty/imported';
+        foreach (glob($directory . '/wpforms-*') ?: [] as $file) {
+            $relative = 'warranty/imported/' . basename($file);
+            if (is_file($file) && !isset($used[$relative])) @unlink($file);
+        }
+    }
+
+
+    private static function removeImportedDocument(?string $relative): void
+    {
+        if ($relative === null || !str_starts_with($relative, 'warranty/imported/wpforms-')) return;
+        $absolute = dirname(__DIR__, 3) . '/storage/private/' . $relative;
+        if (is_file($absolute)) @unlink($absolute);
+    }
 
     private static function newCode(PDO $pdo): string
     {
