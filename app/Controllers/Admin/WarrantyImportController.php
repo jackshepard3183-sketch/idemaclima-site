@@ -206,25 +206,9 @@ final class WarrantyImportController
         $value = preg_replace('/\s+/u', ' ', trim($value)) ?? trim($value);
         if ($value === '') return '';
 
-        if (function_exists('mb_convert_case')) {
-            $value = mb_convert_case(
-                mb_strtolower($value, 'UTF-8'),
-                MB_CASE_TITLE,
-                'UTF-8'
-            );
-        } else {
-            $value = ucwords(strtolower($value), " \t\r\n\f\v-'");
-        }
-
-        return preg_replace_callback(
-            "/(^|[\s'-])([a-zà-ÿ])/u",
-            static fn(array $match): string => $match[1] . (
-                function_exists('mb_strtoupper')
-                    ? mb_strtoupper($match[2], 'UTF-8')
-                    : strtoupper($match[2])
-            ),
-            $value
-        ) ?? $value;
+        return function_exists('mb_strtoupper')
+            ? mb_strtoupper($value, 'UTF-8')
+            : strtoupper($value);
     }
 
     private static function normalizeWpformsDate(string $value): string
