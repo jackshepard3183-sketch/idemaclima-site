@@ -21,7 +21,7 @@ final class WarrantyController
     public static function registrations(): void
     {
         AdminAuth::requireLogin();
-        $sql = 'SELECT wr.id,wr.certificate_number,wr.customer_first_name,wr.customer_last_name,wr.email,wr.invoice_date,wr.status,wr.warranty_years,wr.created_at,pm.code,p.name product_name
+                $sql = 'SELECT wr.id,wr.certificate_number,wr.import_review_warning,wr.customer_first_name,wr.customer_last_name,wr.email,wr.invoice_date,wr.status,wr.warranty_years,wr.created_at,pm.code,p.name product_name
                 FROM warranty_registrations wr JOIN product_models pm ON pm.id=wr.model_id JOIN products p ON p.id=pm.product_id
                 ORDER BY wr.created_at DESC,wr.id DESC';
         $registrations = Database::connection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
