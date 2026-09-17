@@ -100,7 +100,9 @@ final class WarrantyController
         if (!filter_var((string)($old['email'] ?? ''), FILTER_VALIDATE_EMAIL)) $errors[] = 'Indirizzo email non valido.';
 
         $fiscal = strtoupper(preg_replace('/\s+/', '', (string)($old['fiscal_code'] ?? '')) ?? '');
-        if (!preg_match('/^(?:[A-Z0-9]{16}|\d{11})$/', $fiscal)) $errors[] = 'Codice fiscale o Partita IVA non valido.';
+        if (!Validator::fiscalCodeOrVat($fiscal)) {
+            $errors[] = 'Codice fiscale o Partita IVA non valido: verifica tutti i caratteri e il codice di controllo.';
+        }
 
         $postal = strtoupper(trim((string)($old['postal_code'] ?? '')));
         if (!preg_match('/^[A-Z0-9 -]{3,12}$/', $postal)) $errors[] = 'CAP non valido.';
@@ -184,6 +186,7 @@ final class WarrantyController
         }
 
         try {
+            $registrationCode = self::newRegistrationCode($pdo);
             $pdo->exec(
                 'CREATE TABLE IF NOT EXISTS warranty_registration_details (
                     registration_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
@@ -197,13 +200,14 @@ final class WarrantyController
             $pdo->beginTransaction();
             $stmt = $pdo->prepare(
                 'INSERT INTO warranty_registrations
-                 (model_id, warranty_rule_id, warranty_years, extension_formula, registration_days_limit,
+                 (certificate_number, model_id, warranty_rule_id, warranty_years, extension_formula, registration_days_limit,
                   invoice_required_snapshot, fgas_required_snapshot,
                   customer_first_name, customer_last_name, fiscal_code, email, phone, address, postal_code, city, province, region,
                   invoice_date, invoice_file, fgas_file, privacy_accepted_at, status)
-                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),"pending")'
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),"pending")'
             );
             $stmt->execute([
+                $registrationCode,
                 $modelId,
                 (int)$rule['id'],
                 (int)$rule['warranty_years'],
@@ -242,9 +246,9 @@ final class WarrantyController
             $pdo->commit();
 
             WarrantyService::notifyInternal(
-                'Nuova registrazione garanzia IDEMA #' . $registrationId,
+                'Nuova registrazione garanzia IDEMA ' . $registrationCode,
                 [
-                    'Pratica' => '#' . $registrationId,
+                    'Pratica' => $registrationCode,
                     'Sistema' => ($productType === 'mono' ? 'Mono Split - ' : 'Multi Split - ' . $outerUnit . ' / ') . $combination,
                     'Copertura' => (string)$rule['warranty_years'] . ' anni' . ($rule['extension_formula'] ? ' (' . $rule['extension_formula'] . ')' : ''),
                     'Pannello' => 'https://www.rappresentanzeguanzirolisas.it/idemaclima/admin/warranties/registration?id=' . $registrationId,
@@ -254,7 +258,7 @@ final class WarrantyController
                 'title' => 'Registrazione ricevuta',
                 'success' => true,
                 'message' => 'La richiesta di estensione garanzia è stata registrata e sarà sottoposta a verifica.',
-                'registrationId' => $registrationId,
+                'registrationCode' => $registrationCode,
             ]);
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
@@ -263,6 +267,19 @@ final class WarrantyController
             http_response_code(500);
             self::render('warranty/result', ['title' => 'Errore', 'success' => false, 'message' => 'Non è stato possibile registrare la richiesta.']);
         }
+    }
+
+    private static function newRegistrationCode(PDO $pdo): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        do {
+            $code = '';
+            for ($i = 0; $i < 8; $i++) $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+            $number = 'IDM-' . $code;
+            $stmt = $pdo->prepare('SELECT 1 FROM warranty_registrations WHERE certificate_number=? LIMIT 1');
+            $stmt->execute([$number]);
+        } while ($stmt->fetchColumn());
+        return $number;
     }
 
     private static function render(string $view, array $data): void
