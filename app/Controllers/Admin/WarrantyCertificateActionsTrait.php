@@ -41,7 +41,11 @@ trait WarrantyCertificateActionsTrait
 
         $stmt = $pdo->prepare('SELECT * FROM warranty_units WHERE registration_id=? ORDER BY id');
         $stmt->execute([$id]); $units = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $number = $existingCertificate ? (string)$existingCertificate['certificate_number'] : self::newCertificateNumber($pdo);
+        $number = $existingCertificate
+            ? (string)$existingCertificate['certificate_number']
+            : (trim((string)($registration['certificate_number'] ?? '')) !== ''
+                ? (string)$registration['certificate_number']
+                : self::newCertificateNumber($pdo));
         $fileName = self::certificateFileName($registration);
         $relative = 'warranty-certificates/' . $fileName;
         $directory = dirname(__DIR__, 3) . '/storage/private/warranty-certificates';
@@ -227,4 +231,3 @@ trait WarrantyCertificateActionsTrait
     /* PDF rendering lives in WarrantyCertificatePdf so deployments do not depend
        on transferring one oversized controller file. */
 }
-
