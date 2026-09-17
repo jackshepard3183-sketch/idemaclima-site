@@ -129,6 +129,7 @@ final class WarrantyController
             $errors[] = 'Il termine previsto per la registrazione della garanzia risulta superato.';
         }
 
+        $outdoorSerial = strtoupper(trim((string)($old['outdoor_serial'] ?? '')));
         $indoorSerials = [];
         for ($index = 1; $index <= 3; $index++) {
             $serial = strtoupper(trim((string)($old['indoor_serial_' . $index] ?? '')));
@@ -153,6 +154,19 @@ final class WarrantyController
         }
         foreach ($indoorSerials as $serial) {
             if (mb_strlen($serial) > 160) $errors[] = 'Uno o più seriali delle unità interne sono troppo lunghi.';
+        }
+
+        $submittedSerials = array_merge([$outdoorSerial], $indoorSerials);
+        if (count($submittedSerials) !== count(array_unique($submittedSerials))) {
+            $errors[] = 'Ogni unità deve avere un numero di serie diverso.';
+        }
+        if (!$errors) {
+            $placeholders = implode(',', array_fill(0, count($submittedSerials), '?'));
+            $serialCheck = $pdo->prepare('SELECT 1 FROM warranty_units WHERE serial_number IN (' . $placeholders . ') LIMIT 1');
+            $serialCheck->execute($submittedSerials);
+            if ($serialCheck->fetchColumn()) {
+                $errors[] = 'Uno o più numeri di serie risultano già registrati. Verifica i dati oppure contatta Idema Clima.';
+            }
         }
 
         if ($errors) {
@@ -238,7 +252,7 @@ final class WarrantyController
             $detail->execute([$registrationId, $productType, $mainModel !== '' ? $mainModel : null, $combination]);
 
             $unit = $pdo->prepare('INSERT INTO warranty_units (registration_id, model_id, unit_type, serial_number) VALUES (?,?,?,?)');
-            $unit->execute([$registrationId, $modelId, 'outdoor', strtoupper(trim((string)$old['outdoor_serial']))]);
+            $unit->execute([$registrationId, $modelId, 'outdoor', $outdoorSerial]);
             foreach ($indoorSerials as $serial) {
                 $unit->execute([$registrationId, null, 'indoor', $serial]);
             }
@@ -265,7 +279,14 @@ final class WarrantyController
             PrivateUpload::remove($invoiceFile['path'] ?? null);
             PrivateUpload::remove($fgasFile['path'] ?? null);
             http_response_code(500);
-            self::render('warranty/result', ['title' => 'Errore', 'success' => false, 'message' => 'Non è stato possibile registrare la richiesta.']);
+            $duplicateSerial = $e instanceof \PDOException && $e->getCode() === '23000';
+            self::render('warranty/result', [
+                'title' => 'Errore',
+                'success' => false,
+                'message' => $duplicateSerial
+                    ? 'Uno o più numeri di serie risultano già registrati. Verifica i dati oppure contatta Idema Clima.'
+                    : 'Non è stato possibile registrare la richiesta.',
+            ]);
         }
     }
 
