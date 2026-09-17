@@ -62,6 +62,7 @@ final class WarrantyImportController
         $pdo = Database::connection();
         $columns = array_column($pdo->query('SHOW COLUMNS FROM warranty_registrations')->fetchAll(PDO::FETCH_ASSOC), 'Field');
         self::cleanupOrphanedImports($pdo);
+        self::normalizeExistingImportedNames($pdo);
         $done = 0; $skipped = 0; $errors = [];
         foreach ($payload['items'] as $item) {
             if (!is_array($item)) continue;
@@ -83,8 +84,8 @@ final class WarrantyImportController
                     'source_wpforms_id'=>$sourceId,
                     'certificate_number'=>self::newCode($pdo),
                     'model_id'=>$modelId,
-                    'customer_first_name'=>trim((string)($item['first_name'] ?? '')),
-                    'customer_last_name'=>trim((string)($item['last_name'] ?? '')),
+                    'customer_first_name'=>self::normalizeName((string)($item['first_name'] ?? '')),
+                    'customer_last_name'=>self::normalizeName((string)($item['last_name'] ?? '')),
                     'fiscal_code'=>strtoupper(trim((string)($item['fiscal_code'] ?? ''))),
                     'email'=>strtolower(trim((string)($item['email'] ?? ''))),
                     'phone'=>trim((string)($item['phone'] ?? '')) ?: null,
@@ -173,6 +174,58 @@ final class WarrantyImportController
         return $relative;
     }
 
+
+
+    private static function normalizeExistingImportedNames(PDO $pdo): void
+    {
+        $rows = $pdo->query(
+            'SELECT id, customer_first_name, customer_last_name
+             FROM warranty_registrations
+             WHERE source_wpforms_id IS NOT NULL'
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $update = $pdo->prepare(
+            'UPDATE warranty_registrations
+             SET customer_first_name=?, customer_last_name=?
+             WHERE id=?'
+        );
+
+        foreach ($rows as $row) {
+            $firstName = self::normalizeName((string)($row['customer_first_name'] ?? ''));
+            $lastName = self::normalizeName((string)($row['customer_last_name'] ?? ''));
+            if ($firstName === (string)$row['customer_first_name']
+                && $lastName === (string)$row['customer_last_name']) {
+                continue;
+            }
+            $update->execute([$firstName, $lastName, (int)$row['id']]);
+        }
+    }
+
+    private static function normalizeName(string $value): string
+    {
+        $value = preg_replace('/\s+/u', ' ', trim($value)) ?? trim($value);
+        if ($value === '') return '';
+
+        if (function_exists('mb_convert_case')) {
+            $value = mb_convert_case(
+                mb_strtolower($value, 'UTF-8'),
+                MB_CASE_TITLE,
+                'UTF-8'
+            );
+        } else {
+            $value = ucwords(strtolower($value), " \t\r\n\f\v-'");
+        }
+
+        return preg_replace_callback(
+            "/(^|[\s'-])([a-zà-ÿ])/u",
+            static fn(array $match): string => $match[1] . (
+                function_exists('mb_strtoupper')
+                    ? mb_strtoupper($match[2], 'UTF-8')
+                    : strtoupper($match[2])
+            ),
+            $value
+        ) ?? $value;
+    }
 
     private static function normalizeWpformsDate(string $value): string
     {
