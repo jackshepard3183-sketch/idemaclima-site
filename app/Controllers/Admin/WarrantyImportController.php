@@ -20,6 +20,7 @@ namespace App\Controllers\Admin;
 use App\Auth\AdminAuth;
 use App\Core\Database;
 use App\Core\Security;
+use App\Core\Validator;
 use App\Services\WarrantyService;
 use PDO;
 use RuntimeException;
@@ -92,7 +93,7 @@ final class WarrantyImportController
                     'address'=>trim((string)($item['address'] ?? '')),
                     'postal_code'=>strtoupper(trim((string)($item['postal_code'] ?? ''))),
                     'city'=>trim((string)($item['city'] ?? '')),
-                    'province'=>strtoupper(trim((string)($item['province'] ?? ''))),
+                    'province'=>Validator::provinceCode($item['province'] ?? ''),
                     'region'=>strtoupper(trim((string)($item['region'] ?? ''))),
                     'invoice_date'=>(string)($item['invoice_date'] ?? ''),
                     'invoice_file'=>$invoicePath,
@@ -179,25 +180,27 @@ final class WarrantyImportController
     private static function normalizeExistingImportedNames(PDO $pdo): void
     {
         $rows = $pdo->query(
-            'SELECT id, customer_first_name, customer_last_name
+            'SELECT id, customer_first_name, customer_last_name, province
              FROM warranty_registrations
              WHERE source_wpforms_id IS NOT NULL'
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $update = $pdo->prepare(
             'UPDATE warranty_registrations
-             SET customer_first_name=?, customer_last_name=?
+             SET customer_first_name=?, customer_last_name=?, province=?
              WHERE id=?'
         );
 
         foreach ($rows as $row) {
             $firstName = self::normalizeName((string)($row['customer_first_name'] ?? ''));
             $lastName = self::normalizeName((string)($row['customer_last_name'] ?? ''));
+            $province = Validator::provinceCode($row['province'] ?? '');
             if ($firstName === (string)$row['customer_first_name']
-                && $lastName === (string)$row['customer_last_name']) {
+                && $lastName === (string)$row['customer_last_name']
+                && $province === (string)$row['province']) {
                 continue;
             }
-            $update->execute([$firstName, $lastName, (int)$row['id']]);
+            $update->execute([$firstName, $lastName, $province, (int)$row['id']]);
         }
     }
 
