@@ -68,7 +68,7 @@ final class WarrantyImportController
                     'invoice_date'=>(string)($item['invoice_date'] ?? ''),
                     'invoice_file'=>$invoicePath,
                     'fgas_file'=>$fgasPath,
-                    'privacy_accepted_at'=>(string)($item['source_created_at'] ?? date('Y-m-d H:i:s')),
+file_get_contents($url, false, $context)                    'privacy_accepted_at'=>(string)($item['source_created_at'] ?? date('Y-m-d H:i:s')),
                     'status'=>'pending',
                     'warranty_years'=>10,
                     'extension_formula'=>null,
@@ -109,8 +109,27 @@ final class WarrantyImportController
     {
         if (!preg_match('#^https?://www\.idemaclima\.it/wp-content/uploads/wpforms/#i', $url)) throw new RuntimeException('URL documento non consentito');
         $url = preg_replace('#^http://#i', 'https://', $url) ?? $url;
-        $context = stream_context_create(['http'=>['timeout'=>60,'follow_location'=>1,'user_agent'=>'IDEMA migration']]);
-        $data = @file_get_contents($url, false, $context);
+        if (!function_exists('curl_init')) throw new RuntimeException('cURL non disponibile sul server');
+        $ch = curl_init($url);
+        if ($ch === false) throw new RuntimeException('Inizializzazione download ' . $kind . ' non riuscita');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_CONNECTTIMEOUT => 15,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; IDEMA-WPForms-Migration/1.0)',
+            CURLOPT_HTTPHEADER => ['Accept: application/pdf,image/jpeg,image/png,*/*'],
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+        ]);
+        $data = curl_exec($ch);
+        $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        if (!is_string($data) || $status < 200 || $status >= 300) {
+            $detail = $error !== '' ? ': ' . $error : ' (HTTP ' . $status . ')';
+            throw new RuntimeException('Download ' . $kind . ' non riuscito' . $detail);
+        }
         if ($data === false || strlen($data) < 5 || strlen($data) > 15728640) throw new RuntimeException('Download ' . $kind . ' non riuscito');
         $ext = strtolower((string)pathinfo((string)parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
         if (!in_array($ext,['pdf','jpg','jpeg','png'],true)) throw new RuntimeException('Formato ' . $kind . ' non valido');
