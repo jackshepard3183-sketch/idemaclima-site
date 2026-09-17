@@ -50,6 +50,7 @@ final class Validator
     }
 
 
+    /** Normalizes full province names and abbreviations for forms and historical imports. */
     public static function provinceCode(mixed $value): string
     {
         $value = trim((string) $value);
