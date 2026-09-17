@@ -1,47 +1,3 @@
-<?php
-declare(strict_types=1);
-
-namespace App\Controllers\Admin;
-
-use App\Auth\AdminAuth;
-use App\Core\Database;
-use App\Core\Security;
-use App\Services\WarrantyService;
-use PDO;
-use RuntimeException;
-use Throwable;
-
-final class WarrantyImportController
-{
-    public static function index(): void
-    {
-        AdminAuth::requireLogin();
-        $title = 'Importazione garanzie WPForms';
-        $user = AdminAuth::user();
-        $csrf = Security::csrfToken();
-        require dirname(__DIR__, 2) . '/Views/admin/warranty_import.php';
-    }
-
-    public static function run(): void
-    {
-        AdminAuth::requireLogin();
-        if (!Security::verifyCsrf($_POST['_csrf'] ?? null)) { http_response_code(419); exit('Sessione non valida'); }
-        if (!isset($_FILES['manifest']) || !is_uploaded_file((string)($_FILES['manifest']['tmp_name'] ?? ''))) { http_response_code(422); exit('Seleziona il file JSON.'); }
-        $raw = file_get_contents((string)$_FILES['manifest']['tmp_name']);
-        $payload = json_decode((string)$raw, true);
-        if (!is_array($payload) || !is_array($payload['items'] ?? null)) { http_response_code(422); exit('Manifest non valido.'); }
-        set_time_limit(0);
-        $pdo = Database::connection();
-        $columns = array_column($pdo->query('SHOW COLUMNS FROM warranty_registrations')->fetchAll(PDO::FETCH_ASSOC), 'Field');
-        $done = 0; $skipped = 0; $errors = [];
-        foreach ($payload['items'] as $item) {
-            if (!is_array($item)) continue;
-            $sourceId = (int)($item['source_id'] ?? 0);
-            try {
-                if ($sourceId < 1) throw new RuntimeException('ID WPForms mancante');
-                $check = $pdo->prepare('SELECT id FROM warranty_registrations WHERE source_wpforms_id=? LIMIT 1');
-                $check->execute([$sourceId]);
-                if ($check->fetchColumn()) { $skipped++; continue; }
                 $modelId = WarrantyService::modelIdFromCombination($pdo, (string)($item['combination'] ?? ''));
                 if ($modelId < 1) throw new RuntimeException('Modello non trovato');
                 $invoicePath = self::copyDocument((string)($item['invoice_url'] ?? ''), 'invoice', $sourceId);
@@ -100,9 +56,11 @@ final class WarrantyImportController
         echo json_encode(['imported'=>$done,'skipped'=>$skipped,'errors'=>$errors], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);
     }
 
+
     private static function copyDocument(string $url, string $kind, int $sourceId): string
     {
-        if (!preg_match('#^https://www\.idemaclima\.it/wp-content/uploads/wpforms/#', $url)) throw new RuntimeException('URL documento non consentito');
+        if (!preg_match('#^https?://www\.idemaclima\.it/wp-content/uploads/wpforms/#i', $url)) throw new RuntimeException('URL documento non consentito');
+        $url = preg_replace('#^http://#i', 'https://', $url) ?? $url;
         $context = stream_context_create(['http'=>['timeout'=>60,'follow_location'=>1,'user_agent'=>'IDEMA migration']]);
         $data = @file_get_contents($url, false, $context);
         if ($data === false || strlen($data) < 5 || strlen($data) > 15728640) throw new RuntimeException('Download ' . $kind . ' non riuscito');
@@ -118,6 +76,7 @@ final class WarrantyImportController
         return $relative;
     }
 
+
     private static function newCode(PDO $pdo): string
     {
         $alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -129,3 +88,4 @@ final class WarrantyImportController
         return $number;
     }
 }
+
