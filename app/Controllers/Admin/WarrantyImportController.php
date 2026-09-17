@@ -1,3 +1,51 @@
+<?php
+declare(strict_types=1);
+
+
+namespace App\Controllers\Admin;
+
+
+use App\Auth\AdminAuth;
+use App\Core\Database;
+use App\Core\Security;
+use App\Services\WarrantyService;
+use PDO;
+use RuntimeException;
+use Throwable;
+
+
+final class WarrantyImportController
+{
+    public static function index(): void
+    {
+        AdminAuth::requireLogin();
+        $title = 'Importazione garanzie WPForms';
+        $user = AdminAuth::user();
+        $csrf = Security::csrfToken();
+        require dirname(__DIR__, 2) . '/Views/admin/warranty_import.php';
+    }
+
+
+    public static function run(): void
+    {
+        AdminAuth::requireLogin();
+        if (!Security::verifyCsrf($_POST['_csrf'] ?? null)) { http_response_code(419); exit('Sessione non valida'); }
+        if (!isset($_FILES['manifest']) || !is_uploaded_file((string)($_FILES['manifest']['tmp_name'] ?? ''))) { http_response_code(422); exit('Seleziona il file JSON.'); }
+        $raw = file_get_contents((string)$_FILES['manifest']['tmp_name']);
+        $payload = json_decode((string)$raw, true);
+        if (!is_array($payload) || !is_array($payload['items'] ?? null)) { http_response_code(422); exit('Manifest non valido.'); }
+        set_time_limit(0);
+        $pdo = Database::connection();
+        $columns = array_column($pdo->query('SHOW COLUMNS FROM warranty_registrations')->fetchAll(PDO::FETCH_ASSOC), 'Field');
+        $done = 0; $skipped = 0; $errors = [];
+        foreach ($payload['items'] as $item) {
+            if (!is_array($item)) continue;
+            $sourceId = (int)($item['source_id'] ?? 0);
+            try {
+                if ($sourceId < 1) throw new RuntimeException('ID WPForms mancante');
+                $check = $pdo->prepare('SELECT id FROM warranty_registrations WHERE source_wpforms_id=? LIMIT 1');
+                $check->execute([$sourceId]);
+                if ($check->fetchColumn()) { $skipped++; continue; }
                 $modelId = WarrantyService::modelIdFromCombination($pdo, (string)($item['combination'] ?? ''));
                 if ($modelId < 1) throw new RuntimeException('Modello non trovato');
                 $invoicePath = self::copyDocument((string)($item['invoice_url'] ?? ''), 'invoice', $sourceId);
@@ -88,4 +136,3 @@
         return $number;
     }
 }
-
