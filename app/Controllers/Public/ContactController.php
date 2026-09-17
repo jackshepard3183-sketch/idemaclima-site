@@ -65,7 +65,7 @@ final class ContactController
             $s=$pdo->prepare('INSERT INTO contact_submissions(first_name,last_name,region,province,city,postal_code,email,phone,subject,message,attachment_path,attachment_name,attachment_mime,privacy_accepted_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())');
             $s->execute([
                 Validator::naturalText($old['first_name']),Validator::naturalText($old['last_name']),Validator::naturalText($old['region']),Validator::provinceCode($old['province']),Validator::naturalText($old['city']),strtoupper((string)$old['postal_code']),
-                strtolower((string)$old['email']),(string)$old['phone'],Validator::naturalText($old['subject']),trim((string)$old['message']),
+                strtolower((string)$old['email']),(string)$old['phone'],Validator::naturalText($old['subject']),Validator::naturalText($old['message']),
                 $attachment['path']??null,$attachment['original_name']??null,$attachment['mime']??null
             ]);
             ContactMailService::notify($old, $attachment['original_name']??null);
