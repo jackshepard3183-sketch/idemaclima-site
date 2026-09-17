@@ -21,6 +21,7 @@ final class WarrantyController
     public static function registrations(): void
     {
         AdminAuth::requireLogin();
+                if (isset($_GET['import'])) { WarrantyImportController::index(); return; }
                 $sql = 'SELECT wr.id,wr.certificate_number,wr.import_review_warning,wr.customer_first_name,wr.customer_last_name,wr.email,wr.invoice_date,wr.status,wr.warranty_years,wr.created_at,pm.code,p.name product_name
                 FROM warranty_registrations wr JOIN product_models pm ON pm.id=wr.model_id JOIN products p ON p.id=pm.product_id
                 ORDER BY wr.created_at DESC,wr.id DESC';
@@ -64,6 +65,7 @@ final class WarrantyController
     public static function updateStatus(): void
     {
         AdminAuth::requireLogin();
+                if (isset($_GET['import'])) { WarrantyImportController::run(); return; }
         if (!Security::verifyCsrf($_POST['_csrf'] ?? null)) { http_response_code(419); exit('Sessione non valida'); }
         $id = Validator::int($_POST['id'] ?? 0);
         $status = (string)($_POST['status'] ?? 'pending');
