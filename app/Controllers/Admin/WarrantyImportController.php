@@ -141,37 +141,71 @@ final class WarrantyImportController
     {
         if (!preg_match('#^https?://www\.idemaclima\.it/wp-content/uploads/wpforms/#i', $url)) throw new RuntimeException('URL documento non consentito');
         $url = preg_replace('#^http://#i', 'https://', $url) ?? $url;
+        $ext = strtolower((string)pathinfo((string)parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
+        if (!in_array($ext, ['pdf', 'jpg', 'jpeg', 'png'], true)) throw new RuntimeException('Formato ' . $kind . ' non valido');
         if (!function_exists('curl_init')) throw new RuntimeException('cURL non disponibile sul server');
+
+        $name = 'wpforms-' . $sourceId . '-' . $kind . '-' . bin2hex(random_bytes(8)) . '.' . ($ext === 'jpeg' ? 'jpg' : $ext);
+        $relative = 'warranty/imported/' . $name;
+        $absolute = dirname(__DIR__, 3) . '/storage/private/' . $relative;
+        if (!is_dir(dirname($absolute)) && !mkdir(dirname($absolute), 0700, true) && !is_dir(dirname($absolute))) throw new RuntimeException('Cartella privata non disponibile');
+
+        $temporary = $absolute . '.part-' . bin2hex(random_bytes(4));
+        $handle = fopen($temporary, 'wb');
+        if ($handle === false) throw new RuntimeException('File temporaneo ' . $kind . ' non disponibile');
+
+        $tooLarge = false;
         $ch = curl_init($url);
-        if ($ch === false) throw new RuntimeException('Inizializzazione download ' . $kind . ' non riuscita');
+        if ($ch === false) {
+            fclose($handle);
+            @unlink($temporary);
+            throw new RuntimeException('Inizializzazione download ' . $kind . ' non riuscita');
+        }
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FILE => $handle,
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_CONNECTTIMEOUT => 15,
-            CURLOPT_TIMEOUT => 60,
+            CURLOPT_TIMEOUT => 120,
             CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; IDEMA-WPForms-Migration/1.0)',
             CURLOPT_HTTPHEADER => ['Accept: application/pdf,image/jpeg,image/png,*/*'],
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_NOPROGRESS => false,
+            CURLOPT_XFERINFOFUNCTION => static function ($curl, $downloadTotal, $downloaded) use (&$tooLarge): int {
+                if ($downloadTotal > 15728640 || $downloaded > 15728640) {
+                    $tooLarge = true;
+                    return 1;
+                }
+                return 0;
+            },
         ]);
-        $data = curl_exec($ch);
+        $ok = curl_exec($ch);
         $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         $error = curl_error($ch);
         curl_close($ch);
-        if (!is_string($data) || $status < 200 || $status >= 300) {
+        fclose($handle);
+
+        if ($ok !== true || $status < 200 || $status >= 300) {
+            @unlink($temporary);
+            if ($tooLarge) throw new RuntimeException('Documento ' . $kind . ' superiore a 15 MB');
             $detail = $error !== '' ? ': ' . $error : ' (HTTP ' . $status . ')';
             throw new RuntimeException('Download ' . $kind . ' non riuscito' . $detail);
         }
-        if ($data === false || strlen($data) < 5 || strlen($data) > 15728640) throw new RuntimeException('Download ' . $kind . ' non riuscito');
-        $ext = strtolower((string)pathinfo((string)parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
-        if (!in_array($ext,['pdf','jpg','jpeg','png'],true)) throw new RuntimeException('Formato ' . $kind . ' non valido');
-        if ($ext === 'pdf' && !str_starts_with($data,'%PDF-')) throw new RuntimeException('PDF ' . $kind . ' non valido');
-        $name = 'wpforms-' . $sourceId . '-' . $kind . '-' . bin2hex(random_bytes(8)) . '.' . ($ext === 'jpeg' ? 'jpg' : $ext);
-        $relative = 'warranty/imported/' . $name;
-        $absolute = dirname(__DIR__, 3) . '/storage/private/' . $relative;
-        if (!is_dir(dirname($absolute)) && !mkdir(dirname($absolute),0700,true) && !is_dir(dirname($absolute))) throw new RuntimeException('Cartella privata non disponibile');
-        if (file_put_contents($absolute,$data,LOCK_EX) === false) throw new RuntimeException('Salvataggio ' . $kind . ' non riuscito');
-        @chmod($absolute,0600);
+
+        $size = filesize($temporary);
+        if ($size === false || $size < 5 || $size > 15728640) {
+            @unlink($temporary);
+            throw new RuntimeException('Download ' . $kind . ' non riuscito');
+        }
+        if ($ext === 'pdf' && file_get_contents($temporary, false, null, 0, 5) !== '%PDF-') {
+            @unlink($temporary);
+            throw new RuntimeException('PDF ' . $kind . ' non valido');
+        }
+        if (!rename($temporary, $absolute)) {
+            @unlink($temporary);
+            throw new RuntimeException('Salvataggio ' . $kind . ' non riuscito');
+        }
+        @chmod($absolute, 0600);
         return $relative;
     }
 
