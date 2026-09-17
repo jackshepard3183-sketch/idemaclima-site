@@ -97,7 +97,13 @@ for required_path in \
   app/Services/CampusMailService.php \
   app/Services/ContactMailService.php \
   app/Services/IncentivesMailService.php \
-  app/Services/WarrantyService.php
+  app/Services/WarrantyService.php \
+  public/index.php \
+  app/Controllers/Admin/WarrantyController.php \
+  app/Controllers/Admin/WarrantyImportController.php \
+  app/Views/admin/warranty_import.php \
+  app/Views/admin/warranty_registrations.php \
+  database/migrations/064_warranty_historical_import.sql
 do
   printf 'M\t%s\n' "$required_path" >> "$changed_list"
 done
