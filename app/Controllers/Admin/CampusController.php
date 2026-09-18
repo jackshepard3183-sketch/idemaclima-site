@@ -141,8 +141,7 @@ final class CampusController
         if($catAccountId){$where[]='r.cat_account_id=?';$params[]=$catAccountId;}
         if($status!==''){$where[]='r.status=?';$params[]=$status;}
         $pdo=Database::connection();
-        self::ensureRegistrationConfirmationColumn($pdo);
-        $sql='SELECT r.*,e.title event_title,e.audience,e.starts_at event_starts_at,e.location event_location,c.company_name cat_company FROM event_registrations r JOIN events e ON e.id=r.event_id LEFT JOIN cat_accounts c ON c.id=r.cat_account_id'.($where?' WHERE '.implode(' AND ',$where):'').' ORDER BY r.created_at DESC';
+        $sql='SELECT r.*,e.title event_title,e.audience,c.company_name cat_company FROM event_registrations r JOIN events e ON e.id=r.event_id LEFT JOIN cat_accounts c ON c.id=r.cat_account_id'.($where?' WHERE '.implode(' AND ',$where):'').' ORDER BY r.created_at DESC';
         $stmt=$pdo->prepare($sql);$stmt->execute($params);
         $events=$pdo->query('SELECT id,title,starts_at FROM events ORDER BY starts_at DESC')->fetchAll(PDO::FETCH_ASSOC);
         self::view('campus_registrations',['title'=>'Campus - Iscrizioni','rows'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'events'=>$events,'filters'=>['event_id'=>$eventId,'cat_account_id'=>$catAccountId,'status'=>$status]]);
@@ -160,16 +159,6 @@ final class CampusController
         $s->execute([$status,$attended,$id]);
         if($s->rowCount()===0){$check=$pdo->prepare('SELECT 1 FROM event_registrations WHERE id=?');$check->execute([$id]);if(!$check->fetchColumn()){http_response_code(404);exit('Iscrizione non trovata');}}
         Audit::log('campus.registration.update','event_registration',$id,['status'=>$status,'attended'=>$attended]);
-        header('Location:/idemaclima/admin/campus/registrations');exit;
-    }
-
-
-    public static function markConfirmationSent(): void
-    {
-        AdminAuth::requireLogin();self::csrf();$id=Validator::int($_POST['id']??0);$pdo=Database::connection();self::ensureRegistrationConfirmationColumn($pdo);
-        $s=$pdo->prepare('UPDATE event_registrations SET confirmation_sent_at=NOW() WHERE id=?');$s->execute([$id]);
-        if($s->rowCount()===0){$check=$pdo->prepare('SELECT 1 FROM event_registrations WHERE id=?');$check->execute([$id]);if(!$check->fetchColumn()){http_response_code(404);exit('Iscrizione non trovata');}}
-        Audit::log('campus.registration.confirmation_sent','event_registration',$id,['confirmation_sent_at'=>date('Y-m-d H:i:s')]);
         header('Location:/idemaclima/admin/campus/registrations');exit;
     }
 
@@ -243,13 +232,6 @@ final class CampusController
             throw $e;
         }
         header('Location:/idemaclima/admin/cat/users');exit;
-    }
-
-
-    private static function ensureRegistrationConfirmationColumn(PDO $pdo): void
-    {
-        $check=$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='event_registrations' AND COLUMN_NAME='confirmation_sent_at'");
-        if((int)$check->fetchColumn()===0)$pdo->exec("ALTER TABLE event_registrations ADD COLUMN confirmation_sent_at DATETIME NULL AFTER privacy_accepted_at");
     }
 
 
