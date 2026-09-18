@@ -10,14 +10,13 @@
     <div class="easy-grid">
       <label>Nome *<input name="first_name" maxlength="120" autocomplete="given-name" required value="<?=e((string)($old['first_name']??''))?>"></label>
       <label>Cognome *<input name="last_name" maxlength="120" autocomplete="family-name" required value="<?=e((string)($old['last_name']??''))?>"></label>
-      <label>Azienda <input name="company" maxlength="190" autocomplete="organization" value="<?=e((string)($old['company']??''))?>"></label>
-      <label>Profilo *<select name="role" required><option value="">Seleziona</option><?php foreach(['Installatore','Progettista','Centro assistenza tecnica','Cliente privato','Altro'] as $role): ?><option value="<?=e($role)?>" <?=($old['role']??'')===$role?'selected':'' ?>><?=e($role)?></option><?php endforeach; ?></select></label>
+      <label class="easy-full">Azienda <input name="company" maxlength="190" autocomplete="organization" value="<?=e((string)($old['company']??''))?>"></label>
       <label>Regione *<select id="warranty-region" name="region" required data-selected="<?=e((string)($old['region']??''))?>"><option value="">Seleziona la regione</option></select></label>
       <label>Provincia *<select id="warranty-province" name="province" required data-selected="<?=e((string)($old['province']??''))?>" disabled><option value="">Seleziona la provincia</option></select></label>
       <label>Città *<select id="warranty-city" name="city" required data-selected="<?=e((string)($old['city']??''))?>" disabled><option value="">Seleziona la città</option></select></label>
       <label>CAP *<select id="warranty-postal-code" name="postal_code" required data-selected="<?=e((string)($old['postal_code']??''))?>" disabled><option value="">Seleziona il CAP</option></select></label>
       <label>Telefono *<input type="tel" name="phone" maxlength="50" autocomplete="tel" required value="<?=e((string)($old['phone']??''))?>"></label>
-      <span class="form-spacer" aria-hidden="true"></span>
+      <label>Profilo *<select name="role" required><option value="">Seleziona</option><?php foreach(['Installatore','Progettista','Centro assistenza tecnica','Cliente privato','Altro'] as $role): ?><option value="<?=e($role)?>" <?=($old['role']??'')===$role?'selected':''?>><?=e($role)?></option><?php endforeach; ?></select></label>
       <label>Email *<input type="email" name="email" maxlength="190" autocomplete="email" required value="<?=e((string)($old['email']??''))?>"></label>
       <label>Conferma email *<input type="email" name="email_confirm" maxlength="190" required value="<?=e((string)($old['email_confirm']??''))?>"></label>
       <label class="privacy-consent"><input type="checkbox" name="privacy" value="1" required <?=isset($old['privacy'])?'checked':''?>><span>Ho letto l’<a href="https://www.iubenda.com/privacy-policy/38092343/full-legal" target="_blank" rel="noopener">informativa privacy</a> e acconsento al trattamento dei dati per la gestione della richiesta. *</span></label>
@@ -25,5 +24,4 @@
     <div class="easy-actions"><button class="btn" type="submit">Invia richiesta</button></div>
   </form>
 </section>
-<style>@media(max-width:820px){.easy-grid .form-spacer{display:none}}</style>
 <script src="/idemaclima/public/locations-cascade.js" defer></script>
