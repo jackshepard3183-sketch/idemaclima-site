@@ -174,10 +174,14 @@ final class CampusController
         $company=Validator::requiredString($_POST['company_name']??'','Azienda',190,$errors);
         $first=Validator::requiredString($_POST['contact_first_name']??'','Nome',120,$errors);
         $last=Validator::requiredString($_POST['contact_last_name']??'','Cognome',120,$errors);
-        $email=trim((string)($_POST['email']??''));
+        $email=strtolower(trim((string)($_POST['email']??'')));
         $username=trim((string)($_POST['username']??''));
         if(!filter_var($email,FILTER_VALIDATE_EMAIL) || mb_strlen($email)>190)$errors[]='Email non valida.';
-        if($username==='' || mb_strlen($username)>120 || !preg_match('/^[A-Za-z0-9._-]+$/',$username))$errors[]='Username non valido: usa lettere, numeri, punto, trattino o underscore.';
+        if($username==='')$username=$email;
+        if(str_contains($username,'@'))$username=strtolower($username);
+        $usernameIsEmail=filter_var($username,FILTER_VALIDATE_EMAIL)!==false;
+        $usernameIsAlias=preg_match('/^[A-Za-z0-9._-]+$/',$username)===1;
+        if(mb_strlen($username)>120 || (!$usernameIsEmail && !$usernameIsAlias))$errors[]='Username non valido: inserisci un indirizzo email oppure usa lettere, numeri, punto, trattino o underscore.';
         $password=(string)($_POST['password']??'');
         if((!$id || $password!=='') && !self::strongPassword($password))$errors[]='La password deve avere almeno 12 caratteri e contenere maiuscola, minuscola, numero e simbolo.';
         $active=Validator::bool($_POST['active']??0);
