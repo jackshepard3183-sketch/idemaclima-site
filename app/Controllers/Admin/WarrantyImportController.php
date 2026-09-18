@@ -82,8 +82,10 @@ final class WarrantyImportController
                 if ($check->fetchColumn()) { $skipped++; continue; }
                 $modelId = WarrantyService::modelIdFromCombination($pdo, (string)($item['combination'] ?? ''));
                 if ($modelId < 1) throw new RuntimeException('Modello non trovato');
-                $invoicePath = self::copyDocument((string)($item['invoice_url'] ?? ''), 'invoice', $sourceId);
-                $fgasPath = self::copyDocument((string)($item['fgas_url'] ?? ''), 'fgas', $sourceId);
+                $allowIncomplete = (string)($item['import_status'] ?? '') === 'IMPORTABILE CON VERIFICA'
+                    && trim((string)($item['review_warning'] ?? '')) !== '';
+                $invoicePath = self::copyDocument((string)($item['invoice_url'] ?? ''), 'invoice', $sourceId, $allowIncomplete);
+                $fgasPath = self::copyDocument((string)($item['fgas_url'] ?? ''), 'fgas', $sourceId, $allowIncomplete);
                 $pdo->beginTransaction();
                 $data = [
                     'source_wpforms_id'=>$sourceId,
@@ -99,7 +101,7 @@ final class WarrantyImportController
                     'city'=>trim((string)($item['city'] ?? '')),
                     'province'=>Validator::provinceCode($item['province'] ?? ''),
                     'region'=>strtoupper(trim((string)($item['region'] ?? ''))),
-                    'invoice_date'=>(string)($item['invoice_date'] ?? ''),
+                    'invoice_date'=>trim((string)($item['invoice_date'] ?? '')) ?: null,
                     'invoice_file'=>$invoicePath,
                     'fgas_file'=>$fgasPath,
                     'privacy_accepted_at'=>$sourceCreatedAt,
@@ -120,7 +122,8 @@ final class WarrantyImportController
                 $pdo->prepare($sql)->execute(array_values($data));
                 $registrationId = (int)$pdo->lastInsertId();
                 $unit = $pdo->prepare('INSERT INTO warranty_units (registration_id,model_id,unit_type,serial_number) VALUES (?,?,?,?)');
-                $unit->execute([$registrationId,$modelId,'outdoor',strtoupper(trim((string)$item['outdoor_serial']))]);
+                $outdoorSerial = strtoupper(trim((string)($item['outdoor_serial'] ?? '')));
+                if ($outdoorSerial !== '') $unit->execute([$registrationId,$modelId,'outdoor',$outdoorSerial]);
                 foreach (($item['indoor_serials'] ?? []) as $serial) {
                     $serial = strtoupper(trim((string)$serial));
                     if ($serial !== '') $unit->execute([$registrationId,null,'indoor',$serial]);
@@ -141,8 +144,13 @@ final class WarrantyImportController
     }
 
 
-    private static function copyDocument(string $url, string $kind, int $sourceId): string
+    private static function copyDocument(string $url, string $kind, int $sourceId, bool $allowMissing = false): ?string
     {
+        $url = trim($url);
+        if ($url === '') {
+            if ($allowMissing) return null;
+            throw new RuntimeException('Documento ' . $kind . ' mancante');
+        }
         if (!preg_match('#^https?://www\.idemaclima\.it/wp-content/uploads/wpforms/#i', $url)) throw new RuntimeException('URL documento non consentito');
         $url = preg_replace('#^http://#i', 'https://', $url) ?? $url;
         $ext = strtolower((string)pathinfo((string)parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
