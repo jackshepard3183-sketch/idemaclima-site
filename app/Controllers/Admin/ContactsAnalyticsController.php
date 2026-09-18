@@ -20,7 +20,7 @@ final class ContactsAnalyticsController
     public static function contacts(): void
     {
         AdminAuth::requireLogin();
-        $status=(string)($_GET['status']??'');$allowed=['new','in_progress','closed','spam'];$pdo=Database::connection();self::ensureContactReplyColumn($pdo);self::backfillContactLocations($pdo);
+        $status=(string)($_GET['status']??'');$allowed=['new','in_progress','closed','spam'];$pdo=Database::connection();self::backfillContactLocations($pdo);
         if(in_array($status,$allowed,true)){$s=$pdo->prepare('SELECT * FROM contact_submissions WHERE status=? ORDER BY created_at DESC');$s->execute([$status]);$rows=$s->fetchAll(PDO::FETCH_ASSOC);}else{$rows=$pdo->query('SELECT * FROM contact_submissions ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);}
         self::view('contacts',['title'=>'Contatti','rows'=>$rows,'status'=>$status]);
     }
@@ -28,7 +28,7 @@ final class ContactsAnalyticsController
 
     public static function contact(): void
     {
-        AdminAuth::requireLogin();$id=(int)($_GET['id']??0);$pdo=Database::connection();self::ensureContactReplyColumn($pdo);self::backfillContactLocations($pdo);$s=$pdo->prepare('SELECT * FROM contact_submissions WHERE id=?');$s->execute([$id]);$row=$s->fetch(PDO::FETCH_ASSOC);if(!$row){http_response_code(404);exit('Richiesta non trovata');}self::view('contact_detail',['title'=>'Richiesta contatto','row'=>$row]);
+        AdminAuth::requireLogin();$id=(int)($_GET['id']??0);$pdo=Database::connection();self::backfillContactLocations($pdo);$s=$pdo->prepare('SELECT * FROM contact_submissions WHERE id=?');$s->execute([$id]);$row=$s->fetch(PDO::FETCH_ASSOC);if(!$row){http_response_code(404);exit('Richiesta non trovata');}self::view('contact_detail',['title'=>'Richiesta contatto','row'=>$row]);
     }
 
 
@@ -40,16 +40,6 @@ final class ContactsAnalyticsController
         $reviewedAt=$status==='new'?null:date('Y-m-d H:i:s');
         $s=$pdo->prepare('UPDATE contact_submissions SET status=?,admin_notes=?,reviewed_at=? WHERE id=?');$s->execute([$status,$notes?:null,$reviewedAt,$id]);
         Audit::log('contact.update','contact_submission',$id,['status_from'=>$before,'status_to'=>$status]);
-        header('Location:/idemaclima/admin/contacts/view?id='.$id);exit;
-    }
-
-
-    public static function markReplySent(): void
-    {
-        AdminAuth::requireLogin();self::csrf();$id=(int)($_POST['id']??0);$pdo=Database::connection();self::ensureContactReplyColumn($pdo);
-        $s=$pdo->prepare('UPDATE contact_submissions SET reply_sent_at=NOW() WHERE id=?');$s->execute([$id]);
-        if($s->rowCount()===0){$check=$pdo->prepare('SELECT 1 FROM contact_submissions WHERE id=?');$check->execute([$id]);if(!$check->fetchColumn()){http_response_code(404);exit('Richiesta non trovata');}}
-        Audit::log('contact.reply_sent','contact_submission',$id,['reply_sent_at'=>date('Y-m-d H:i:s')]);
         header('Location:/idemaclima/admin/contacts/view?id='.$id);exit;
     }
 
@@ -94,13 +84,6 @@ final class ContactsAnalyticsController
         Database::connection()->prepare('UPDATE analytics_settings SET ga4_measurement_id=?,ga4_property_id=?,gtm_container_id=?,search_console_verification=?,meta_pixel_id=?,iubenda_enabled=?,iubenda_site_id=?,iubenda_cookie_policy_id=?,analytics_enabled=?,consent_required=?,pdf_tracking_enabled=?,internal_tracking_retention_days=? WHERE id=1')->execute([$measurement?:null,$property?:null,$gtm?:null,$searchConsole?:null,$metaPixel?:null,$iubendaEnabled,$iubendaSite?:null,$iubendaPolicy,$enabled,$consent,$pdf,$retention]);
         Audit::log('analytics.settings','analytics_settings',1,['analytics_enabled'=>$enabled,'iubenda_enabled'=>$iubendaEnabled,'consent_required'=>$consent,'pdf_tracking_enabled'=>$pdf,'retention_days'=>$retention]);
         header('Location:/idemaclima/admin/analytics');exit;
-    }
-
-
-    private static function ensureContactReplyColumn(PDO $pdo): void
-    {
-        $check=$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='contact_submissions' AND COLUMN_NAME='reply_sent_at'");
-        if((int)$check->fetchColumn()===0)$pdo->exec("ALTER TABLE contact_submissions ADD COLUMN reply_sent_at DATETIME NULL AFTER reviewed_at");
     }
 
 
