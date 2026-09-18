@@ -30,7 +30,7 @@ $checks = [
     [$admin, "cat_account.update", 'audit CAT'],
     [$admin, "strongPassword", 'password forte CAT'],
     [$admin, "usernameIsEmail", 'username CAT accetta email'],
-    [$admin, "if($username==='')$username=$email", 'username CAT automatico da email'],
+    [$admin, "if(\$username==='')\$username=\$email", 'username CAT automatico da email'],
     [$catForm, "placeholder=\"E-mail o username\"", 'campo username CAT coerente'],
     [$admin, "cover_image_file", 'upload copertina'],
     [$public, "FOR UPDATE", 'lock capienza'],
