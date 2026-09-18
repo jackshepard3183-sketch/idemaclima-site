@@ -2,7 +2,7 @@
 <?php if(!empty($row['import_review_warning'])):?><div class="panel" style="margin-bottom:18px;border-color:#d97706"><strong>Da verificare</strong><p style="margin-bottom:0"><?= htmlspecialchars((string)$row['import_review_warning']) ?></p></div><?php endif;?>
 <div class="toolbar"><h1>Richiesta contatto</h1><a class="btnlink" href="/idemaclima/admin/contacts">Torna all'elenco</a></div>
 <div class="panel">
-<p><strong><?= htmlspecialchars($row['first_name'].' '.$row['last_name']) ?></strong><br><?= htmlspecialchars($row['email']) ?><?= !empty($row['phone'])?' · '.htmlspecialchars($row['phone']):'' ?></p>
+<p><strong><?= htmlspecialchars($row['first_name'].' '.$row['last_name']) ?></strong><br><strong>Profilo:</strong> <?= htmlspecialchars((string)($row['profile']??'')!==''?(string)$row['profile']:'Dato non disponibile') ?><br><?= htmlspecialchars($row['email']) ?><?= !empty($row['phone'])?' · '.htmlspecialchars($row['phone']):'' ?></p>
 <p><?= htmlspecialchars($row['city']) ?> (<?= htmlspecialchars($row['province']) ?>) · CAP <?= htmlspecialchars((string)($row['postal_code']??'')) ?> · <?= htmlspecialchars($row['region']) ?></p>
 <h3><?= htmlspecialchars($row['subject']) ?></h3><p style="white-space:pre-wrap"><?= htmlspecialchars($row['message']) ?></p>
 <?php if(!empty($row['attachment_path'])): ?><p><a class="btnlink" href="/idemaclima/admin/contacts/file/<?= (int)$row['id'] ?>">Scarica allegato</a> <span class="muted"><?= htmlspecialchars((string)$row['attachment_name']) ?></span></p><?php endif; ?>
