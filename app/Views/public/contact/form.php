@@ -17,7 +17,7 @@
 <label>Telefono *<input name="phone" maxlength="50" inputmode="tel" required value="<?= e((string)($old['phone']??'')) ?>"></label>
 <label>Email *<input type="email" name="email" maxlength="190" required value="<?= e((string)($old['email']??'')) ?>"></label>
 <label>Conferma email *<input type="email" name="email_confirm" maxlength="190" required value="<?= e((string)($old['email_confirm']??'')) ?>"></label>
-<label class="full">Oggetto *<input name="subject" maxlength="220" required value="<?= e((string)($old['subject']??'')) ?>"></label>
+<label class="full">Oggetto *<select name="subject" required><option value="">Seleziona oggetto</option><?php foreach(['INFORMAZIONI COMMERCIALI / OFFERTE','INFORMAZIONI TECNICHE / ASSISTENZA'] as $subjectOption): ?><option value="<?= e($subjectOption) ?>" <?= (($old['subject']??'')===$subjectOption)?'selected':'' ?>><?= e($subjectOption) ?></option><?php endforeach; ?></select></label>
 <label class="full">Messaggio *<textarea name="message" rows="7" maxlength="10000" required><?= e((string)($old['message']??'')) ?></textarea></label>
 <label class="full">Allegato facoltativo<input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"><small>PDF, immagini o documenti Office - massimo 10 MB.</small></label>
 <label class="privacy-consent"><input type="checkbox" name="privacy" value="1" required <?= isset($old['privacy'])?'checked':'' ?>> <span>Ho letto l’<a href="https://www.iubenda.com/privacy-policy/38092343/full-legal" target="_blank" rel="noopener">informativa privacy</a> e acconsento al trattamento dei dati per la gestione della richiesta. *</span></label>
