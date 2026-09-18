@@ -118,7 +118,7 @@ final class ContactsAnalyticsController
             if(count($matches)!==1)continue;
             [$region,$province,$city,$caps]=$matches[0];
             $postal=trim((string)($row['postal_code']??''));
-            if($postal===''&&count($caps)===1)$postal=$caps[0];
+            if($postal===''&&!empty($caps))$postal=$caps[0];
             $update->execute([
                 trim((string)($row['region']??''))!==''?(string)$row['region']:$region,
                 trim((string)($row['province']??''))!==''?(string)$row['province']:$province,
