@@ -12,6 +12,7 @@ use App\Controllers\Admin\ProductsController;
 use App\Controllers\Admin\ProductImagesController;
 use App\Controllers\Admin\WarrantyController as AdminWarrantyController;
 use App\Controllers\Admin\WarrantyImportController;
+use App\Controllers\Admin\WpformsRequestImportController;
 use App\Controllers\Admin\CampusController as AdminCampusController;
 use App\Controllers\Admin\CampusActionsController as AdminCampusActionsController;
 use App\Controllers\Admin\ContentController as AdminContentController;
@@ -159,6 +160,8 @@ $router->post('/admin/editorial/faq/delete', [AdminEditorialController::class, '
 $router->post('/admin/editorial/document', [AdminEditorialController::class, 'addDocument']);
 $router->post('/admin/editorial/document/delete', [AdminEditorialController::class, 'deleteDocument']);
 $router->get('/admin/incentives', [AdminIncentivesController::class, 'requests']);
+$router->get('/admin/incentives/import', static fn() => WpformsRequestImportController::index('incentives'));
+$router->post('/admin/incentives/import/run', static fn() => WpformsRequestImportController::run('incentives'));
 $router->get('/admin/incentives/request', [AdminIncentivesController::class, 'request']);
 $router->post('/admin/incentives/update', [AdminIncentivesController::class, 'update']);
 $router->get('/admin/campus/events', [AdminCampusController::class, 'events']);
@@ -196,6 +199,8 @@ $router->post('/admin/content/references/image', [AdminContentController::class,
 $router->post('/admin/content/references/image/update', [AdminContentController::class, 'updateReferenceImage']);
 $router->post('/admin/content/references/image/delete', [AdminContentController::class, 'deleteReferenceImage']);
 $router->get('/admin/contacts', [AdminContactsAnalyticsController::class, 'contacts']);
+$router->get('/admin/contacts/import', static fn() => WpformsRequestImportController::index('contacts'));
+$router->post('/admin/contacts/import/run', static fn() => WpformsRequestImportController::run('contacts'));
 $router->get('/admin/contacts/view', [AdminContactsAnalyticsController::class, 'contact']);
 $router->post('/admin/contacts/update', [AdminContactsAnalyticsController::class, 'updateContact']);
 $router->get('/admin/contacts/file/{id}', [AdminContactsAnalyticsController::class, 'attachment']);
