@@ -169,6 +169,7 @@ $router->get('/admin/campus/events', [AdminCampusController::class, 'events']);
 $router->get('/admin/campus/events/form', [AdminCampusController::class, 'eventForm']);
 $router->post('/admin/campus/events/save', [AdminCampusController::class, 'saveEvent']);
 $router->post('/admin/campus/events/duplicate', [AdminCampusActionsController::class, 'duplicate']);
+$router->post('/admin/campus/events/delete', [AdminCampusActionsController::class, 'delete']);
 $router->get('/admin/campus/registrations', [AdminCampusController::class, 'registrations']);
 $router->get('/admin/campus/registrations/export', [AdminCampusActionsController::class, 'export']);
 $router->post('/admin/campus/registrations/update', [AdminCampusController::class, 'updateRegistration']);
