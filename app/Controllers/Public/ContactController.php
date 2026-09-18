@@ -20,7 +20,7 @@ final class ContactController
 {
     public static function form(): void
     {
-        self::ensurePostalCodeColumn();
+        self::ensureContactColumns();
         self::render('contact/form', ['title'=>'Contatti','csrf'=>Security::csrfToken(),'errors'=>[],'old'=>[]]);
     }
 
@@ -42,7 +42,7 @@ final class ContactController
         }
 
 
-        foreach(['first_name','last_name','region','province','city','postal_code','phone','email','email_confirm','subject','message'] as $f) {
+        foreach(['first_name','last_name','region','province','city','postal_code','phone','profile','email','email_confirm','subject','message'] as $f) {
             if(trim((string)($old[$f]??''))==='')$errors[]='Compila tutti i campi obbligatori.';
         }
 
@@ -59,6 +59,9 @@ final class ContactController
         self::maxLen($old,'postal_code',12,'CAP',$errors);
         self::maxLen($old,'email',190,'Email',$errors);
         self::maxLen($old,'phone',50,'Telefono',$errors);
+        self::maxLen($old,'profile',120,'Profilo',$errors);
+        $allowedProfiles=['Installatore','Progettista','Centro assistenza tecnica','Cliente privato','Altro'];
+        if(!in_array((string)($old['profile']??''),$allowedProfiles,true))$errors[]='Seleziona un profilo valido.';
         self::maxLen($old,'subject',220,'Oggetto',$errors);
         self::maxLen($old,'message',10000,'Messaggio',$errors);
 
@@ -76,12 +79,12 @@ final class ContactController
 
 
         try {
-            self::ensurePostalCodeColumn();
+            self::ensureContactColumns();
             $pdo=Database::connection();
-            $s=$pdo->prepare('INSERT INTO contact_submissions(first_name,last_name,region,province,city,postal_code,email,phone,subject,message,attachment_path,attachment_name,attachment_mime,privacy_accepted_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())');
+            $s=$pdo->prepare('INSERT INTO contact_submissions(first_name,last_name,region,province,city,postal_code,email,phone,profile,subject,message,attachment_path,attachment_name,attachment_mime,privacy_accepted_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())');
             $s->execute([
                 Validator::naturalText($old['first_name']),Validator::naturalText($old['last_name']),Validator::naturalText($old['region']),Validator::provinceCode($old['province']),Validator::naturalText($old['city']),strtoupper((string)$old['postal_code']),
-                strtolower((string)$old['email']),(string)$old['phone'],(string)$old['subject'],Validator::naturalText($old['message']),
+                strtolower((string)$old['email']),(string)$old['phone'],(string)$old['profile'],(string)$old['subject'],Validator::naturalText($old['message']),
                 $attachment['path']??null,$attachment['original_name']??null,$attachment['mime']??null
             ]);
             ContactMailService::notify($old, $attachment['original_name']??null);
@@ -93,12 +96,16 @@ final class ContactController
     }
 
 
-    private static function ensurePostalCodeColumn(): void
+    private static function ensureContactColumns(): void
     {
         $pdo=Database::connection();
         $check=$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='contact_submissions' AND COLUMN_NAME='postal_code'");
         if ((int)$check->fetchColumn() === 0) {
             $pdo->exec("ALTER TABLE contact_submissions ADD COLUMN postal_code VARCHAR(12) NULL AFTER city");
+        }
+        $profileCheck=$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='contact_submissions' AND COLUMN_NAME='profile'");
+        if ((int)$profileCheck->fetchColumn() === 0) {
+            $pdo->exec("ALTER TABLE contact_submissions ADD COLUMN profile VARCHAR(120) NULL AFTER phone");
         }
     }
 
