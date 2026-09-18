@@ -173,6 +173,7 @@ $router->post('/admin/campus/events/delete', [AdminCampusActionsController::clas
 $router->get('/admin/campus/registrations', [AdminCampusController::class, 'registrations']);
 $router->get('/admin/campus/registrations/export', [AdminCampusActionsController::class, 'export']);
 $router->post('/admin/campus/registrations/update', [AdminCampusController::class, 'updateRegistration']);
+$router->post('/admin/campus/registrations/confirmation-sent', [AdminCampusController::class, 'markConfirmationSent']);
 $router->get('/admin/cat/users', [AdminCampusController::class, 'catUsers']);
 $router->get('/admin/cat/users/form', [AdminCampusController::class, 'catUserForm']);
 $router->post('/admin/cat/users/save', [AdminCampusController::class, 'saveCatUser']);
@@ -205,6 +206,7 @@ $router->get('/admin/contacts/import', static fn() => WpformsRequestImportContro
 $router->post('/admin/contacts/import/run', static fn() => WpformsRequestImportController::run('contacts'));
 $router->get('/admin/contacts/view', [AdminContactsAnalyticsController::class, 'contact']);
 $router->post('/admin/contacts/update', [AdminContactsAnalyticsController::class, 'updateContact']);
+$router->post('/admin/contacts/reply-sent', [AdminContactsAnalyticsController::class, 'markReplySent']);
 $router->get('/admin/contacts/file/{id}', [AdminContactsAnalyticsController::class, 'attachment']);
 $router->get('/admin/analytics', [AdminContactsAnalyticsController::class, 'analytics']);
 $router->post('/admin/analytics/save', [AdminContactsAnalyticsController::class, 'saveAnalytics']);
