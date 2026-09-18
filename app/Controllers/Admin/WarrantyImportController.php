@@ -63,7 +63,15 @@ final class WarrantyImportController
         try {
             if (function_exists('set_time_limit')) @set_time_limit(0);
             $pdo = Database::connection();
-            $columns = array_column($pdo->query('SHOW COLUMNS FROM warranty_registrations')->fetchAll(PDO::FETCH_ASSOC), 'Field');
+            $columnDefinitions = $pdo->query('SHOW COLUMNS FROM warranty_registrations')->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($columnDefinitions as $columnDefinition) {
+                if (($columnDefinition['Field'] ?? '') === 'invoice_date'
+                    && strtoupper((string)($columnDefinition['Null'] ?? 'NO')) !== 'YES') {
+                    $pdo->exec('ALTER TABLE warranty_registrations MODIFY invoice_date DATE NULL');
+                    break;
+                }
+            }
+            $columns = array_column($columnDefinitions, 'Field');
         } catch (Throwable $e) {
             header('Content-Type: application/json; charset=UTF-8');
             echo json_encode(['imported'=>0, 'skipped'=>0, 'errors'=>['Preparazione importazione: ' . $e->getMessage()]], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);
