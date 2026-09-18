@@ -103,7 +103,14 @@ for required_path in \
   app/Controllers/Admin/WarrantyImportController.php \
   app/Views/admin/warranty_import.php \
   app/Views/admin/warranty_registrations.php \
-  database/migrations/064_warranty_historical_import.sql
+  database/migrations/064_warranty_historical_import.sql \
+  app/Controllers/Admin/WpformsRequestImportController.php \
+  app/Views/admin/wpforms_request_import.php \
+  app/Views/admin/contacts.php \
+  app/Views/admin/contact_detail.php \
+  app/Views/admin/incentive_requests.php \
+  app/Views/admin/incentive_request.php \
+  database/migrations/066_wpforms_request_import.sql
 do
   printf 'M\t%s\n' "$required_path" >> "$changed_list"
 done
