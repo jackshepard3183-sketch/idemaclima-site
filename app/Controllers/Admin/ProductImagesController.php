@@ -26,7 +26,7 @@ final class ProductImagesController
         foreach($items as &$item){[$item['current_width'],$item['current_height']]=self::dimensions((string)($item['image_path']??''));} unset($item);
         $media=$pdo->query("SELECT id,title,file_path FROM media_assets WHERE category='images' AND archived_at IS NULL ORDER BY title,filename")->fetchAll(PDO::FETCH_ASSOC);
         $summary=array_fill_keys(self::STATUSES,0); foreach($items as $item)$summary[(string)$item['review_status']]++;
-        $user=AdminAuth::user(); $csrf=Security::csrfToken(); $saved=isset($_GET['saved']); $approved=isset($_GET['approved']); $removed=isset($_GET['removed']); $candidateRemoved=isset($_GET['candidate_removed']); $error=trim((string)($_GET['error']??''));
+        $user=AdminAuth::user(); $csrf=Security::csrfToken(); $saved=isset($_GET['saved']); $approved=isset($_GET['approved']); $removed=isset($_GET['removed']); $candidateRemoved=isset($_GET['candidate_removed']); $error=trim((string)($_GET['error']??'')); $bulkImported=Validator::int($_GET['bulk_imported']??0); $bulkSkipped=Validator::int($_GET['bulk_skipped']??0); $bulkErrors=$_SESSION['product_image_bulk_errors']??[]; unset($_SESSION['product_image_bulk_errors']);
         require dirname(__DIR__,2).'/Views/admin/product_images.php';
     }
 
@@ -45,6 +45,29 @@ final class ProductImagesController
         $q->execute([$status,$candidate?:null,$width,$height,$catalog?:null,$page,$notes?:null,AdminAuth::id(),$productId]);
         Audit::log('product_image.review','product',$productId,['status'=>$status,'candidate_path'=>$candidate]);
         header('Location: /idemaclima/admin/product-images?saved=1'); exit;
+    }
+
+
+    public static function bulkImport(): void
+    {
+        AdminAuth::requireLogin(); self::csrf(); $pdo=Database::connection(); self::syncProducts($pdo);
+        $files=$_FILES['candidate_files']??null; $catalog=trim((string)($_POST['source_catalog']??''));
+        if(!is_array($files)||!isset($files['name'])||!is_array($files['name']))self::redirectError('Seleziona almeno un’immagine.');
+        $rows=$pdo->query("SELECT r.product_id,r.review_status,r.protected,p.name,p.slug FROM product_image_reviews r JOIN products p ON p.id=r.product_id")->fetchAll(PDO::FETCH_ASSOC);
+        $lookup=[]; foreach($rows as $row){if((int)$row['protected']===1||$row['review_status']==='approved')continue;foreach([(string)$row['name'],(string)$row['slug']] as $value)$lookup[self::key($value)][]=$row;}
+        $imported=0;$skipped=0;$errors=[];$count=count($files['name']);
+        for($i=0;$i<$count;$i++){
+            if((int)($files['error'][$i]??UPLOAD_ERR_NO_FILE)===UPLOAD_ERR_NO_FILE)continue;
+            $_FILES['candidate_file']=['name'=>$files['name'][$i]??'','type'=>$files['type'][$i]??'','tmp_name'=>$files['tmp_name'][$i]??'','error'=>$files['error'][$i]??UPLOAD_ERR_NO_FILE,'size'=>$files['size'][$i]??0];
+            $uploadErrors=[];$uploaded=Upload::contentImage('candidate_file','products',$uploadErrors);
+            if(!$uploaded){$skipped++;$errors=array_merge($errors,$uploadErrors);continue;}
+            $key=self::key(pathinfo((string)$files['name'][$i],PATHINFO_FILENAME));$matches=$lookup[$key]??[];
+            if(!$matches){Upload::removeManaged((string)$uploaded['path']);$skipped++;$errors[]='Nessun prodotto corrisponde a '.(string)$files['name'][$i].'.';continue;}
+            [$width,$height]=self::dimensions((string)$uploaded['path']);
+            foreach($matches as $match){$q=$pdo->prepare("UPDATE product_image_reviews SET review_status='recovered',candidate_path=?,candidate_width=?,candidate_height=?,source_catalog=?,notes=?,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=? AND protected=0 AND review_status<>'approved'");$q->execute([(string)$uploaded['path'],$width,$height,$catalog?:'Importazione multipla','Importata automaticamente dal nome del file; candidata da verificare e non assegnata al frontend.',AdminAuth::id(),(int)$match['product_id']]);if($q->rowCount()>0){$imported++;Audit::log('product_image.bulk_import','product',(int)$match['product_id'],['candidate_path'=>$uploaded['path'],'source_name'=>$files['name'][$i]]);}}
+        }
+        unset($_FILES['candidate_file']);$_SESSION['product_image_bulk_errors']=array_slice(array_values(array_unique($errors)),0,20);
+        header('Location: /idemaclima/admin/product-images?bulk_imported='.$imported.'&bulk_skipped='.$skipped);exit;
     }
 
     public static function approve(): void
@@ -104,6 +127,10 @@ final class ProductImagesController
     private static function dimensions(string $path): array
     {
         if($path===''||!str_starts_with($path,'/uploads/'))return[null,null];$file=dirname(__DIR__,3).'/public'.$path;$info=is_file($file)?@getimagesize($file):false;return $info===false?[null,null]:[(int)$info[0],(int)$info[1]];
+    }
+    private static function key(string $value): string
+    {
+        $value=strtolower(trim($value));$value=preg_replace('/[^a-z0-9]+/','-',$value)??'';return trim($value,'-');
     }
     private static function csrf(): void
     {
