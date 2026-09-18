@@ -1,4 +1,5 @@
 <?php require __DIR__.'/_layout_start.php'; ?>
+<?php if(!empty($row['import_review_warning'])):?><div class="panel" style="margin-bottom:18px;border-color:#d97706"><strong>Da verificare</strong><p style="margin-bottom:0"><?= htmlspecialchars((string)$row['import_review_warning']) ?></p></div><?php endif;?>
 <div class="toolbar"><h1>Richiesta contatto</h1><a class="btnlink" href="/idemaclima/admin/contacts">Torna all'elenco</a></div>
 <div class="panel">
 <p><strong><?= htmlspecialchars($row['first_name'].' '.$row['last_name']) ?></strong><br><?= htmlspecialchars($row['email']) ?><?= !empty($row['phone'])?' · '.htmlspecialchars($row['phone']):'' ?></p>
