@@ -94,6 +94,8 @@ $router->get('/admin/login', [AuthController::class, 'loginForm']);
 $router->post('/admin/login', [AuthController::class, 'login']);
 $router->post('/admin/logout', [AuthController::class, 'logout']);
 $router->get('/admin', [DashboardController::class, 'index']);
+$router->get('/admin/account', [AdminSettingsController::class, 'account']);
+$router->post('/admin/account/password', [AdminSettingsController::class, 'savePassword']);
 $router->get('/admin/mono-split-import', [MonoSplitImportController::class, 'index']);
 $router->post('/admin/mono-split-import/run', [MonoSplitImportController::class, 'run']);
 $router->get('/admin/catalog-import', [CatalogImportController::class, 'index']);

@@ -1,4 +1,5 @@
 <?php $title = 'Accesso amministrazione'; $user = null; require __DIR__ . '/_layout_start.php'; ?>
+<!-- Controllo visibilità password amministratore -->
 <style>
 .admin-shell{display:block}.admin-content{min-height:100vh;display:grid;place-items:center}.admin-content main{width:100%;padding:24px}.login-panel{width:min(100%,440px);margin:0 auto;padding:30px}.login-panel .btn{width:100%}
 .password-field{position:relative;margin-top:7px}.password-field input{width:100%;margin:0;padding-right:52px}.password-toggle{position:absolute;top:50%;right:5px;display:grid;width:40px;height:40px;padding:0;place-items:center;transform:translateY(-50%);border:0;border-radius:8px;background:transparent;color:inherit;cursor:pointer}.password-toggle:hover{background:rgba(15,72,94,.08)}.password-toggle:focus-visible{outline:2px solid var(--blue);outline-offset:1px}.password-toggle svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:2}.password-toggle .eye-off{display:none}.password-toggle[aria-pressed="true"] .eye-on{display:none}.password-toggle[aria-pressed="true"] .eye-off{display:block}

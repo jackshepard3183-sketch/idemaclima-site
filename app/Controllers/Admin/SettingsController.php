@@ -38,6 +38,31 @@ final class SettingsController
         }catch(\Throwable $e){if($pdo->inTransaction())$pdo->rollBack();http_response_code(422);exit(htmlspecialchars($e->getMessage(),ENT_QUOTES,'UTF-8'));}
         header('Location:/idemaclima/admin/settings/'.$group.'?saved=1');exit;
     }
+    public static function account():void
+    {
+        $user=AdminAuth::user();
+        if($user===null){header('Location:/idemaclima/admin/login',true,302);exit;}
+        self::view('account',['title'=>'Il mio account','saved'=>isset($_GET['saved']),'error'=>'']);
+    }
+    public static function savePassword():void
+    {
+        $user=AdminAuth::user();
+        if($user===null){header('Location:/idemaclima/admin/login',true,302);exit;}
+        self::csrf();
+        $current=(string)($_POST['current_password']??'');
+        $password=(string)($_POST['new_password']??'');
+        $confirmation=(string)($_POST['new_password_confirmation']??'');
+        $error='';
+        if(!AdminAuth::verifyPassword((int)$user['id'],$current))$error='La password attuale non è corretta.';
+        elseif(strlen($password)<12)$error='La nuova password deve contenere almeno 12 caratteri.';
+        elseif($password!==$confirmation)$error='Le due nuove password non coincidono.';
+        elseif(hash_equals($current,$password))$error='La nuova password deve essere diversa da quella attuale.';
+        if($error!==''){http_response_code(422);self::view('account',['title'=>'Il mio account','saved'=>false,'error'=>$error]);return;}
+        Database::connection()->prepare('UPDATE admin_users SET password_hash=? WHERE id=?')->execute([password_hash($password,PASSWORD_DEFAULT),(int)$user['id']]);
+        Audit::log('admin_user.password_change','admin_user',(int)$user['id'],[]);
+        header('Location:/idemaclima/admin/account?saved=1');exit;
+    }
+
     public static function users():void
     {
         AdminAuth::requireManager();$rows=Database::connection()->query('SELECT id,first_name,last_name,email,username,role,active,last_login_at FROM admin_users ORDER BY last_name,first_name')->fetchAll(PDO::FETCH_ASSOC);

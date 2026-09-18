@@ -72,6 +72,44 @@ final class AdminAuth
         return true;
     }
 
+    public static function verifyPassword(int $userId, string $password): bool
+    {
+        if ($userId < 1 || $password === '') {
+            return false;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT password_hash, active FROM admin_users WHERE id = ? LIMIT 1'
+        );
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$user || !(bool) $user['active']) {
+            return false;
+        }
+
+        $hash = (string) $user['password_hash'];
+        try {
+            if (password_verify($password, $hash)) {
+                return true;
+            }
+        } catch (\Throwable) {
+            return false;
+        }
+
+        if (function_exists('crypt')) {
+            try {
+                $computed = crypt($password, $hash);
+                return is_string($computed)
+                    && strlen($computed) === strlen($hash)
+                    && hash_equals($hash, $computed);
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
     public static function check(): bool
     {
         return isset($_SESSION[self::SESSION_KEY]) && is_int($_SESSION[self::SESSION_KEY]);
