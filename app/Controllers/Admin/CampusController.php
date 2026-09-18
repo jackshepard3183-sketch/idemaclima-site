@@ -141,7 +141,7 @@ final class CampusController
         if($catAccountId){$where[]='r.cat_account_id=?';$params[]=$catAccountId;}
         if($status!==''){$where[]='r.status=?';$params[]=$status;}
         $pdo=Database::connection();
-        $sql='SELECT r.*,e.title event_title,e.audience,c.company_name cat_company FROM event_registrations r JOIN events e ON e.id=r.event_id LEFT JOIN cat_accounts c ON c.id=r.cat_account_id'.($where?' WHERE '.implode(' AND ',$where):'').' ORDER BY r.created_at DESC';
+        $sql='SELECT r.*,e.title event_title,e.audience,e.starts_at event_starts_at,e.location event_location,c.company_name cat_company,(SELECT MAX(a.created_at) FROM audit_log a WHERE a.action="campus.registration.confirmation_sent" AND a.entity_type="event_registration" AND a.entity_id=r.id) confirmation_sent_at FROM event_registrations r JOIN events e ON e.id=r.event_id LEFT JOIN cat_accounts c ON c.id=r.cat_account_id'.($where?' WHERE '.implode(' AND ',$where):'').' ORDER BY r.created_at DESC';
         $stmt=$pdo->prepare($sql);$stmt->execute($params);
         $events=$pdo->query('SELECT id,title,starts_at FROM events ORDER BY starts_at DESC')->fetchAll(PDO::FETCH_ASSOC);
         self::view('campus_registrations',['title'=>'Campus - Iscrizioni','rows'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'events'=>$events,'filters'=>['event_id'=>$eventId,'cat_account_id'=>$catAccountId,'status'=>$status]]);
@@ -159,6 +159,14 @@ final class CampusController
         $s->execute([$status,$attended,$id]);
         if($s->rowCount()===0){$check=$pdo->prepare('SELECT 1 FROM event_registrations WHERE id=?');$check->execute([$id]);if(!$check->fetchColumn()){http_response_code(404);exit('Iscrizione non trovata');}}
         Audit::log('campus.registration.update','event_registration',$id,['status'=>$status,'attended'=>$attended]);
+        header('Location:/idemaclima/admin/campus/registrations');exit;
+    }
+
+
+    public static function markConfirmationSent(): void
+    {
+        AdminAuth::requireLogin();self::csrf();$id=Validator::int($_POST['id']??0);$pdo=Database::connection();$check=$pdo->prepare('SELECT 1 FROM event_registrations WHERE id=?');$check->execute([$id]);if(!$check->fetchColumn()){http_response_code(404);exit('Iscrizione non trovata');}
+        Audit::log('campus.registration.confirmation_sent','event_registration',$id);
         header('Location:/idemaclima/admin/campus/registrations');exit;
     }
 
