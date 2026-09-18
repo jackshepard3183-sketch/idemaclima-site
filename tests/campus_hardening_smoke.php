@@ -7,6 +7,8 @@ $admin = file_get_contents($root . '/app/Controllers/Admin/CampusController.php'
 $public = file_get_contents($root . '/app/Controllers/Public/CampusController.php');
 $auth = file_get_contents($root . '/app/Auth/CatAuth.php');
 $eventForm = file_get_contents($root . '/app/Views/admin/campus_event_form.php');
+$eventsAdminView = file_get_contents($root . '/app/Views/admin/campus_events.php');
+$routes = file_get_contents($root . '/public/index.php');
 $catForm = file_get_contents($root . '/app/Views/admin/cat_user_form.php');
 $eventView = file_get_contents($root . '/app/Views/public/campus/event.php');
 $migration = file_get_contents($root . '/database/migrations/019_campus_security.sql');
@@ -18,7 +20,7 @@ $catIndexView = file_get_contents($root . '/app/Views/public/campus/cat_index.ph
 $openEventsView = file_get_contents($root . '/app/Views/public/campus/open_events.php');
 $registrationsView = file_get_contents($root . '/app/Views/admin/campus_registrations.php');
 
-foreach ([$admin,$public,$auth,$eventForm,$catForm,$eventView,$migration,$completeMigration,$eventsMigration,$actions,$indexView,$catIndexView,$openEventsView,$registrationsView] as $content) {
+foreach ([$admin,$public,$auth,$eventForm,$eventsAdminView,$routes,$catForm,$eventView,$migration,$completeMigration,$eventsMigration,$actions,$indexView,$catIndexView,$openEventsView,$registrationsView] as $content) {
     if (!is_string($content) || $content === '') throw new RuntimeException('File Campus/CAT non leggibile.');
 }
 
@@ -40,6 +42,13 @@ $checks = [
     [$eventView, "Programma", 'programma evento'],
     [$indexView, "annullati", 'filtro eventi annullati'],
     [$actions, "campus.event.duplicate", 'duplicazione evento'],
+    [$actions, "campus.event.delete", 'audit eliminazione evento'],
+    [$actions, "DELETE FROM events WHERE id=?", 'eliminazione evento'],
+    [$actions, "registrations_deleted", 'conteggio iscrizioni eliminate'],
+    [$actions, "Upload::removeManaged", 'rimozione copertina evento eliminato'],
+    [$eventsAdminView, "/admin/campus/events/delete", 'azione elimina nella tabella eventi'],
+    [$eventsAdminView, "L’operazione non può essere annullata", 'conferma eliminazione definitiva'],
+    [$routes, "/admin/campus/events/delete", 'rotta eliminazione evento'],
     [$actions, "Upload::duplicateManaged", 'copertina evento duplicata in modo indipendente'],
     [$actions, "r.status=?", 'export iscrizioni filtrabile per stato'],
     [$actions, "Content-Type:text/csv", 'export iscrizioni'],
