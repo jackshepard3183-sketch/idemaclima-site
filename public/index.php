@@ -114,6 +114,7 @@ $router->post('/admin/products/delete', [ProductsController::class, 'delete']);
 $router->post('/admin/products/document/unlink', [ProductsController::class, 'unlinkDocument']);
 $router->get('/admin/product-images', [ProductImagesController::class, 'index']);
 $router->post('/admin/product-images/save', [ProductImagesController::class, 'save']);
+$router->post('/admin/product-images/bulk-import', [ProductImagesController::class, 'bulkImport']);
 $router->post('/admin/product-images/approve', [ProductImagesController::class, 'approve']);
 $router->post('/admin/product-images/remove-candidate', [ProductImagesController::class, 'removeCandidate']);
 $router->post('/admin/product-images/remove-assigned', [ProductImagesController::class, 'removeAssigned']);
