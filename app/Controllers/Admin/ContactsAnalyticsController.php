@@ -28,7 +28,7 @@ final class ContactsAnalyticsController
 
     public static function contact(): void
     {
-        AdminAuth::requireLogin();$id=(int)($_GET['id']??0);$pdo=Database::connection();self::backfillContactLocations($pdo);$s=$pdo->prepare('SELECT * FROM contact_submissions WHERE id=?');$s->execute([$id]);$row=$s->fetch(PDO::FETCH_ASSOC);if(!$row){http_response_code(404);exit('Richiesta non trovata');}self::view('contact_detail',['title'=>'Richiesta contatto','row'=>$row]);
+        AdminAuth::requireLogin();$id=(int)($_GET['id']??0);$pdo=Database::connection();self::backfillContactLocations($pdo);$s=$pdo->prepare('SELECT * FROM contact_submissions WHERE id=?');$s->execute([$id]);$row=$s->fetch(PDO::FETCH_ASSOC);if(!$row){http_response_code(404);exit('Richiesta non trovata');}$replyLog=$pdo->prepare("SELECT created_at FROM audit_log WHERE action='contact.reply_sent' AND entity_type='contact_submission' AND entity_id=? ORDER BY created_at DESC LIMIT 1");$replyLog->execute([$id]);$replySentAt=$replyLog->fetchColumn()?:null;self::view('contact_detail',['title'=>'Richiesta contatto','row'=>$row,'replySentAt'=>$replySentAt]);
     }
 
 
@@ -40,6 +40,14 @@ final class ContactsAnalyticsController
         $reviewedAt=$status==='new'?null:date('Y-m-d H:i:s');
         $s=$pdo->prepare('UPDATE contact_submissions SET status=?,admin_notes=?,reviewed_at=? WHERE id=?');$s->execute([$status,$notes?:null,$reviewedAt,$id]);
         Audit::log('contact.update','contact_submission',$id,['status_from'=>$before,'status_to'=>$status]);
+        header('Location:/idemaclima/admin/contacts/view?id='.$id);exit;
+    }
+
+
+    public static function markReplySent(): void
+    {
+        AdminAuth::requireLogin();self::csrf();$id=(int)($_POST['id']??0);$pdo=Database::connection();$check=$pdo->prepare('SELECT 1 FROM contact_submissions WHERE id=?');$check->execute([$id]);if(!$check->fetchColumn()){http_response_code(404);exit('Richiesta non trovata');}
+        Audit::log('contact.reply_sent','contact_submission',$id);
         header('Location:/idemaclima/admin/contacts/view?id='.$id);exit;
     }
 
