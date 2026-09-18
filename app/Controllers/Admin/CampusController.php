@@ -1,8 +1,11 @@
 <?php
 
+
 declare(strict_types=1);
 
+
 namespace App\Controllers\Admin;
+
 
 use App\Auth\AdminAuth;
 use App\Core\Audit;
@@ -11,6 +14,7 @@ use App\Core\Security;
 use App\Core\Upload;
 use App\Core\Validator;
 use PDO;
+
 
 final class CampusController
 {
@@ -22,6 +26,7 @@ final class CampusController
         $stmt=Database::connection()->prepare($sql);$stmt->execute($audience!==''?[$audience]:[]);
         self::view('campus_events',['title'=>'Campus - Eventi','events'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'audience'=>$audience]);
     }
+
 
     public static function eventForm(): void
     {
@@ -38,6 +43,7 @@ final class CampusController
         }
         self::view('campus_event_form',['title'=>'Evento Campus','event'=>$event,'errors'=>[]]);
     }
+
 
     public static function saveEvent(): void
     {
@@ -61,7 +67,17 @@ final class CampusController
         $location=Validator::optionalString($_POST['location']??'',190,'Luogo',$errors);
         $address=Validator::optionalString($_POST['address']??'',255,'Indirizzo',$errors);
         $short=Validator::optionalString($_POST['short_description']??'',1000,'Descrizione breve',$errors);
-        $category=Validator::optionalString($_POST['category']??'',120,'Categoria',$errors);
+        $categoryChoice=trim((string)($_POST['category_choice']??''));
+        $standardCategories=['Residenziale','Commerciale','Sistemi industriali','Pompe di calore'];
+        if($categoryChoice==='Altro'){
+            $category=Validator::optionalString($_POST['category_custom']??'',120,'Categoria personalizzata',$errors);
+            if($category==='')$errors[]='Inserisci la categoria personalizzata.';
+        } elseif(in_array($categoryChoice,$standardCategories,true)){
+            $category=$categoryChoice;
+        } else {
+            $category='';
+            $errors[]='Seleziona una categoria valida.';
+        }
         $speaker=Validator::optionalString($_POST['speaker']??'',190,'Relatore',$errors);
         $feeRaw=str_replace(',','.',trim((string)($_POST['fee_amount']??'')));
         $feeAmount=$feeRaw===''?null:(is_numeric($feeRaw)?round((float)$feeRaw,2):null);
@@ -113,6 +129,7 @@ final class CampusController
         header('Location:/idemaclima/admin/campus/events');exit;
     }
 
+
     public static function registrations(): void
     {
         AdminAuth::requireLogin();
@@ -130,6 +147,7 @@ final class CampusController
         self::view('campus_registrations',['title'=>'Campus - Iscrizioni','rows'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'events'=>$events,'filters'=>['event_id'=>$eventId,'cat_account_id'=>$catAccountId,'status'=>$status]]);
     }
 
+
     public static function updateRegistration(): void
     {
         AdminAuth::requireLogin();self::csrf();
@@ -144,6 +162,7 @@ final class CampusController
         header('Location:/idemaclima/admin/campus/registrations');exit;
     }
 
+
     public static function catUsers(): void
     {
         AdminAuth::requireLogin();
@@ -151,6 +170,7 @@ final class CampusController
         $users=Database::connection()->query('SELECT * FROM cat_accounts'.$where.' ORDER BY company_name,contact_last_name')->fetchAll(PDO::FETCH_ASSOC);
         self::view('cat_users',['title'=>'Utenti CAT','users'=>$users]);
     }
+
 
     public static function catUserForm(): void
     {
@@ -166,6 +186,7 @@ final class CampusController
         }
         self::view('cat_user_form',['title'=>'Utente CAT','cat'=>$user,'errors'=>[]]);
     }
+
 
     public static function saveCatUser(): void
     {
@@ -213,12 +234,14 @@ final class CampusController
         header('Location:/idemaclima/admin/cat/users');exit;
     }
 
+
     private static function defaultCover(string $audience): string
     {
         return $audience==='cat'
             ? '/idemaclima/public/brand-assets/campus-eventi-cat.webp.php'
             : '/idemaclima/public/brand-assets/campus-eventi-aperti.webp.php';
     }
+
 
     private static function strongPassword(string $password): bool
     {
@@ -228,6 +251,7 @@ final class CampusController
             && preg_match('/\d/',$password)
             && preg_match('/[^A-Za-z0-9]/',$password);
     }
+
 
     private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/'.$file.'.php';}
     private static function csrf():void{if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}}
