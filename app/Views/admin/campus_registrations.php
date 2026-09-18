@@ -20,13 +20,13 @@
   </div>
   <button class="btn" type="submit" style="margin-top:14px">Filtra</button>
 </form>
-<div class="table-wrap registrations-wrap"><table class="registrations-table"><thead><tr><th>Evento</th><th>Partecipante</th><th>Contatti</th><th>Azienda</th><th>Stato</th><th>Presenza</th><th>Attestato</th><th>Gestione</th></tr></thead><tbody>
+<div class="table-wrap registrations-wrap"><table class="registrations-table"><thead><tr><th>Evento</th><th>Partecipante</th><th>Contatti</th><th>Azienda / Profilo</th><th>Stato</th><th>Presenza</th><th>Attestato</th><th>Gestione</th></tr></thead><tbody>
 <?php foreach($rows as $row): ?>
   <tr>
     <td data-label="Evento"><strong><?=htmlspecialchars($row['event_title'],ENT_QUOTES,'UTF-8')?></strong><br><span class="badge"><?=$row['audience']==='cat'?'CAT':'Aperto'?></span></td>
     <td data-label="Partecipante"><?=htmlspecialchars($row['first_name'].' '.$row['last_name'],ENT_QUOTES,'UTF-8')?></td>
     <td data-label="Contatti"><?=htmlspecialchars($row['email'],ENT_QUOTES,'UTF-8')?><?=!empty($row['phone'])?'<br>'.htmlspecialchars($row['phone'],ENT_QUOTES,'UTF-8'):''?></td>
-    <td data-label="Azienda"><?=htmlspecialchars((string)($row['cat_company']?:$row['company']),ENT_QUOTES,'UTF-8')?></td>
+    <td data-label="Azienda / Profilo"><?=htmlspecialchars((string)($row['cat_company']?:$row['company']),ENT_QUOTES,'UTF-8')?><br><span class="muted">Profilo: <?=htmlspecialchars((string)($row['role']??'')!==''?(string)$row['role']:'Dato non disponibile',ENT_QUOTES,'UTF-8')?></span></td>
     <td data-label="Stato"><?=['registered'=>'Iscritto','confirmed'=>'Confermato','waitlist'=>'Lista d’attesa','cancelled'=>'Annullato'][$row['status']]??htmlspecialchars($row['status'],ENT_QUOTES,'UTF-8')?></td>
     <td data-label="Presenza"><?=$row['attended']===null?'—':((int)$row['attended']?'Presente':'Assente')?></td>
     <td data-label="Attestato"><?=!empty($row['certificate_number'])?htmlspecialchars((string)$row['certificate_number'],ENT_QUOTES,'UTF-8'):'Non emesso'?></td>
