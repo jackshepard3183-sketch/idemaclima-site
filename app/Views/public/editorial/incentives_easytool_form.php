@@ -10,7 +10,8 @@
     <div class="easy-grid">
       <label>Nome *<input name="first_name" maxlength="120" autocomplete="given-name" required value="<?=e((string)($old['first_name']??''))?>"></label>
       <label>Cognome *<input name="last_name" maxlength="120" autocomplete="family-name" required value="<?=e((string)($old['last_name']??''))?>"></label>
-      <label class="easy-full">Azienda <input name="company" maxlength="190" autocomplete="organization" value="<?=e((string)($old['company']??''))?>"></label>
+      <label>Azienda <input name="company" maxlength="190" autocomplete="organization" value="<?=e((string)($old['company']??''))?>"></label>
+      <label>Profilo *<select name="role" required><option value="">Seleziona</option><?php foreach(['Installatore','Progettista','Centro assistenza tecnica','Cliente privato','Altro'] as $role): ?><option value="<?=e($role)?>" <?=($old['role']??'')===$role?'selected':'' ?>><?=e($role)?></option><?php endforeach; ?></select></label>
       <label>Regione *<select id="warranty-region" name="region" required data-selected="<?=e((string)($old['region']??''))?>"><option value="">Seleziona la regione</option></select></label>
       <label>Provincia *<select id="warranty-province" name="province" required data-selected="<?=e((string)($old['province']??''))?>" disabled><option value="">Seleziona la provincia</option></select></label>
       <label>Città *<select id="warranty-city" name="city" required data-selected="<?=e((string)($old['city']??''))?>" disabled><option value="">Seleziona la città</option></select></label>
