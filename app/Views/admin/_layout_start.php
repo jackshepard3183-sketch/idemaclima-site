@@ -34,7 +34,11 @@ input,select,textarea{border-color:#cbd6e1;background-color:#fff;color:var(--tex
 .table-wrap{box-shadow:var(--shadow-sm);scrollbar-width:thin;scrollbar-color:#b9c7d4 #f4f7f9}.admin-data-table{line-height:1.38}.admin-data-table th{padding:11px 12px;background:linear-gradient(180deg,#fbfcfd,#f4f7f9);color:#334b61;font-size:12.5px;font-weight:800;letter-spacing:.01em;border-bottom:1px solid #d9e2ea}.admin-data-table td{padding:11px 12px}.admin-data-table tbody tr{transition:background-color .14s}.admin-data-table tbody tr:nth-child(even){background:#fbfcfd}.admin-data-table tbody tr:hover{background:#f3f8fc}.admin-data-table .col-primary{width:26%;min-width:180px}.admin-data-table .col-date,.admin-data-table .col-status,.admin-data-table .col-compact{overflow-wrap:normal}.admin-data-table .col-action{min-width:82px}.admin-data-table td.col-action form,.row-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.admin-data-table td.col-action .btn,.admin-data-table td.col-action .btnlink{min-height:34px;padding:7px 10px;font-size:13px}
 .error,.success,.notice,.warning{border:1px solid transparent;border-radius:10px;padding:11px 13px;box-shadow:var(--shadow-sm)}.error{border-color:#f4caca}.success{background:#edf8e4;border-color:#cfe5bb;color:#37650e}.notice{background:#eaf5ff;border-color:#c9e1f5;color:#15568a}.warning{background:#fff7d8;border-color:#f1d987;color:#765600}
 .quick-list a{background:#fff;transition:border-color .15s,background .15s,transform .15s}.quick-list a:hover{border-color:#b9c9d7;background:#f8fbfd;transform:translateX(2px)}
-@media(max-width:760px){.card,.panel{border-radius:12px}.admin-data-table th,.admin-data-table td{padding:10px}.btnlink,.btn{box-shadow:none}}
+/* Pulsanti amministrativi compatti e uniformi */
+.btnlink,.btn{min-height:36px;padding:7px 12px;border-radius:7px;font-size:13px;line-height:1.25}
+main button:not(.global-sort-button):not(.menu-button){min-height:36px;padding:7px 12px;border-radius:7px;font-size:13px;line-height:1.25}
+.toolbar .btnlink,.toolbar>.btn{white-space:nowrap}
+@media(max-width:760px){.card,.panel{border-radius:12px}.admin-data-table th,.admin-data-table td{padding:10px}.btnlink,.btn{min-height:42px;padding:9px 12px;box-shadow:none}main button:not(.global-sort-button):not(.menu-button){min-height:42px;padding:9px 12px}}
 
 
 </style></head><body><div class="admin-shell">
