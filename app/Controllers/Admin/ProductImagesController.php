@@ -150,7 +150,7 @@ final class ProductImagesController
         if($path===''||!str_starts_with($path,'/uploads/'))return false;
         $file=realpath(dirname(__DIR__,3).'/public'.$path);
         $root=realpath(dirname(__DIR__,3).'/public/uploads');
-        return $file!==false&&$root!==false&&str_starts_with($file,$root.DIRECTORY_SEPARATOR)&&is_file($file);
+        return $file!==false&&$root!==false&&str_starts_with($file,$root.DIRECTORY_SEPARATOR)&&is_file($file)&&@getimagesize($file)!==false;
     }
     private static function hasUpload(string $field):bool{return isset($_FILES[$field])&&is_array($_FILES[$field])&&(int)($_FILES[$field]['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE;}
     private static function transparentManagedImage(string $path):bool
