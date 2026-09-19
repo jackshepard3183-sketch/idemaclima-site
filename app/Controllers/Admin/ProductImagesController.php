@@ -89,7 +89,8 @@ final class ProductImagesController
         if((int)$review['protected']===1&&!$recoverMissing)self::redirectError('Le immagini dei 6 Mono Split sono protette.');
         $candidate=(string)($review['candidate_path']??''); if($candidate==='')self::redirectError('Carica o seleziona prima un’immagine candidata.'); if(!$recoverMissing&&!self::transparentManagedImage($candidate))self::redirectError('L’immagine candidata non supera il controllo dello sfondo trasparente.');
         $replaceExisting=isset($_POST['replace_existing'])&&$_POST['replace_existing']==='1';
-        if($recoverMissing)$assigned=$candidate;
+        if($recoverMissing&&in_array((string)$review['product_name'],['ISA-R32','ISAT-R32'],true))$assigned=self::copyRecovered150($candidate,(string)$review['product_name']);
+        elseif($recoverMissing)$assigned=$candidate;
         else try{$assigned=Upload::copyProductImage($candidate,(string)$review['product_name'],$replaceExisting);}
         catch(\Throwable $e){self::redirectError($e->getMessage());}
         [$width,$height]=self::dimensions($assigned); $pdo->beginTransaction();
@@ -144,6 +145,21 @@ final class ProductImagesController
     private static function dimensions(string $path): array
     {
         if($path===''||!str_starts_with($path,'/uploads/'))return[null,null];$file=dirname(__DIR__,3).'/public'.$path;$info=is_file($file)?@getimagesize($file):false;return $info===false?[null,null]:[(int)$info[0],(int)$info[1]];
+    }
+    private static function copyRecovered150(string $path,string $name):string
+    {
+        $source=realpath(dirname(__DIR__,3).'/public'.$path);
+        $root=realpath(dirname(__DIR__,3).'/public/uploads');
+        $info=$source!==false?@getimagesize($source):false;
+        if($source===false||$root===false||!str_starts_with($source,$root.DIRECTORY_SEPARATOR)||$info===false)self::redirectError('La sorgente 150×150 non è disponibile.');
+        $mime=(string)($info['mime']??'');$loader=$mime==='image/png'?'imagecreatefrompng':($mime==='image/webp'?'imagecreatefromwebp':($mime==='image/jpeg'?'imagecreatefromjpeg':''));
+        if($loader===''||!function_exists($loader))self::redirectError('Formato sorgente non supportato.');
+        $image=@$loader($source);if($image===false)self::redirectError('Impossibile leggere la sorgente 150×150.');
+        $canvas=imagecreatetruecolor(150,150);imagealphablending($canvas,false);imagesavealpha($canvas,true);$transparent=imagecolorallocatealpha($canvas,255,255,255,127);imagefill($canvas,0,0,$transparent);
+        $scale=min(150/(int)$info[0],150/(int)$info[1]);$w=max(1,(int)round((int)$info[0]*$scale));$h=max(1,(int)round((int)$info[1]*$scale));imagecopyresampled($canvas,$image,(int)floor((150-$w)/2),(int)floor((150-$h)/2),0,0,$w,$h,(int)$info[0],(int)$info[1]);
+        $dir='/uploads/products/'.date('Y').'/'.date('m');$absolute=dirname(__DIR__,3).'/public'.$dir;if(!is_dir($absolute)&&!mkdir($absolute,0755,true)&&!is_dir($absolute))self::redirectError('Impossibile creare la cartella di ripristino.');
+        $base=strtolower((string)preg_replace('/[^a-zA-Z0-9]+/','-',iconv('UTF-8','ASCII//TRANSLIT//IGNORE',$name)?:'prodotto'));$file=$absolute.'/'.trim($base,'-').'-150.png';
+        $written=imagepng($canvas,$file,9);imagedestroy($canvas);imagedestroy($image);if(!$written)self::redirectError('Impossibile creare l’immagine 150×150.');@chmod($file,0644);return $dir.'/'.basename($file);
     }
     private static function managedImageExists(string $path):bool
     {
