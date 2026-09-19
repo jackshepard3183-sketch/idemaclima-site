@@ -45,7 +45,7 @@ final class ProductImagesController
         $catalog=trim((string)($_POST['source_catalog']??'')); $page=Validator::int($_POST['source_page']??0)?:null; $notes=trim((string)($_POST['notes']??''));
         $errors=[]; if(self::hasUpload('candidate_file')&&!self::transparentImageFile((string)$_FILES['candidate_file']['tmp_name']))$errors[]='L’immagine candidata deve avere uno sfondo realmente trasparente.'; $uploaded=$errors?null:Upload::contentImage('candidate_file','products',$errors); $candidate=(string)($review['candidate_path']??'');
         if($uploaded)$candidate=(string)$uploaded['path'];
-        elseif(($mediaId=Validator::int($_POST['media_id']??0))>0){$m=$pdo->prepare("SELECT file_path FROM media_assets WHERE id=? AND category='images' AND archived_at IS NULL");$m->execute([$mediaId]);$candidate=(string)($m->fetchColumn()?:'');if($candidate===''||!self::transparentManagedImage($candidate))$errors[]='Immagine della Media Library non valida o priva di sfondo trasparente.';}
+        elseif(($mediaId=Validator::int($_POST['media_id']??0))>0){$m=$pdo->prepare("SELECT file_path FROM media_assets WHERE id=? AND category='images' AND archived_at IS NULL");$m->execute([$mediaId]);$candidate=(string)($m->fetchColumn()?:'');$recoveringMissing=!self::managedImageExists((string)($review['product_image_path']??''));if($candidate===''||(!$recoveringMissing&&!self::transparentManagedImage($candidate)))$errors[]='Immagine della Media Library non valida o priva di sfondo trasparente.';}
         if($errors){if($uploaded)Upload::removeManaged((string)$uploaded['path']);self::redirectError(implode(' ',$errors));}
         [$width,$height]=self::dimensions($candidate);
         $q=$pdo->prepare('UPDATE product_image_reviews SET review_status=?,candidate_path=?,candidate_width=?,candidate_height=?,source_catalog=?,source_page=?,notes=?,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=?');
@@ -87,7 +87,7 @@ final class ProductImagesController
         if(!$review)self::redirectError('Prodotto non trovato.');
         $current=(string)($review['product_image_path']??''); $recoverMissing=!self::managedImageExists($current);
         if((int)$review['protected']===1&&!$recoverMissing)self::redirectError('Le immagini dei 6 Mono Split sono protette.');
-        $candidate=(string)($review['candidate_path']??''); if($candidate==='')self::redirectError('Carica o seleziona prima un’immagine candidata.'); if(!self::transparentManagedImage($candidate))self::redirectError('L’immagine candidata non supera il controllo dello sfondo trasparente.');
+        $candidate=(string)($review['candidate_path']??''); if($candidate==='')self::redirectError('Carica o seleziona prima un’immagine candidata.'); if(!$recoverMissing&&!self::transparentManagedImage($candidate))self::redirectError('L’immagine candidata non supera il controllo dello sfondo trasparente.');
         $replaceExisting=isset($_POST['replace_existing'])&&$_POST['replace_existing']==='1';
         if($recoverMissing)$assigned=$candidate;
         else try{$assigned=Upload::copyProductImage($candidate,(string)$review['product_name'],$replaceExisting);}
