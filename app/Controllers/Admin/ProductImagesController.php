@@ -39,7 +39,8 @@ final class ProductImagesController
         AdminAuth::requireLogin(); self::csrf(); $pdo=Database::connection();
         if(($_POST['audit_transparency']??'')==='1')self::auditTransparency($pdo);
         $productId=Validator::int($_POST['product_id']??0); $review=self::review($pdo,$productId);
-        if(!$review||(int)$review['protected']===1)self::redirectError('Le immagini dei 6 Mono Split sono protette.');
+        if(!$review)self::redirectError('Prodotto non trovato.');
+        if((int)$review['protected']===1&&self::managedImageExists((string)($review['product_image_path']??'')))self::redirectError('Le immagini dei 6 Mono Split sono protette.');
         $status=(string)($_POST['review_status']??'to_review'); if(!in_array($status,array_diff(self::STATUSES,['approved']),true))$status='to_review';
         $catalog=trim((string)($_POST['source_catalog']??'')); $page=Validator::int($_POST['source_page']??0)?:null; $notes=trim((string)($_POST['notes']??''));
         $errors=[]; if(self::hasUpload('candidate_file')&&!self::transparentImageFile((string)$_FILES['candidate_file']['tmp_name']))$errors[]='L’immagine candidata deve avere uno sfondo realmente trasparente.'; $uploaded=$errors?null:Upload::contentImage('candidate_file','products',$errors); $candidate=(string)($review['candidate_path']??'');
@@ -83,12 +84,15 @@ final class ProductImagesController
     public static function approve(): void
     {
         AdminAuth::requireLogin(); self::csrf(); $pdo=Database::connection(); $productId=Validator::int($_POST['product_id']??0); $review=self::review($pdo,$productId);
-        if(!$review||(int)$review['protected']===1)self::redirectError('Le immagini dei 6 Mono Split sono protette.');
+        if(!$review)self::redirectError('Prodotto non trovato.');
+        $current=(string)($review['product_image_path']??''); $recoverMissing=!self::managedImageExists($current);
+        if((int)$review['protected']===1&&!$recoverMissing)self::redirectError('Le immagini dei 6 Mono Split sono protette.');
         $candidate=(string)($review['candidate_path']??''); if($candidate==='')self::redirectError('Carica o seleziona prima un’immagine candidata.'); if(!self::transparentManagedImage($candidate))self::redirectError('L’immagine candidata non supera il controllo dello sfondo trasparente.');
         $replaceExisting=isset($_POST['replace_existing'])&&$_POST['replace_existing']==='1';
-        try{$assigned=Upload::copyProductImage($candidate,(string)$review['product_name'],$replaceExisting);}
+        if($recoverMissing)$assigned=$candidate;
+        else try{$assigned=Upload::copyProductImage($candidate,(string)$review['product_name'],$replaceExisting);}
         catch(\Throwable $e){self::redirectError($e->getMessage());}
-        [$width,$height]=self::dimensions($assigned);$current=(string)($review['product_image_path']??''); $pdo->beginTransaction();
+        [$width,$height]=self::dimensions($assigned); $pdo->beginTransaction();
         try{$pdo->prepare('UPDATE products SET image_path=? WHERE id=?')->execute([$assigned,$productId]);$pdo->prepare("UPDATE product_image_reviews SET original_image_path=COALESCE(original_image_path,?),candidate_path=?,candidate_width=?,candidate_height=?,review_status='approved',approved_at=CURRENT_TIMESTAMP,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=?")->execute([$current?:null,$assigned,$width,$height,AdminAuth::id(),$productId]);Audit::log('product_image.approve','product',$productId,['previous_path'=>$current,'source_path'=>$candidate,'approved_path'=>$assigned,'replaced_existing'=>$replaceExisting]);$pdo->commit();}
         catch(\Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
         header('Location: /idemaclima/admin/product-images?approved=1'); exit;
@@ -140,6 +144,13 @@ final class ProductImagesController
     private static function dimensions(string $path): array
     {
         if($path===''||!str_starts_with($path,'/uploads/'))return[null,null];$file=dirname(__DIR__,3).'/public'.$path;$info=is_file($file)?@getimagesize($file):false;return $info===false?[null,null]:[(int)$info[0],(int)$info[1]];
+    }
+    private static function managedImageExists(string $path):bool
+    {
+        if($path===''||!str_starts_with($path,'/uploads/'))return false;
+        $file=realpath(dirname(__DIR__,3).'/public'.$path);
+        $root=realpath(dirname(__DIR__,3).'/public/uploads');
+        return $file!==false&&$root!==false&&str_starts_with($file,$root.DIRECTORY_SEPARATOR)&&is_file($file);
     }
     private static function hasUpload(string $field):bool{return isset($_FILES[$field])&&is_array($_FILES[$field])&&(int)($_FILES[$field]['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE;}
     private static function transparentManagedImage(string $path):bool
