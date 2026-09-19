@@ -50,3 +50,4 @@ document.querySelectorAll('.sort-button').forEach(button=>button.addEventListene
 })();
 </script>
 <?php require __DIR__.'/_layout_end.php'; ?>
+<?php /* Deployment sync: transparency controls. */ ?>

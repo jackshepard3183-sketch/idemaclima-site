@@ -173,3 +173,4 @@ final class ProductImagesController
         header('Location: /idemaclima/admin/product-images?error='.rawurlencode($message));exit;
     }
 }
+// Deployment sync: transparent candidate validation.
