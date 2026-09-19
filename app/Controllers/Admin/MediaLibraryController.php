@@ -99,3 +99,4 @@ final class MediaLibraryController
     private static function csrf():void{if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}}
     private static function redirect(string $notice='',string $error=''):never{$q=http_build_query(array_filter(['notice'=>$notice,'error'=>$error],static fn($v)=>$v!==''));header('Location:/idemaclima/admin/media'.($q!==''?'?'.$q:''));exit;}
 }
+// Deployment sync: media library unused filters and deletion.
