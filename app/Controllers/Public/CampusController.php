@@ -89,15 +89,15 @@ final class CampusController
             if(!empty($event['registration_deadline']) && new \DateTimeImmutable((string)$event['registration_deadline']) < new \DateTimeImmutable('now')){$pdo->rollBack();self::render('campus/result',['title'=>'Iscrizioni chiuse','message'=>'Il termine per l’iscrizione è scaduto.']);return;}
             if(new \DateTimeImmutable((string)$event['starts_at']) <= new \DateTimeImmutable('now')){$pdo->rollBack();self::render('campus/result',['title'=>'Iscrizioni chiuse','message'=>'L’evento è già iniziato o concluso.']);return;}
 
-            $first=Validator::naturalText($_POST['first_name']??($catUser['contact_first_name']??''));
-            $last=Validator::naturalText($_POST['last_name']??($catUser['contact_last_name']??''));
+            $first=mb_strtoupper(Validator::naturalText($_POST['first_name']??($catUser['contact_first_name']??'')),'UTF-8');
+            $last=mb_strtoupper(Validator::naturalText($_POST['last_name']??($catUser['contact_last_name']??'')),'UTF-8');
             $email=strtolower(trim((string)($_POST['email']??($catUser['email']??''))));
             $emailConfirm=strtolower(trim((string)($_POST['email_confirm']??'')));
-            $phone=trim((string)($_POST['phone']??($catUser['phone']??'')));
-            $company=Validator::naturalText($_POST['company']??($catUser['company_name']??''));
-            $role=Validator::naturalText($_POST['role']??'');
-            $notes=Validator::naturalText($_POST['notes']??'');
-            $allowedProfiles=['Installatore','Progettista','Centro assistenza tecnica','Cliente privato','Altro'];
+            $phone=preg_replace('/[\s.()\-]+/u','',(string)($_POST['phone']??($catUser['phone']??'')))??'';
+            $company=mb_strtoupper(Validator::naturalText($_POST['company']??($catUser['company_name']??'')),'UTF-8');
+            $role=mb_strtoupper(Validator::naturalText($_POST['role']??''),'UTF-8');
+            $notes=mb_strtoupper(Validator::naturalText($_POST['notes']??''),'UTF-8');
+            $allowedProfiles=['INSTALLATORE','PROGETTISTA','CENTRO ASSISTENZA TECNICA','CLIENTE PRIVATO','ALTRO'];
             $invalid=$first===''||$last===''||$phone===''||$role===''||$emailConfirm===''||strcasecmp($email,$emailConfirm)!==0||!in_array($role,$allowedProfiles,true)||mb_strlen($first)>120||mb_strlen($last)>120||!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>190||mb_strlen($phone)>50||mb_strlen($company)>190||mb_strlen($role)>120||mb_strlen($notes)>4000||empty($_POST['privacy']);
             if($invalid){$pdo->rollBack();self::render('campus/result',['title'=>'Dati non validi','message'=>'Compila correttamente i campi obbligatori e accetta la privacy.']);return;}
 
