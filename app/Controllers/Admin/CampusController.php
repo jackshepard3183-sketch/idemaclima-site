@@ -161,6 +161,46 @@ final class CampusController
         self::view('campus_participants',['title'=>'Campus - Anagrafica iscritti','rows'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'search'=>$search]);
     }
 
+    public static function participantDetail(): void
+    {
+        AdminAuth::requireLogin();
+        $id=Validator::int($_GET['id']??0);$pdo=Database::connection();
+        $anchor=self::participantAnchor($pdo,$id);
+        if(!$anchor){http_response_code(404);exit('Anagrafica non trovata');}
+        $stmt=$pdo->prepare('SELECT r.*,e.title event_title,e.starts_at,e.archived FROM event_registrations r JOIN events e ON e.id=r.event_id WHERE UPPER(TRIM(r.first_name))=? AND UPPER(TRIM(r.last_name))=? AND LOWER(TRIM(r.email))=? ORDER BY e.starts_at DESC,r.id DESC');
+        $stmt->execute([mb_strtoupper(trim((string)$anchor['first_name']),'UTF-8'),mb_strtoupper(trim((string)$anchor['last_name']),'UTF-8'),strtolower(trim((string)$anchor['email']))]);
+        self::view('campus_participant_detail',['title'=>'Campus - Dettaglio iscritto','participant'=>$anchor,'registrations'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'errors'=>[]]);
+    }
+
+    public static function updateParticipant(): void
+    {
+        AdminAuth::requireLogin();self::csrf();
+        $id=Validator::int($_POST['id']??0);$pdo=Database::connection();$anchor=self::participantAnchor($pdo,$id);
+        if(!$anchor){http_response_code(404);exit('Anagrafica non trovata');}
+        $first=self::upper($_POST['first_name']??'');$last=self::upper($_POST['last_name']??'');$email=strtolower(trim((string)($_POST['email']??'')));$phone=self::phone($_POST['phone']??'');$company=self::company($_POST['company']??'');$role=self::upper($_POST['role']??'');
+        $errors=[];if($first===''||$last==='')$errors[]='Nome e cognome sono obbligatori.';if(!filter_var($email,FILTER_VALIDATE_EMAIL))$errors[]='Email non valida.';
+        if($errors){$participant=array_merge($anchor,['first_name'=>$first,'last_name'=>$last,'email'=>$email,'phone'=>$phone,'company'=>$company,'role'=>$role]);self::view('campus_participant_detail',['title'=>'Campus - Dettaglio iscritto','participant'=>$participant,'registrations'=>[],'errors'=>$errors]);return;}
+        $stmt=$pdo->prepare('UPDATE event_registrations SET first_name=?,last_name=?,email=?,phone=?,company=?,role=? WHERE UPPER(TRIM(first_name))=? AND UPPER(TRIM(last_name))=? AND LOWER(TRIM(email))=?');
+        $stmt->execute([$first,$last,$email,$phone?:null,$company?:null,$role?:null,mb_strtoupper(trim((string)$anchor['first_name']),'UTF-8'),mb_strtoupper(trim((string)$anchor['last_name']),'UTF-8'),strtolower(trim((string)$anchor['email']))]);
+        Audit::log('campus.participant.update','event_registration',$id,['registrations_updated'=>$stmt->rowCount(),'first_name'=>$first,'last_name'=>$last,'email'=>$email]);
+        header('Location:/idemaclima/admin/campus/participants/detail?id='.$id.'&saved=1');exit;
+    }
+
+    private static function participantAnchor(PDO $pdo,int $id): array|false
+    { $stmt=$pdo->prepare('SELECT id,first_name,last_name,email,phone,company,role,created_at FROM event_registrations WHERE id=?');$stmt->execute([$id]);return $stmt->fetch(PDO::FETCH_ASSOC); }
+    private static function upper(mixed $value): string
+    { return mb_strtoupper(trim(preg_replace('/\s+/u',' ',(string)$value)??(string)$value),'UTF-8'); }
+    private static function phone(mixed $value): string
+    { return preg_replace('/[\s.()\-]+/u','',(string)$value)??''; }
+    private static function company(mixed $value): string
+    {
+        $value=self::upper($value);$value=preg_replace('/\s*,\s*/u',', ',$value)??$value;
+        $exact=['TEDI S.R.L.S'=>'TEDI S.R.L.S.','TEDI S.R.L.S.'=>'TEDI S.R.L.S.','TEDI S.L.S'=>'TEDI S.R.L.S.','TEDI S.L.S.'=>'TEDI S.R.L.S.'];$value=$exact[$value]??$value;
+        $value=str_replace(['B.P., IMPIANTI','GRILLIRAPORESENTANZE','GIANNI BNVENUTO','LFM IMPIANTI','EMERG-ON'],['B.P. IMPIANTI','GRILLI RAPPRESENTANZE','GIANNI BENVENUTO','LMF IMPIANTI','ENERG.ON'],$value);
+        $value=preg_replace('/\bSRLS\.?$/u','S.R.L.S.',$value)??$value;$value=preg_replace('/\bSRL\.?$/u','S.R.L.',$value)??$value;$value=preg_replace('/\bSNC\.?$/u','S.N.C.',$value)??$value;$value=preg_replace('/\bSAS\.?$/u','S.A.S.',$value)??$value;$value=preg_replace('/\bSPA\.?$/u','S.P.A.',$value)??$value;
+        return $value;
+    }
+
 
     public static function updateRegistration(): void
     {
