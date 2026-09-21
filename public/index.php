@@ -107,7 +107,7 @@ $router->get('/admin/categories', [CategoriesController::class, 'index']);
 $router->get('/admin/categories/form', [CategoriesController::class, 'form']);
 $router->post('/admin/categories/save', [CategoriesController::class, 'save']);
 $router->get('/admin/products', [ProductsController::class, 'index']);
-$router->get('/admin/products/inventory', [ProductsController::class, 'index']);
+$router->get('/admin/products/inventory', [ProductsController::class, 'inventory']);
 $router->get('/admin/products/form', [ProductsController::class, 'form']);
 $router->post('/admin/products/save', [ProductsController::class, 'save']);
 $router->post('/admin/products/duplicate', [ProductsController::class, 'duplicate']);
