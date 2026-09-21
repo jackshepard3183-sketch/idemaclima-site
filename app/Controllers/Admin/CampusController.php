@@ -143,8 +143,22 @@ final class CampusController
         $pdo=Database::connection();
         $sql='SELECT r.*,e.title event_title,e.audience,c.company_name cat_company FROM event_registrations r JOIN events e ON e.id=r.event_id LEFT JOIN cat_accounts c ON c.id=r.cat_account_id'.($where?' WHERE '.implode(' AND ',$where):'').' ORDER BY r.created_at DESC';
         $stmt=$pdo->prepare($sql);$stmt->execute($params);
-        $events=$pdo->query('SELECT id,title,starts_at FROM events ORDER BY starts_at DESC')->fetchAll(PDO::FETCH_ASSOC);
+        $events=$pdo->query('SELECT e.id,e.title,e.starts_at,e.audience,e.archived,COUNT(r.id) registrations FROM events e LEFT JOIN event_registrations r ON r.event_id=e.id GROUP BY e.id,e.title,e.starts_at,e.audience,e.archived ORDER BY e.starts_at DESC,e.id DESC')->fetchAll(PDO::FETCH_ASSOC);
         self::view('campus_registrations',['title'=>'Campus - Iscrizioni','rows'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'events'=>$events,'filters'=>['event_id'=>$eventId,'cat_account_id'=>$catAccountId,'status'=>$status]]);
+    }
+
+    public static function participants(): void
+    {
+        AdminAuth::requireLogin();
+        $search=trim((string)($_GET['q']??''));
+        $where='';$params=[];
+        if($search!==''){
+            $where=' WHERE CONCAT_WS(" ",r.first_name,r.last_name,r.email,r.phone,r.company,r.role) LIKE ?';
+            $params[]='%'.$search.'%';
+        }
+        $sql='SELECT MIN(r.id) id,UPPER(TRIM(r.first_name)) first_name,UPPER(TRIM(r.last_name)) last_name,LOWER(TRIM(r.email)) email,MAX(r.phone) phone,MAX(UPPER(r.company)) company,MAX(UPPER(r.role)) role,COUNT(*) registrations_count,COUNT(DISTINCT r.event_id) courses_count,MAX(CASE WHEN r.notes LIKE "%POSSIBILE DUPLICATO%" THEN 1 ELSE 0 END) possible_duplicate,GROUP_CONCAT(DISTINCT CONCAT(COALESCE(DATE_FORMAT(e.starts_at,"%d/%m/%Y"),"DATA NON DISPONIBILE")," · ",e.title) ORDER BY e.starts_at DESC SEPARATOR "||") courses FROM event_registrations r JOIN events e ON e.id=r.event_id'.$where.' GROUP BY UPPER(TRIM(r.first_name)),UPPER(TRIM(r.last_name)),LOWER(TRIM(r.email)) ORDER BY last_name,first_name,email';
+        $stmt=Database::connection()->prepare($sql);$stmt->execute($params);
+        self::view('campus_participants',['title'=>'Campus - Anagrafica iscritti','rows'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'search'=>$search]);
     }
 
 

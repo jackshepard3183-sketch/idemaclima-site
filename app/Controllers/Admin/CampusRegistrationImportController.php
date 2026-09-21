@@ -148,7 +148,7 @@ final class CampusRegistrationImportController
     private static function date(string $value): string
     { $dt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', trim($value)); if (!$dt) throw new RuntimeException('Data storica non valida.'); return $dt->format('Y-m-d H:i:s'); }
     private static function name(mixed $value): string
-    { $v=trim(preg_replace('/\s+/u',' ',(string)$value)??(string)$value); return $v===''?'':mb_convert_case(mb_strtolower($v,'UTF-8'),MB_CASE_TITLE,'UTF-8'); }
+    { $v=trim(preg_replace('/\s+/u',' ',(string)$value)??(string)$value); return $v===''?'':mb_strtoupper($v,'UTF-8'); }
     private static function respond(array $payload): void
     { header('Content-Type: application/json; charset=UTF-8'); echo json_encode($payload,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE); }
 }
