@@ -12,7 +12,7 @@
 <div class="table-wrap"><table class="participant-table"><thead><tr><th>Nominativo</th><th>Contatti</th><th>Azienda / Profilo</th><th>Iscrizioni</th><th>Corsi</th></tr></thead><tbody>
 <?php foreach($rows as $row): ?>
 <tr>
-  <td data-label="Nominativo"><strong><?=htmlspecialchars(trim($row['first_name'].' '.$row['last_name']),ENT_QUOTES,'UTF-8')?></strong><?=!empty($row['possible_duplicate'])?'<br><span class="badge badge-warning">POSSIBILE DUPLICATO</span>':''?></td>
+  <td data-label="Nominativo"><strong><?=htmlspecialchars(trim($row['first_name'].' '.$row['last_name']),ENT_QUOTES,'UTF-8')?></strong><?=!empty($row['possible_duplicate'])?'<br><span class="badge badge-warning">POSSIBILE DUPLICATO</span>':''?><br><a href="/idemaclima/admin/campus/participants/detail?id=<?=(int)$row['id']?>">Vedi dettaglio e correggi</a></td>
   <td data-label="Contatti"><?=htmlspecialchars((string)$row['email'],ENT_QUOTES,'UTF-8')?><?=!empty($row['phone'])?'<br>'.htmlspecialchars((string)$row['phone'],ENT_QUOTES,'UTF-8'):''?></td>
   <td data-label="Azienda / Profilo"><?=htmlspecialchars((string)($row['company']?:'DATO NON DISPONIBILE'),ENT_QUOTES,'UTF-8')?><br><span class="muted"><?=htmlspecialchars((string)($row['role']?:'DATO NON DISPONIBILE'),ENT_QUOTES,'UTF-8')?></span></td>
   <td data-label="Iscrizioni"><strong><?=(int)$row['registrations_count']?></strong><br><span class="muted"><?=(int)$row['courses_count']?> corsi</span></td>
