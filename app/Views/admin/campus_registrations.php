@@ -11,11 +11,11 @@
 
 <div class="toolbar">
   <div><h1>Campus - Iscrizioni</h1><p class="muted">Partecipanti, lista d’attesa e presenze.</p></div>
-  <a class="btnlink" href="/idemaclima/admin/campus/registrations/export?<?=http_build_query(array_filter(['event_id'=>(int)($filters['event_id']??0),'cat_account_id'=>(int)($filters['cat_account_id']??0),'status'=>(string)($filters['status']??'')]))?>">Esporta CSV / Excel</a>
+  <div><a class="btnlink" href="/idemaclima/admin/campus/registrations/import">Importa archivio</a> <a class="btnlink" href="/idemaclima/admin/campus/registrations/export?<?=http_build_query(array_filter(['event_id'=>(int)($filters['event_id']??0),'cat_account_id'=>(int)($filters['cat_account_id']??0),'status'=>(string)($filters['status']??'')]))?>">Esporta CSV / Excel</a></div>
 </div>
 <form method="get" class="panel" style="margin-bottom:18px">
   <div class="formgrid">
-    <label>Evento<select name="event_id"><option value="">Tutti gli eventi</option><?php foreach($events as $event):?><option value="<?=(int)$event['id']?>" <?=(int)($filters['event_id']??0)===(int)$event['id']?'selected':''?>><?=htmlspecialchars(date('d/m/Y',strtotime((string)$event['starts_at'])).' · '.$event['title'],ENT_QUOTES,'UTF-8')?></option><?php endforeach;?></select></label>
+    <label>Evento<select name="event_id"><option value="">Tutti gli eventi</option><?php foreach($events as $event):?><option value="<?=(int)$event['id']?>" <?=(int)($filters['event_id']??0)===(int)$event['id']?'selected':''?>><?=htmlspecialchars((empty($event['starts_at'])?'Data non disponibile':date('d/m/Y',strtotime((string)$event['starts_at']))).' · '.$event['title'],ENT_QUOTES,'UTF-8')?></option><?php endforeach;?></select></label>
     <label>Stato<select name="status"><option value="">Tutti gli stati</option><?php foreach(['registered'=>'Iscritto','confirmed'=>'Confermato','waitlist'=>'Lista d’attesa','cancelled'=>'Annullato'] as $value=>$label):?><option value="<?=$value?>" <?=($filters['status']??'')===$value?'selected':''?>><?=$label?></option><?php endforeach;?></select></label>
   </div>
   <button class="btn" type="submit" style="margin-top:14px">Filtra</button>
