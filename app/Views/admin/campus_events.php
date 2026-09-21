@@ -13,9 +13,9 @@
   <tr>
     <td><strong><?=htmlspecialchars($event['title'],ENT_QUOTES,'UTF-8')?></strong><?=!empty($event['category'])?'<br><span class="muted">'.htmlspecialchars($event['category'],ENT_QUOTES,'UTF-8').'</span>':''?></td>
     <td><span class="badge"><?=$event['audience']==='cat'?'CAT':'Aperto'?></span></td>
-    <td><?=htmlspecialchars(date('d/m/Y H:i',strtotime((string)$event['starts_at'])),ENT_QUOTES,'UTF-8')?></td>
+    <td><?=empty($event['starts_at'])?'Data non disponibile':htmlspecialchars(date('d/m/Y H:i',strtotime((string)$event['starts_at'])),ENT_QUOTES,'UTF-8')?></td>
     <td><a href="/idemaclima/admin/campus/registrations?event_id=<?=(int)$event['id']?>"><?=(int)$event['registrations']?></a></td>
-    <td><?=(int)$event['cancelled']?'Annullato':((int)$event['published']?((int)$event['registration_open']?'Pubblicato · iscrizioni aperte':'Pubblicato · iscrizioni chiuse'):'Bozza')?></td>
+    <td><?=!empty($event['archived'])?'Archiviato':((int)$event['cancelled']?'Annullato':((int)$event['published']?((int)$event['registration_open']?'Pubblicato · iscrizioni aperte':'Pubblicato · iscrizioni chiuse'):'Bozza'))?></td>
     <td><a href="/idemaclima/admin/campus/events/form?id=<?=(int)$event['id']?>">Modifica</a><form method="post" action="/idemaclima/admin/campus/events/duplicate" style="display:inline;margin-left:8px"><input type="hidden" name="_csrf" value="<?=htmlspecialchars($csrf,ENT_QUOTES,'UTF-8')?>"><input type="hidden" name="id" value="<?=(int)$event['id']?>"><button type="submit" class="link-button">Duplica</button></form><form method="post" action="/idemaclima/admin/campus/events/delete" data-confirm="Eliminare definitivamente questo evento e le <?= (int)$event['registrations'] ?> iscrizioni collegate? L’operazione non può essere annullata." style="display:inline;margin-left:8px"><input type="hidden" name="_csrf" value="<?=htmlspecialchars($csrf,ENT_QUOTES,'UTF-8')?>"><input type="hidden" name="id" value="<?=(int)$event['id']?>"><input type="hidden" name="return_audience" value="<?=htmlspecialchars((string)($audience??''),ENT_QUOTES,'UTF-8')?>"><button type="submit" class="link-button">Elimina</button></form></td>
   </tr>
 <?php endforeach; ?>

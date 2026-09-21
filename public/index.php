@@ -13,6 +13,7 @@ use App\Controllers\Admin\ProductImagesController;
 use App\Controllers\Admin\WarrantyController as AdminWarrantyController;
 use App\Controllers\Admin\WarrantyImportController;
 use App\Controllers\Admin\WpformsRequestImportController;
+use App\Controllers\Admin\CampusRegistrationImportController;
 use App\Controllers\Admin\CampusController as AdminCampusController;
 use App\Controllers\Admin\CampusActionsController as AdminCampusActionsController;
 use App\Controllers\Admin\ContentController as AdminContentController;
@@ -173,6 +174,8 @@ $router->post('/admin/campus/events/save', [AdminCampusController::class, 'saveE
 $router->post('/admin/campus/events/duplicate', [AdminCampusActionsController::class, 'duplicate']);
 $router->post('/admin/campus/events/delete', [AdminCampusActionsController::class, 'delete']);
 $router->get('/admin/campus/registrations', [AdminCampusController::class, 'registrations']);
+$router->get('/admin/campus/registrations/import', [CampusRegistrationImportController::class, 'index']);
+$router->post('/admin/campus/registrations/import/run', [CampusRegistrationImportController::class, 'run']);
 $router->get('/admin/campus/registrations/export', [AdminCampusActionsController::class, 'export']);
 $router->post('/admin/campus/registrations/update', [AdminCampusController::class, 'updateRegistration']);
 $router->get('/admin/cat/users', [AdminCampusController::class, 'catUsers']);
