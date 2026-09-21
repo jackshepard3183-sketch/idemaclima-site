@@ -25,6 +25,37 @@ final class ProductsController
         require dirname(__DIR__, 2) . '/Views/admin/products.php';
     }
 
+    public static function inventory(): void
+    {
+        AdminAuth::requireLogin();
+        $sql = "SELECT p.id,
+                       COALESCE(parent.name,c.name) AS product_line,
+                       CASE WHEN parent.id IS NULL THEN 'Categoria principale' ELSE c.name END AS product_type,
+                       p.name,
+                       p.product_role,
+                       p.image_path,
+                       p.content_status,
+                       (SELECT GROUP_CONCAT(pm.code ORDER BY pm.sort_order,pm.code SEPARATOR ', ')
+                          FROM product_models pm
+                         WHERE pm.product_id=p.id) AS model_codes,
+                       (SELECT GROUP_CONCAT(DISTINCT CONCAT(dt.name,' — ',d.filename)
+                                            ORDER BY dt.sort_order,d.sort_order,d.title SEPARATOR '\\n')
+                          FROM document_links dl
+                          JOIN documents d ON d.id=dl.document_id
+                          JOIN document_types dt ON dt.id=d.document_type_id
+                         WHERE dl.product_id=p.id
+                            OR dl.model_id IN (SELECT pm2.id FROM product_models pm2 WHERE pm2.product_id=p.id)) AS document_list
+                  FROM products p
+                  JOIN product_categories c ON c.id=p.category_id
+             LEFT JOIN product_categories parent ON parent.id=c.parent_id
+              ORDER BY COALESCE(parent.sort_order,c.sort_order),
+                       COALESCE(parent.name,c.name),c.sort_order,c.name,p.sort_order,p.name";
+        $products = Database::connection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $user = AdminAuth::user();
+        $csrf = Security::csrfToken();
+        require dirname(__DIR__, 2) . '/Views/admin/product_inventory.php';
+    }
+
     public static function form(): void
     {
         AdminAuth::requireLogin();
