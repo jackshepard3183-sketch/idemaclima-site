@@ -30,6 +30,12 @@ $returnPath = $isContacts ? 'contacts' : 'incentives';
   <div class="progress-track" role="progressbar" aria-label="Avanzamento importazione" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-bar" id="progress-bar"></div></div>
   <div class="table-wrap"><table class="queue-table"><thead><tr><th>#</th><th>File</th><th>Ordine</th><th>Stato</th></tr></thead><tbody id="import-queue"><tr><td colspan="4" class="empty">Seleziona uno o più file JSON.</td></tr></tbody></table></div>
   <pre class="import-log" id="import-log" aria-live="polite"></pre>
+  <form class="panel" method="post" enctype="multipart/form-data" action="/idemaclima/admin/<?= $returnPath ?>/import/run" style="margin-top:18px">
+    <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf,ENT_QUOTES,'UTF-8') ?>">
+    <p class="muted"><strong>Modalità compatibilità:</strong> usa questo invio se il caricamento multiplo viene bloccato dal browser.</p>
+    <label>Singolo manifest JSON<input type="file" name="manifest" accept="application/json,.json" required></label>
+    <button class="btn" type="submit">Importa singolo lotto</button>
+  </form>
 </div>
 <script nonce="<?= htmlspecialchars(\App\Core\Security::nonce(),ENT_QUOTES,'UTF-8') ?>">
 (()=>{
