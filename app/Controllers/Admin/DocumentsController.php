@@ -152,6 +152,51 @@ final class DocumentsController
         exit;
     }
 
+    public static function delete(): void
+    {
+        AdminAuth::requireLogin();
+        if (!Security::verifyCsrf($_POST['_csrf'] ?? null)) {
+            http_response_code(419);
+            exit('Sessione non valida');
+        }
+
+        $id = Validator::int($_POST['id'] ?? 0);
+        $pdo = Database::connection();
+        $s = $pdo->prepare('SELECT id,title,filename,file_path FROM documents WHERE id=?');
+        $s->execute([$id]);
+        $document = $s->fetch(PDO::FETCH_ASSOC);
+        if (!$document) {
+            http_response_code(404);
+            exit('Documento non trovato');
+        }
+
+        $links = $pdo->prepare('SELECT COUNT(*) FROM document_links WHERE document_id=?');
+        $links->execute([$id]);
+        if ((int)$links->fetchColumn() > 0) {
+            http_response_code(409);
+            exit('Il documento è ancora associato a una categoria, un prodotto o un modello. Rimuovi prima le associazioni.');
+        }
+
+        $pdo->prepare('DELETE FROM documents WHERE id=?')->execute([$id]);
+
+        $filePath = (string)$document['file_path'];
+        if ($filePath !== '') {
+            $uses = $pdo->prepare('SELECT COUNT(*) FROM documents WHERE file_path=?');
+            $uses->execute([$filePath]);
+            if ((int)$uses->fetchColumn() === 0) {
+                Upload::removeManaged($filePath);
+            }
+        }
+
+        Audit::log('document.delete', 'document', $id, [
+            'title'=>(string)$document['title'],
+            'filename'=>(string)$document['filename'],
+            'file_path'=>$filePath,
+        ]);
+        header('Location: /idemaclima/admin/documents');
+        exit;
+    }
+
     /** @return array{0:array,1:array,2:array,3:array} */
     private static function formOptions(PDO $pdo): array
     {
