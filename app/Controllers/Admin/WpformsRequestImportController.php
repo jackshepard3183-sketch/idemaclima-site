@@ -107,7 +107,7 @@ final class WpformsRequestImportController
                         $sourceId,
                         self::upper((string)($item['first_name'] ?? '')),
                         self::upper((string)($item['last_name'] ?? '')),
-                        self::upper((string)($item['company'] ?? '')) ?: null,
+                        Validator::companyName($item['company'] ?? '') ?: null,
                         self::upper((string)($item['region'] ?? '')),
                         Validator::provinceCode($item['province'] ?? ''),
                         self::upper((string)($item['city'] ?? '')),
