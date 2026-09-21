@@ -6,12 +6,24 @@
 .registrations-table th:nth-child(1){width:22%}.registrations-table th:nth-child(2){width:12%}.registrations-table th:nth-child(3){width:17%}.registrations-table th:nth-child(4){width:13%}.registrations-table th:nth-child(5){width:8%}.registrations-table th:nth-child(6){width:8%}.registrations-table th:nth-child(7){width:8%}.registrations-table th:nth-child(8){width:12%}
 .registrations-table th button{white-space:normal;text-align:left;line-height:1.15}
 .registration-actions{display:grid;gap:6px;margin:0}.registration-actions select,.registration-actions .btn{width:100%;min-width:0;font-size:12px;padding:7px 6px}.registration-actions .btn{white-space:nowrap}
+.course-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 18px}.course-card{display:flex;flex-direction:column;gap:8px;min-height:132px;padding:16px;border:1px solid var(--border);border-radius:12px;background:#fff;color:inherit;text-decoration:none;box-shadow:var(--shadow-sm)}.course-card:hover,.course-card.is-active{border-color:var(--primary);background:#f7fbf2}.course-card strong{line-height:1.3}.course-meta{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:auto}.course-count{font-size:22px;font-weight:800;color:var(--primary)}
+@media(max-width:1200px){.course-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.registrations-table,.registrations-table tbody,.registrations-table tr,.registrations-table td{display:block;width:100%}.registrations-table{table-layout:auto}.registrations-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.registrations-table tr{margin-bottom:14px;border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}.registrations-table td{display:grid;grid-template-columns:minmax(105px,32%) minmax(0,1fr);gap:10px;border-bottom:1px solid var(--border);padding:10px 12px}.registrations-table td:last-child{border-bottom:0}.registrations-table td::before{content:attr(data-label);font-weight:700;color:var(--text)}.registration-actions{max-width:280px}}
+@media(max-width:620px){.course-grid{grid-template-columns:1fr}}
 </style>
 
 <div class="toolbar">
   <div><h1>Campus - Iscrizioni</h1><p class="muted">Partecipanti, lista d’attesa e presenze.</p></div>
-  <div><a class="btnlink" href="/idemaclima/admin/campus/registrations/import">Importa archivio</a> <a class="btnlink" href="/idemaclima/admin/campus/registrations/export?<?=http_build_query(array_filter(['event_id'=>(int)($filters['event_id']??0),'cat_account_id'=>(int)($filters['cat_account_id']??0),'status'=>(string)($filters['status']??'')]))?>">Esporta CSV / Excel</a></div>
+  <div><a class="btnlink" href="/idemaclima/admin/campus/participants">Anagrafica iscritti</a> <a class="btnlink" href="/idemaclima/admin/campus/registrations/import">Importa archivio</a> <a class="btnlink" href="/idemaclima/admin/campus/registrations/export?<?=http_build_query(array_filter(['event_id'=>(int)($filters['event_id']??0),'cat_account_id'=>(int)($filters['cat_account_id']??0),'status'=>(string)($filters['status']??'')]))?>">Esporta CSV / Excel</a></div>
+</div>
+<div class="course-grid">
+<?php foreach($events as $event): ?>
+  <a class="course-card <?=(int)($filters['event_id']??0)===(int)$event['id']?'is-active':''?>" href="/idemaclima/admin/campus/registrations?event_id=<?=(int)$event['id']?>">
+    <span class="muted"><?=empty($event['starts_at'])?'DATA NON DISPONIBILE':date('d/m/Y',strtotime((string)$event['starts_at']))?></span>
+    <strong><?=htmlspecialchars((string)$event['title'],ENT_QUOTES,'UTF-8')?></strong>
+    <span class="course-meta"><span class="badge"><?=$event['audience']==='cat'?'CAT':'APERTO'?><?=!empty($event['archived'])?' · ARCHIVIATO':''?></span><span class="course-count"><?=(int)$event['registrations']?></span></span>
+  </a>
+<?php endforeach; ?>
 </div>
 <form method="get" class="panel" style="margin-bottom:18px">
   <div class="formgrid">
