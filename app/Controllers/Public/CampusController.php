@@ -94,7 +94,7 @@ final class CampusController
             $email=strtolower(trim((string)($_POST['email']??($catUser['email']??''))));
             $emailConfirm=strtolower(trim((string)($_POST['email_confirm']??'')));
             $phone=preg_replace('/[\s.()\-]+/u','',(string)($_POST['phone']??($catUser['phone']??'')))??'';
-            $company=mb_strtoupper(Validator::naturalText($_POST['company']??($catUser['company_name']??'')),'UTF-8');
+            $company=Validator::companyName($_POST['company']??($catUser['company_name']??''));
             $role=mb_strtoupper(Validator::naturalText($_POST['role']??''),'UTF-8');
             $notes=mb_strtoupper(Validator::naturalText($_POST['notes']??''),'UTF-8');
             $allowedProfiles=['INSTALLATORE','PROGETTISTA','CENTRO ASSISTENZA TECNICA','CLIENTE PRIVATO','ALTRO'];

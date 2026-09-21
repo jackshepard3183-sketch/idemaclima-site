@@ -50,6 +50,43 @@ final class Validator
     }
 
 
+    /** Normalizes company names without changing free-text fields. */
+    public static function companyName(mixed $value): string
+    {
+        $value = self::naturalText($value);
+        if ($value === '') return '';
+
+        $exact = [
+            'B.P.,IMPIANTI SRL' => 'B.P. IMPIANTI SRL',
+            'B.P., IMPIANTI SRL' => 'B.P. IMPIANTI SRL',
+            'GRILLIRAPORESENTANZE' => 'GRILLI RAPPRESENTANZE',
+            'GIANNI BNVENUTO S.P.A.' => 'GIANNI BENVENUTO S.P.A.',
+            'LFM IMPIANTI' => 'LMF IMPIANTI',
+            'TEDI S.L.S' => 'TEDI S.R.L.S.',
+            'TEDI S.L.S.' => 'TEDI S.R.L.S.',
+            'TEDI S.R.L.S' => 'TEDI S.R.L.S.',
+            'ENERG.ON' => 'ENERG.ON S.R.L.',
+            'ENERG-ON' => 'ENERG.ON S.R.L.',
+            'ENERG. ON' => 'ENERG.ON S.R.L.',
+            'ENERGON' => 'ENERG.ON S.R.L.',
+            'EMERG-ON' => 'ENERG.ON S.R.L.',
+        ];
+        $value = $exact[$value] ?? $value;
+
+        $suffixes = [
+            '/\bS\s*\.?\s*R\s*\.?\s*L\s*\.?\s*S\s*\.?\s*$/u' => 'S.R.L.S.',
+            '/\bS\s*\.?\s*R\s*\.?\s*L\s*\.?\s*$/u' => 'S.R.L.',
+            '/\bS\s*\.?\s*N\s*\.?\s*C\s*\.?\s*$/u' => 'S.N.C.',
+            '/\bS\s*\.?\s*A\s*\.?\s*S\s*\.?\s*$/u' => 'S.A.S.',
+            '/\bS\s*\.?\s*P\s*\.?\s*A\s*\.?\s*$/u' => 'S.P.A.',
+        ];
+        foreach ($suffixes as $pattern => $replacement) {
+            $value = preg_replace($pattern, $replacement, $value) ?? $value;
+        }
+        return $value;
+    }
+
+
     /** Normalizes full province names and abbreviations for forms and historical imports. */
     public static function provinceCode(mixed $value): string
     {

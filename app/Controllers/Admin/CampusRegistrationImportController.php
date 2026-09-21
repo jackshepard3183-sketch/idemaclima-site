@@ -121,7 +121,7 @@ final class CampusRegistrationImportController
                 $created = self::date((string)($row['registered_at'] ?? ''));
                 $checked = empty($row['checked_in_at']) ? null : self::date((string)$row['checked_in_at']);
                 $notes = !empty($row['possible_duplicate']) ? 'Possibile duplicato segnalato durante la migrazione WordPress.' : null;
-                $insert->execute([$sourceId,$eventId,self::name($row['first_name'] ?? ''),self::name($row['last_name'] ?? ''),strtolower(trim((string)$row['email'])),trim((string)($row['phone'] ?? '')) ?: null,self::name($row['company'] ?? '') ?: null,null,$notes,'registered',($row['checked_in'] ?? false) ? 1 : null,$checked,$created,$created]);
+                $insert->execute([$sourceId,$eventId,self::name($row['first_name'] ?? ''),self::name($row['last_name'] ?? ''),strtolower(trim((string)$row['email'])),trim((string)($row['phone'] ?? '')) ?: null,Validator::companyName($row['company'] ?? '') ?: null,null,$notes,'registered',($row['checked_in'] ?? false) ? 1 : null,$checked,$created,$created]);
                 $imported++;
         }
         return ['validated'=>$validated + $skipped,'imported'=>$imported,'skipped'=>$skipped,'errors'=>$errors];

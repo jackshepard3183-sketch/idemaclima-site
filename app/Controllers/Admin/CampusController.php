@@ -194,11 +194,7 @@ final class CampusController
     { return preg_replace('/[\s.()\-]+/u','',(string)$value)??''; }
     private static function company(mixed $value): string
     {
-        $value=self::upper($value);$value=preg_replace('/\s*,\s*/u',', ',$value)??$value;
-        $exact=['TEDI S.R.L.S'=>'TEDI S.R.L.S.','TEDI S.R.L.S.'=>'TEDI S.R.L.S.','TEDI S.L.S'=>'TEDI S.R.L.S.','TEDI S.L.S.'=>'TEDI S.R.L.S.'];$value=$exact[$value]??$value;
-        $value=str_replace(['B.P., IMPIANTI','GRILLIRAPORESENTANZE','GIANNI BNVENUTO','LFM IMPIANTI','EMERG-ON'],['B.P. IMPIANTI','GRILLI RAPPRESENTANZE','GIANNI BENVENUTO','LMF IMPIANTI','ENERG.ON'],$value);
-        $value=preg_replace('/\bSRLS\.?$/u','S.R.L.S.',$value)??$value;$value=preg_replace('/\bSRL\.?$/u','S.R.L.',$value)??$value;$value=preg_replace('/\bSNC\.?$/u','S.N.C.',$value)??$value;$value=preg_replace('/\bSAS\.?$/u','S.A.S.',$value)??$value;$value=preg_replace('/\bSPA\.?$/u','S.P.A.',$value)??$value;
-        return $value;
+        return Validator::companyName($value);
     }
 
 
@@ -246,7 +242,7 @@ final class CampusController
     {
         AdminAuth::requireLogin();self::csrf();
         $errors=[];$id=Validator::int($_POST['id']??0);
-        $company=Validator::requiredString($_POST['company_name']??'','Azienda',190,$errors);
+        $company=Validator::requiredString(Validator::companyName($_POST['company_name']??''),'Azienda',190,$errors);
         $first=Validator::requiredString($_POST['contact_first_name']??'','Nome',120,$errors);
         $last=Validator::requiredString($_POST['contact_last_name']??'','Cognome',120,$errors);
         $email=strtolower(trim((string)($_POST['email']??'')));
