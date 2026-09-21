@@ -127,6 +127,7 @@ $router->post('/admin/media/archive', [MediaLibraryController::class, 'archive']
 $router->get('/admin/documents', [DocumentsController::class, 'index']);
 $router->get('/admin/documents/form', [DocumentsController::class, 'form']);
 $router->post('/admin/documents/save', [DocumentsController::class, 'save']);
+$router->post('/admin/documents/delete', [DocumentsController::class, 'delete']);
 $router->get('/admin/warranties', [AdminWarrantyController::class, 'registrations']);
 $router->get('/admin/warranties/import', [WarrantyImportController::class, 'index']);
 $router->post('/admin/warranties/import/run', [WarrantyImportController::class, 'run']);
