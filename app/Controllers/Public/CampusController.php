@@ -22,7 +22,7 @@ final class CampusController
     public static function openEvents(): void
     {
         $pdo = Database::connection();
-        $stmt = $pdo->query('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.audience="public" AND e.published=1 ORDER BY e.starts_at DESC,e.id DESC');
+        $stmt = $pdo->query('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.audience="public" AND e.published=1 AND e.archived=0 ORDER BY e.starts_at DESC,e.id DESC');
         $all=$stmt->fetchAll(PDO::FETCH_ASSOC);$status=in_array($_GET['stato']??'', ['prossimi','passati','annullati'],true)?(string)$_GET['stato']:'tutti';$category=trim((string)($_GET['categoria']??''));$month=preg_match('/^\d{4}-\d{2}$/',(string)($_GET['mese']??''))?(string)$_GET['mese']:'';
         $categories=array_values(array_unique(array_filter(array_column($all,'category'))));sort($categories,SORT_NATURAL|SORT_FLAG_CASE);
         $events=array_values(array_filter($all,static function(array $e)use($status,$category,$month):bool{$start=strtotime((string)$e['starts_at']);if($status==='prossimi'&&($start<time()||(int)$e['cancelled']))return false;if($status==='passati'&&($start>=time()||(int)$e['cancelled']))return false;if($status==='annullati'&&!(int)$e['cancelled'])return false;if($status!=='annullati'&&$status!=='tutti'&&(int)$e['cancelled'])return false;if($category!==''&&(string)$e['category']!==$category)return false;if($month!==''&&date('Y-m',$start)!==$month)return false;return true;}));
@@ -39,7 +39,7 @@ final class CampusController
         }
 
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="public" AND e.published=1 LIMIT 1');
+        $stmt = $pdo->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="public" AND e.published=1 AND e.archived=0 LIMIT 1');
         $stmt->execute([$slug]);
         $event=$stmt->fetch(PDO::FETCH_ASSOC);
         if(!$event){self::notFound();return;}
@@ -49,7 +49,7 @@ final class CampusController
     public static function catIndex(): void
     {
         $catUser=CatAuth::requireLogin();
-        $stmt=Database::connection()->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked,(SELECT ur.status FROM event_registrations ur WHERE ur.event_id=e.id AND ur.cat_account_id=? ORDER BY ur.id DESC LIMIT 1) AS user_status,(SELECT ur.attended FROM event_registrations ur WHERE ur.event_id=e.id AND ur.cat_account_id=? ORDER BY ur.id DESC LIMIT 1) AS user_attended,(SELECT ur.certificate_number FROM event_registrations ur WHERE ur.event_id=e.id AND ur.cat_account_id=? ORDER BY ur.id DESC LIMIT 1) AS certificate_number FROM events e WHERE e.audience="cat" AND e.published=1 ORDER BY e.starts_at DESC,e.id DESC');
+        $stmt=Database::connection()->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked,(SELECT ur.status FROM event_registrations ur WHERE ur.event_id=e.id AND ur.cat_account_id=? ORDER BY ur.id DESC LIMIT 1) AS user_status,(SELECT ur.attended FROM event_registrations ur WHERE ur.event_id=e.id AND ur.cat_account_id=? ORDER BY ur.id DESC LIMIT 1) AS user_attended,(SELECT ur.certificate_number FROM event_registrations ur WHERE ur.event_id=e.id AND ur.cat_account_id=? ORDER BY ur.id DESC LIMIT 1) AS certificate_number FROM events e WHERE e.audience="cat" AND e.published=1 AND e.archived=0 ORDER BY e.starts_at DESC,e.id DESC');
         $stmt->execute([(int)$catUser['id'],(int)$catUser['id'],(int)$catUser['id']]);
         self::render('campus/cat_index',['title'=>'Campus CAT','events'=>$stmt->fetchAll(PDO::FETCH_ASSOC),'catUser'=>$catUser,'csrf'=>Security::csrfToken()]);
     }
@@ -57,7 +57,7 @@ final class CampusController
     public static function catEvent(string $slug): void
     {
         $catUser=CatAuth::requireLogin();
-        $stmt=Database::connection()->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="cat" AND e.published=1 LIMIT 1');
+        $stmt=Database::connection()->prepare('SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id=e.id AND r.status IN ("registered","confirmed")) AS booked FROM events e WHERE e.slug=? AND e.audience="cat" AND e.published=1 AND e.archived=0 LIMIT 1');
         $stmt->execute([$slug]);
         $event=$stmt->fetch(PDO::FETCH_ASSOC);
         if(!$event){self::notFound();return;}
@@ -71,7 +71,7 @@ final class CampusController
         if(trim((string)($_POST['company_website']??''))!==''){self::render('campus/result',['title'=>'Iscrizione non valida','message'=>'Non è stato possibile elaborare la richiesta.']);return;}
 
         $pdo=Database::connection();
-        $audienceStmt=$pdo->prepare('SELECT audience FROM events WHERE slug=? AND published=1 AND cancelled=0 LIMIT 1');
+        $audienceStmt=$pdo->prepare('SELECT audience FROM events WHERE slug=? AND published=1 AND cancelled=0 AND archived=0 LIMIT 1');
         $audienceStmt->execute([$slug]);
         $audience=$audienceStmt->fetchColumn();
         if($audience===false){self::notFound();return;}
@@ -80,7 +80,7 @@ final class CampusController
 
         try{
             $pdo->beginTransaction();
-            $stmt=$pdo->prepare('SELECT * FROM events WHERE slug=? AND published=1 AND cancelled=0 LIMIT 1 FOR UPDATE');
+            $stmt=$pdo->prepare('SELECT * FROM events WHERE slug=? AND published=1 AND cancelled=0 AND archived=0 LIMIT 1 FOR UPDATE');
             $stmt->execute([$slug]);
             $event=$stmt->fetch(PDO::FETCH_ASSOC);
             if(!$event){$pdo->rollBack();self::notFound();return;}
