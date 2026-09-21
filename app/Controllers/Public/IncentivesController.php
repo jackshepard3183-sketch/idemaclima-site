@@ -29,7 +29,8 @@ final class IncentivesController
         try{
             $pdo=Database::connection();self::ensureTable();
             $stmt=$pdo->prepare('INSERT INTO incentive_requests(first_name,last_name,company,region,province,city,postal_code,phone,email,professional_role,privacy_accepted_at) VALUES(?,?,?,?,?,?,?,?,?,?,NOW())');
-            $company=Validator::naturalText($old['company']??'');
+            $company=Validator::companyName($old['company']??'');
+            $old['company']=$company;
             $stmt->execute([Validator::naturalText($old['first_name']),Validator::naturalText($old['last_name']),$company!==''?$company:null,Validator::naturalText($old['region']),Validator::provinceCode($old['province']),Validator::naturalText($old['city']),strtoupper((string)$old['postal_code']),$old['phone'],strtolower((string)$old['email']),Validator::naturalText($old['role'])]);
             IncentivesMailService::notify($old);
             header('Location:/idemaclima/detrazioni-e-incentivi/consulenza-energetica?sent=1');exit;
