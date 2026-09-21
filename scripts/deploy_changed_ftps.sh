@@ -101,6 +101,10 @@ for required_path in \
   public/index.php \
   app/Controllers/Admin/WarrantyController.php \
   app/Controllers/Admin/WarrantyImportController.php \
+  app/Controllers/Admin/ProductsController.php \
+  app/Views/admin/_layout_start.php \
+  app/Views/admin/products.php \
+  app/Views/admin/product_inventory.php \
   app/Views/admin/warranty_import.php \
   app/Views/admin/warranty_registrations.php \
   database/migrations/064_warranty_historical_import.sql \
