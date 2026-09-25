@@ -67,12 +67,22 @@ final class WarrantyService
 
     public static function modelIdFromCode(PDO $pdo, string $modelCode): int
     {
-        $modelCode = strtoupper(trim($modelCode));
+        $modelCode = self::warrantyModelCode($modelCode);
         if ($modelCode === '') return 0;
         foreach (self::eligibleModels($pdo) as $model) {
             if (strtoupper(trim((string)$model['code'])) === $modelCode) return (int)$model['id'];
         }
         return 0;
+    }
+
+    public static function warrantyModelCode(string $modelCode): string
+    {
+        $modelCode = strtoupper(trim($modelCode));
+        return match ($modelCode) {
+            '2MW-50-R32' => '2MWTZ-50-R32',
+            '3MW-70-R32' => '3MWTZ-70-R32',
+            default => $modelCode,
+        };
     }
 
     public static function registrationWithinLimit(array $rule, string $invoiceDate): bool

@@ -37,7 +37,7 @@ trait WarrantyCertificateActionsTrait
 
         if ((int)$registration['warranty_rule_id'] < 1 || (int)$registration['warranty_years'] < 1
             || (in_array(strtolower((string)$registration['product_type']), ['multi','multi split'], true)
-                && (string)$registration['outer_unit'] !== (string)$registration['code'])) {
+                && \App\Services\WarrantyService::warrantyModelCode((string)$registration['outer_unit']) !== (string)$registration['code'])) {
             http_response_code(422); exit('Verifica il modello esterno e la regola garanzia prima di generare il certificato.');
         }
 
@@ -237,4 +237,3 @@ trait WarrantyCertificateActionsTrait
     /* PDF rendering lives in WarrantyCertificatePdf so deployments do not depend
        on transferring one oversized controller file. */
 }
-

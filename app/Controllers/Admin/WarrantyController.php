@@ -24,7 +24,12 @@ final class WarrantyController
                 if (isset($_GET['import'])) { WarrantyImportController::index(); return; }
                 $sql = 'SELECT wr.id,wr.certificate_number,wr.import_review_warning,wr.customer_first_name,wr.customer_last_name,wr.email,wr.invoice_date,wr.status,wr.warranty_years,wr.created_at,
                        CASE WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code THEN d.outer_unit ELSE pm.code END code,
-                       CASE WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code THEN \'Multi Split da verificare\' ELSE p.name END product_name
+                       CASE WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code
+                           AND NOT ((d.outer_unit=\'2MW-50-R32\' AND pm.code=\'2MWTZ-50-R32\')
+                             OR (d.outer_unit=\'3MW-70-R32\' AND pm.code=\'3MWTZ-70-R32\'))
+                      THEN \'Multi Split da verificare\'
+                      WHEN d.outer_unit <> pm.code THEN CONCAT(\'Multi Split (equiv. \',pm.code,\')\')
+                      ELSE p.name END product_name
                 FROM warranty_registrations wr JOIN product_models pm ON pm.id=wr.model_id JOIN products p ON p.id=pm.product_id
                 LEFT JOIN warranty_registration_details d ON d.registration_id=wr.id
                 ORDER BY wr.created_at DESC,wr.id DESC';
@@ -41,7 +46,12 @@ final class WarrantyController
         self::ensureDetailsTable($pdo);
         self::ensureCertificateTable($pdo);
         $stmt = $pdo->prepare('SELECT wr.*,CASE WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code THEN d.outer_unit ELSE pm.code END code,
-            CASE WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code THEN \'Multi Split da verificare\' ELSE p.name END product_name
+            CASE WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code
+                           AND NOT ((d.outer_unit=\'2MW-50-R32\' AND pm.code=\'2MWTZ-50-R32\')
+                             OR (d.outer_unit=\'3MW-70-R32\' AND pm.code=\'3MWTZ-70-R32\'))
+                      THEN \'Multi Split da verificare\'
+                      WHEN d.outer_unit <> pm.code THEN CONCAT(\'Multi Split (equiv. \',pm.code,\')\')
+                      ELSE p.name END product_name
             FROM warranty_registrations wr JOIN product_models pm ON pm.id=wr.model_id JOIN products p ON p.id=pm.product_id
             LEFT JOIN warranty_registration_details d ON d.registration_id=wr.id WHERE wr.id=?');
         $stmt->execute([$id]);
@@ -138,7 +148,7 @@ final class WarrantyController
         $stmt->execute([$modelId]);
         $selectedModelCode = $stmt->fetchColumn();
         if ($selectedModelCode === false) { http_response_code(422); exit('Modello non valido.'); }
-        if ($productType === 'multi' && $outerUnit !== (string)$selectedModelCode) {
+        if ($productType === 'multi' && WarrantyService::warrantyModelCode($outerUnit) !== (string)$selectedModelCode) {
             http_response_code(422); exit('Seleziona il modello dell’unità esterna indicata nella pratica.');
         }
         $rule = WarrantyService::applicableRule($pdo, $modelId, $data['invoice_date']);
