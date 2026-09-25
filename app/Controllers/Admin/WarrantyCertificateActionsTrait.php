@@ -35,6 +35,12 @@ trait WarrantyCertificateActionsTrait
             http_response_code(422); exit('Approva la pratica prima di generare il certificato.');
         }
 
+        if ((int)$registration['warranty_rule_id'] < 1 || (int)$registration['warranty_years'] < 1
+            || (in_array(strtolower((string)$registration['product_type']), ['multi','multi split'], true)
+                && (string)$registration['outer_unit'] !== (string)$registration['code'])) {
+            http_response_code(422); exit('Verifica il modello esterno e la regola garanzia prima di generare il certificato.');
+        }
+
         $existing = $pdo->prepare('SELECT * FROM warranty_generated_certificates WHERE registration_id=?');
         $existing->execute([$id]);
         $existingCertificate = $existing->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -231,3 +237,4 @@ trait WarrantyCertificateActionsTrait
     /* PDF rendering lives in WarrantyCertificatePdf so deployments do not depend
        on transferring one oversized controller file. */
 }
+

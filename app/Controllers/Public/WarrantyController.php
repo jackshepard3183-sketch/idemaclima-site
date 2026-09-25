@@ -66,7 +66,12 @@ final class WarrantyController
         if ($productType === 'multi' && str_contains($outerUnit, 'MIT') && !str_contains($combination, 'ISPT')) $errors[] = 'La combinazione non è compatibile con l’unità esterna selezionata.';
         if ($productType === 'multi' && !str_contains($outerUnit, 'MIT') && !preg_match('/WTZ|WTMC/', $combination)) $errors[] = 'La combinazione non è compatibile con l’unità esterna selezionata.';
 
-        $modelId = WarrantyService::modelIdFromCombination($pdo, $combination);
+        $modelId = $productType === 'multi'
+            ? WarrantyService::modelIdFromCode($pdo, $outerUnit)
+            : WarrantyService::modelIdFromCombination($pdo, $combination);
+        if ($productType === 'multi' && $modelId < 1 && in_array($outerUnit, $allowedOuter, true)) {
+            $errors[] = 'Il modello esterno selezionato richiede una verifica prima della registrazione della garanzia.';
+        }
         $invoiceDate = (string)($old['invoice_date'] ?? '');
 
         $required = [

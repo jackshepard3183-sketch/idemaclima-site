@@ -36,7 +36,7 @@ final class WarrantyService
              JOIN products p ON p.id = pm.product_id AND p.published = 1
              JOIN product_categories c ON c.id = p.category_id AND c.published = 1
              JOIN warranty_rules wr ON wr.enabled = 1 AND (wr.model_id = pm.id OR (wr.model_id IS NULL AND wr.product_id = p.id))
-             WHERE pm.published = 1
+             WHERE (pm.published = 1 OR (pm.published = 0 AND pm.code = p.name AND c.name = \'Multi Split\'))
                AND (wr.valid_from IS NULL OR wr.valid_from <= CURRENT_DATE)
                AND (wr.valid_to IS NULL OR wr.valid_to >= CURRENT_DATE)
              ORDER BY p.name, pm.sort_order, pm.code'
@@ -61,6 +61,16 @@ final class WarrantyService
             if ($code === '') continue;
             $base = preg_replace('/-R32$/', '', $code) ?: $code;
             if (str_contains($combination, $code) || str_contains($combination, $base)) return (int)$model['id'];
+        }
+        return 0;
+    }
+
+    public static function modelIdFromCode(PDO $pdo, string $modelCode): int
+    {
+        $modelCode = strtoupper(trim($modelCode));
+        if ($modelCode === '') return 0;
+        foreach (self::eligibleModels($pdo) as $model) {
+            if (strtoupper(trim((string)$model['code'])) === $modelCode) return (int)$model['id'];
         }
         return 0;
     }

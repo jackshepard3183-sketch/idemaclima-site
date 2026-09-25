@@ -22,8 +22,11 @@ final class WarrantyController
     {
         AdminAuth::requireLogin();
                 if (isset($_GET['import'])) { WarrantyImportController::index(); return; }
-                $sql = 'SELECT wr.id,wr.certificate_number,wr.import_review_warning,wr.customer_first_name,wr.customer_last_name,wr.email,wr.invoice_date,wr.status,wr.warranty_years,wr.created_at,pm.code,p.name product_name
+                $sql = 'SELECT wr.id,wr.certificate_number,wr.import_review_warning,wr.customer_first_name,wr.customer_last_name,wr.email,wr.invoice_date,wr.status,wr.warranty_years,wr.created_at,
+                       CASE WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code THEN d.outer_unit ELSE pm.code END code,
+                       CASE WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code THEN \'Multi Split da verificare\' ELSE p.name END product_name
                 FROM warranty_registrations wr JOIN product_models pm ON pm.id=wr.model_id JOIN products p ON p.id=pm.product_id
+                LEFT JOIN warranty_registration_details d ON d.registration_id=wr.id
                 ORDER BY wr.created_at DESC,wr.id DESC';
         $registrations = Database::connection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $title = 'Registrazioni garanzia'; $user = AdminAuth::user(); $csrf = Security::csrfToken();
@@ -37,7 +40,10 @@ final class WarrantyController
         $pdo = Database::connection();
         self::ensureDetailsTable($pdo);
         self::ensureCertificateTable($pdo);
-        $stmt = $pdo->prepare('SELECT wr.*,pm.code,p.name product_name FROM warranty_registrations wr JOIN product_models pm ON pm.id=wr.model_id JOIN products p ON p.id=pm.product_id WHERE wr.id=?');
+        $stmt = $pdo->prepare('SELECT wr.*,CASE WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code THEN d.outer_unit ELSE pm.code END code,
+            CASE WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code THEN \'Multi Split da verificare\' ELSE p.name END product_name
+            FROM warranty_registrations wr JOIN product_models pm ON pm.id=wr.model_id JOIN products p ON p.id=pm.product_id
+            LEFT JOIN warranty_registration_details d ON d.registration_id=wr.id WHERE wr.id=?');
         $stmt->execute([$id]);
         $registration = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$registration) { http_response_code(404); exit('Registrazione non trovata'); }
@@ -49,7 +55,7 @@ final class WarrantyController
         $stmt->execute([$id]); $certificate = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
         $stmt = $pdo->prepare('SELECT action,metadata,created_at FROM audit_log WHERE entity_type="warranty_registration" AND entity_id=? ORDER BY created_at DESC,id DESC LIMIT 100');
         $stmt->execute([$id]); $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $modelRows = $pdo->query('SELECT pm.id,pm.code,p.name product_name FROM product_models pm JOIN products p ON p.id=pm.product_id WHERE pm.published=1 ORDER BY p.name,pm.code')->fetchAll(PDO::FETCH_ASSOC);
+        $modelRows = $pdo->query('SELECT pm.id,pm.code,p.name product_name FROM product_models pm JOIN products p ON p.id=pm.product_id JOIN product_categories c ON c.id=p.category_id WHERE pm.published=1 OR (pm.published=0 AND pm.code=p.name AND c.name=\'Multi Split\' AND EXISTS (SELECT 1 FROM warranty_rules r WHERE r.product_id=p.id AND r.enabled=1)) ORDER BY p.name,pm.code')->fetchAll(PDO::FETCH_ASSOC);
         $modelsByKey = [];
         foreach ($modelRows as $model) {
             $key = strtoupper(trim((string)$model['product_name'])) . "\0" . strtoupper(trim((string)$model['code']));
@@ -74,10 +80,15 @@ final class WarrantyController
         if (mb_strlen($notes) > 10000) { http_response_code(422); exit('Note troppo lunghe'); }
 
         $pdo = Database::connection();
-        $exists = $pdo->prepare('SELECT status FROM warranty_registrations WHERE id=? LIMIT 1');
+        $exists = $pdo->prepare('SELECT status,warranty_rule_id,warranty_years FROM warranty_registrations WHERE id=? LIMIT 1');
         $exists->execute([$id]);
-        $previous = $exists->fetchColumn();
-        if ($previous === false) { http_response_code(404); exit('Registrazione non trovata'); }
+        $current = $exists->fetch(PDO::FETCH_ASSOC);
+        if (!$current) { http_response_code(404); exit('Registrazione non trovata'); }
+        $previous = (string)$current['status'];
+        if (in_array($status, ['approved','issued'], true)
+            && ((int)$current['warranty_rule_id'] < 1 || (int)$current['warranty_years'] < 1)) {
+            http_response_code(422); exit('Verifica il modello principale e la regola garanzia prima di approvare la pratica.');
+        }
 
         if ($status === 'issued') {
             self::ensureCertificateTable($pdo);
@@ -122,10 +133,16 @@ final class WarrantyController
         $stmt = $pdo->prepare('SELECT status FROM warranty_registrations WHERE id=?');
         $stmt->execute([$id]); $currentStatus = $stmt->fetchColumn();
         if ($currentStatus === false) { http_response_code(404); exit('Registrazione non trovata'); }
-        $stmt = $pdo->prepare('SELECT code FROM product_models WHERE id=? AND published=1');
+        $stmt = $pdo->prepare('SELECT pm.code FROM product_models pm JOIN products p ON p.id=pm.product_id JOIN product_categories c ON c.id=p.category_id
+            WHERE pm.id=? AND (pm.published=1 OR (pm.published=0 AND pm.code=p.name AND c.name=\'Multi Split\'))');
         $stmt->execute([$modelId]);
         $selectedModelCode = $stmt->fetchColumn();
         if ($selectedModelCode === false) { http_response_code(422); exit('Modello non valido.'); }
+        if ($productType === 'multi' && $outerUnit !== (string)$selectedModelCode) {
+            http_response_code(422); exit('Seleziona il modello dell’unità esterna indicata nella pratica.');
+        }
+        $rule = WarrantyService::applicableRule($pdo, $modelId, $data['invoice_date']);
+        if (!$rule) { http_response_code(422); exit('Regola garanzia non disponibile per il modello e la data fattura.'); }
         if ($productType === 'mono' && $outerUnit === '') $outerUnit = (string)$selectedModelCode;
         $stmt = $pdo->prepare('SELECT file_path FROM warranty_generated_certificates WHERE registration_id=?');
         $stmt->execute([$id]); $certificatePath = $stmt->fetchColumn() ?: null;
@@ -147,8 +164,9 @@ final class WarrantyController
         $pdo->beginTransaction();
         try {
             $newStatus = $currentStatus === 'issued' ? 'approved' : $currentStatus;
-            $stmt = $pdo->prepare('UPDATE warranty_registrations SET model_id=?,customer_first_name=?,customer_last_name=?,fiscal_code=?,email=?,phone=?,address=?,postal_code=?,city=?,province=?,region=?,invoice_date=?,status=? WHERE id=?');
-            $stmt->execute([$modelId,Validator::naturalText($data['customer_first_name']),Validator::naturalText($data['customer_last_name']),strtoupper($data['fiscal_code']),strtolower($data['email']),$phone ?: null,Validator::naturalText($data['address']),strtoupper($data['postal_code']),Validator::naturalText($data['city']),Validator::provinceCode($data['province']),Validator::naturalText($data['region']),$data['invoice_date'],$newStatus,$id]);
+            $stmt = $pdo->prepare('UPDATE warranty_registrations SET model_id=?,warranty_rule_id=?,warranty_years=?,extension_formula=?,registration_days_limit=?,invoice_required_snapshot=?,fgas_required_snapshot=?,customer_first_name=?,customer_last_name=?,fiscal_code=?,email=?,phone=?,address=?,postal_code=?,city=?,province=?,region=?,invoice_date=?,status=? WHERE id=?');
+            $stmt->execute([$modelId,(int)$rule['id'],(int)$rule['warranty_years'],$rule['extension_formula'],$rule['registration_days_limit'],(int)$rule['invoice_required'],(int)$rule['fgas_required'],Validator::naturalText($data['customer_first_name']),Validator::naturalText($data['customer_last_name']),strtoupper($data['fiscal_code']),strtolower($data['email']),$phone ?: null,Validator::naturalText($data['address']),strtoupper($data['postal_code']),Validator::naturalText($data['city']),Validator::provinceCode($data['province']),Validator::naturalText($data['region']),$data['invoice_date'],$newStatus,$id]);
+            $pdo->prepare('UPDATE warranty_units SET model_id=? WHERE registration_id=? AND unit_type=\'outdoor\'')->execute([$modelId,$id]);
             $updateSerial = $pdo->prepare('UPDATE warranty_units SET serial_number=? WHERE id=? AND registration_id=?');
             foreach ($serials as $unitId => $serial) {
                 $serial = strtoupper(trim((string)$serial));

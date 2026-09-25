@@ -88,8 +88,19 @@ final class WarrantyImportController
                 $check = $pdo->prepare('SELECT id FROM warranty_registrations WHERE source_wpforms_id=? LIMIT 1');
                 $check->execute([$sourceId]);
                 if ($check->fetchColumn()) { $skipped++; continue; }
-                $modelId = WarrantyService::modelIdFromCombination($pdo, (string)($item['combination'] ?? ''));
-                if ($modelId < 1) throw new RuntimeException('Modello non trovato');
+                $productType = strtolower(trim((string)($item['product_type'] ?? '')));
+                $isMulti = in_array($productType, ['multi', 'multi split'], true);
+                $modelCode = strtoupper(trim((string)($item['model_code'] ?? '')));
+                $combination = strtoupper(trim((string)($item['combination'] ?? '')));
+                if ($isMulti && str_starts_with($combination, $modelCode . ' + ')) {
+                    $combination = trim(substr($combination, strlen($modelCode) + 3));
+                }
+                $modelId = $isMulti
+                    ? WarrantyService::modelIdFromCode($pdo, $modelCode)
+                    : WarrantyService::modelIdFromCombination($pdo, $combination);
+                if ($modelId < 1) throw new RuntimeException('Modello principale non trovato: ' . $modelCode);
+                $rule = WarrantyService::applicableRule($pdo, $modelId, (string)($item['invoice_date'] ?? ''));
+                if (!$rule) throw new RuntimeException('Regola garanzia non trovata per ' . $modelCode);
                 $allowIncomplete = (string)($item['import_status'] ?? '') === 'IMPORTABILE CON VERIFICA'
                     && trim((string)($item['review_warning'] ?? '')) !== '';
                 $invoicePath = self::copyDocument((string)($item['invoice_url'] ?? ''), 'invoice', $sourceId, $allowIncomplete);
@@ -99,6 +110,7 @@ final class WarrantyImportController
                     'source_wpforms_id'=>$sourceId,
                     'certificate_number'=>self::newCode($pdo),
                     'model_id'=>$modelId,
+                    'warranty_rule_id'=>(int)$rule['id'],
                     'customer_first_name'=>self::normalizeName((string)($item['first_name'] ?? '')),
                     'customer_last_name'=>self::normalizeName((string)($item['last_name'] ?? '')),
                     'fiscal_code'=>strtoupper(trim((string)($item['fiscal_code'] ?? ''))),
@@ -114,12 +126,13 @@ final class WarrantyImportController
                     'fgas_file'=>$fgasPath,
                     'privacy_accepted_at'=>$sourceCreatedAt,
                     'status'=>'pending',
-                    'warranty_years'=>10,
-                    'extension_formula'=>null,
+                    'warranty_years'=>(int)$rule['warranty_years'],
+                    'extension_formula'=>$rule['extension_formula'],
+                    'registration_days_limit'=>$rule['registration_days_limit'],
                     'admin_notes'=>null,
                     'reviewed_at'=>null,
-                    'invoice_required_snapshot'=>1,
-                    'fgas_required_snapshot'=>1,
+                    'invoice_required_snapshot'=>(int)$rule['invoice_required'],
+                    'fgas_required_snapshot'=>(int)$rule['fgas_required'],
                     'import_review_warning'=>trim((string)($item['review_warning'] ?? '')) ?: null,
                     'imported_at'=>date('Y-m-d H:i:s'),
                     'created_at'=>$sourceCreatedAt,
@@ -137,7 +150,7 @@ final class WarrantyImportController
                     if ($serial !== '') $unit->execute([$registrationId,null,'indoor',$serial]);
                 }
                 $pdo->prepare('INSERT INTO warranty_registration_details (registration_id,product_type,outer_unit,combination) VALUES (?,?,?,?)')
-                    ->execute([$registrationId,(string)$item['product_type'],strtoupper((string)$item['model_code']),strtoupper((string)$item['combination'])]);
+                    ->execute([$registrationId,$isMulti ? 'multi' : 'mono',$modelCode,$combination]);
                 $pdo->commit();
                 $done++;
             } catch (Throwable $e) {
