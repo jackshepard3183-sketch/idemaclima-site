@@ -14,6 +14,7 @@ usort($rows,static function(array $a,array $b)use($sort,$dir):int{
 $sortHref=static function(string $key)use($sort,$dir,$status):string{
     return '?'.http_build_query(array_filter([
         'status'=>(string)($status??''),
+        'trash'=>!empty($trashed)?'1':'',
         'sort'=>$key,
         'dir'=>$sort===$key&&$dir==='asc'?'desc':'asc',
     ],static fn($value):bool=>$value!==''));
@@ -21,10 +22,11 @@ $sortHref=static function(string $key)use($sort,$dir,$status):string{
 $sortMark=static fn(string $key):string=>$sort===$key?($dir==='asc'?' ▲':' ▼'):' ↕';
 ?>
 <style>
-.contacts-table{min-width:820px}.contacts-table th{white-space:nowrap}.contacts-table .sort-link{display:inline-flex;align-items:center;gap:4px;color:inherit;text-decoration:none}.contacts-table .contact-datetime span{display:block;white-space:nowrap}.contacts-table .contact-subject{width:220px;max-width:220px;line-height:1.35;overflow-wrap:anywhere}.contacts-table .contact-action,.contacts-table .contact-action a{white-space:nowrap}
+.contacts-table{min-width:820px}.contacts-table th{white-space:nowrap}.contacts-table .sort-link{display:inline-flex;align-items:center;gap:4px;color:inherit;text-decoration:none}.contacts-table .contact-datetime span{display:block;white-space:nowrap}.contacts-table .contact-subject{width:220px;max-width:220px;line-height:1.35;overflow-wrap:anywhere}.contacts-table .contact-action{white-space:nowrap}.contact-actions{display:flex;align-items:center;gap:10px}.contact-actions form{margin:0}.contact-delete{color:#991b1b;border-color:#fecaca;background:#fff1f2}.contact-delete:hover{background:#ffe4e6}
 </style>
-<div class="toolbar"><div><h1>Contatti</h1><p class="muted">Richieste inviate dal modulo pubblico.</p></div><a class="btnlink" href="/idemaclima/admin/contacts/import">Importa da WPForms</a></div>
-<form method="get" class="panel" style="margin-bottom:18px"><div class="inlineform"><label>Stato<select name="status"><option value="">Tutti</option><?php foreach(['new'=>'Nuova','in_progress'=>'In lavorazione','closed'=>'Chiusa','spam'=>'Spam'] as $value=>$label):?><option value="<?=$value?>" <?=($status??'')===$value?'selected':''?>><?=$label?></option><?php endforeach;?></select></label><input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>"><input type="hidden" name="dir" value="<?= htmlspecialchars($dir) ?>"><button class="btn" type="submit">Filtra</button></div></form>
+<div class="toolbar"><div><h1><?= !empty($trashed)?'Contatti — Cestino':'Contatti' ?></h1><p class="muted"><?= !empty($trashed)?'Richieste eliminate, disponibili per il ripristino.':'Richieste inviate dal modulo pubblico.' ?></p></div><a class="btnlink" href="/idemaclima/admin/contacts/import">Importa da WPForms</a></div>
+<p><a class="btnlink" href="/idemaclima/admin/contacts?trash=<?= !empty($trashed)?'0':'1' ?>" data-reset-filters><?= !empty($trashed)?'Torna ai contatti':'Cestino' ?></a></p>
+<form method="get" class="panel" style="margin-bottom:18px"><input type="hidden" name="trash" value="<?= !empty($trashed)?'1':'0' ?>"><div class="inlineform"><label>Stato<select name="status"><option value="">Tutti</option><?php foreach(['new'=>'Nuova','in_progress'=>'In lavorazione','closed'=>'Chiusa','spam'=>'Spam'] as $value=>$label):?><option value="<?=$value?>" <?=($status??'')===$value?'selected':''?>><?=$label?></option><?php endforeach;?></select></label><input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>"><input type="hidden" name="dir" value="<?= htmlspecialchars($dir) ?>"><button class="btn" type="submit">Filtra</button></div></form>
 <div class="table-wrap"><table class="contacts-table"><thead><tr>
 <th><a class="sort-link" href="<?= htmlspecialchars($sortHref('created_at')) ?>">Data e<br>ora<?= $sortMark('created_at') ?></a></th>
 <th><a class="sort-link" href="<?= htmlspecialchars($sortHref('name')) ?>">Nome<?= $sortMark('name') ?></a></th>
@@ -35,6 +37,11 @@ $sortMark=static fn(string $key):string=>$sort===$key?($dir==='asc'?' ▲':' ▼
 <td class="contact-datetime"><span><?= htmlspecialchars($createdTs?date('d-m-Y',$createdTs):$created) ?></span><span><?= $createdTs?htmlspecialchars(date('H:i',$createdTs)):'' ?></span></td>
 <td><?= htmlspecialchars($r['first_name'].' '.$r['last_name']) ?></td><td><?= htmlspecialchars($r['email']) ?></td>
 <td class="contact-subject"><?= htmlspecialchars($r['subject']) ?><?php if(!empty($r['import_review_warning'])):?><br><span class="badge" style="white-space:nowrap">Da verificare</span><?php endif;?></td>
-<td><span class="badge" style="white-space:nowrap"><?= htmlspecialchars($r['status']) ?></span></td><td class="contact-action"><a href="/idemaclima/admin/contacts/view?id=<?= (int)$r['id'] ?>">Apri</a></td></tr><?php endforeach; ?><?php if(!$rows):?><tr><td colspan="6" class="empty">Nessuna richiesta.</td></tr><?php endif;?>
+<td><span class="badge" style="white-space:nowrap"><?= htmlspecialchars($r['status']) ?></span></td><td class="contact-action"><div class="contact-actions"><a href="/idemaclima/admin/contacts/view?id=<?= (int)$r['id'] ?>">Apri</a>
+<form method="post" action="/idemaclima/admin/contacts/<?= !empty($trashed)?'restore':'delete' ?>"<?= empty($trashed)?' data-confirm="Spostare questa richiesta nel cestino? Potrai ripristinarla."':'' ?>>
+<input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf,ENT_QUOTES,'UTF-8') ?>"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+<button type="submit" class="btn btn-secondary<?= empty($trashed)?' contact-delete':'' ?>" aria-label="<?= !empty($trashed)?'Ripristina':'Elimina' ?> richiesta di <?= htmlspecialchars($r['first_name'].' '.$r['last_name'],ENT_QUOTES,'UTF-8') ?>"><?= !empty($trashed)?'Ripristina':'Elimina' ?></button>
+</form></div></td></tr><?php endforeach; ?><?php if(!$rows):?><tr><td colspan="6" class="empty">Nessuna richiesta.</td></tr><?php endif;?>
 </tbody></table></div>
 <?php require __DIR__.'/_layout_end.php'; ?>
+

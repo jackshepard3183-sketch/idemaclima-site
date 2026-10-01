@@ -18,7 +18,7 @@ final class DashboardController
             try { return (int) $pdo->query($sql)->fetchColumn(); } catch (\Throwable) { return 0; }
         };
         $counts = [
-            'contacts_new' => $count("SELECT COUNT(*) FROM contact_submissions WHERE status='new'"),
+            'contacts_new' => $count("SELECT COUNT(*) FROM contact_submissions WHERE status='new' AND deleted_at IS NULL"),
             'warranties_new' => $count("SELECT COUNT(*) FROM warranty_registrations WHERE status='pending'"),
             'campus_new' => $count("SELECT COUNT(*) FROM event_registrations WHERE status IN ('registered','waitlist')"),
             'incentives_new' => $count("SELECT COUNT(*) FROM incentive_requests WHERE status='new'"),

@@ -215,6 +215,8 @@ $router->get('/admin/contacts/import', static fn() => WpformsRequestImportContro
 $router->post('/admin/contacts/import/run', static fn() => WpformsRequestImportController::run('contacts'));
 $router->get('/admin/contacts/view', [AdminContactsAnalyticsController::class, 'contact']);
 $router->post('/admin/contacts/update', [AdminContactsAnalyticsController::class, 'updateContact']);
+$router->post('/admin/contacts/delete', [AdminContactsAnalyticsController::class, 'deleteContact']);
+$router->post('/admin/contacts/restore', [AdminContactsAnalyticsController::class, 'restoreContact']);
 $router->get('/admin/contacts/file/{id}', [AdminContactsAnalyticsController::class, 'attachment']);
 $router->get('/admin/analytics', [AdminContactsAnalyticsController::class, 'analytics']);
 $router->post('/admin/analytics/save', [AdminContactsAnalyticsController::class, 'saveAnalytics']);

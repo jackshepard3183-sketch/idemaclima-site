@@ -29,7 +29,7 @@ final class WarrantyController
                            AND NOT ((d.outer_unit=\'2MW-50-R32\' AND pm.code=\'2MWTZ-50-R32\')
                              OR (d.outer_unit=\'3MW-70-R32\' AND pm.code=\'3MWTZ-70-R32\'))
                       THEN \'Multi Split da verificare\'
-                      WHEN d.outer_unit <> pm.code THEN CONCAT(\'Multi Split (equiv. \',pm.code,\')\')
+                      WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code THEN CONCAT(\'Multi Split (equiv. \',pm.code,\')\')
                       ELSE p.name END product_name
                 FROM warranty_registrations wr JOIN product_models pm ON pm.id=wr.model_id JOIN products p ON p.id=pm.product_id
                 LEFT JOIN warranty_registration_details d ON d.registration_id=wr.id
@@ -51,7 +51,7 @@ final class WarrantyController
                            AND NOT ((d.outer_unit=\'2MW-50-R32\' AND pm.code=\'2MWTZ-50-R32\')
                              OR (d.outer_unit=\'3MW-70-R32\' AND pm.code=\'3MWTZ-70-R32\'))
                       THEN \'Multi Split da verificare\'
-                      WHEN d.outer_unit <> pm.code THEN CONCAT(\'Multi Split (equiv. \',pm.code,\')\')
+                      WHEN LOWER(d.product_type) IN (\'multi\',\'multi split\') AND d.outer_unit <> pm.code THEN CONCAT(\'Multi Split (equiv. \',pm.code,\')\')
                       ELSE p.name END product_name
             FROM warranty_registrations wr JOIN product_models pm ON pm.id=wr.model_id JOIN products p ON p.id=pm.product_id
             LEFT JOIN warranty_registration_details d ON d.registration_id=wr.id WHERE wr.id=?');
@@ -308,3 +308,4 @@ final class WarrantyController
     }
 
 }
+

@@ -6,7 +6,15 @@
 <p><?= htmlspecialchars($row['city']) ?> (<?= htmlspecialchars($row['province']) ?>) · CAP <?= htmlspecialchars((string)($row['postal_code']??'')) ?> · <?= htmlspecialchars($row['region']) ?></p>
 <h3><?= htmlspecialchars($row['subject']) ?></h3><p style="white-space:pre-wrap"><?= htmlspecialchars($row['message']) ?></p>
 <?php if(!empty($row['attachment_path'])): ?><p><a class="btnlink" href="/idemaclima/admin/contacts/file/<?= (int)$row['id'] ?>">Scarica allegato</a> <span class="muted"><?= htmlspecialchars((string)$row['attachment_name']) ?></span></p><?php endif; ?>
+<?php if(empty($row['deleted_at'])): ?>
 <form method="post" action="/idemaclima/admin/contacts/update"><input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>"><input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
 <div class="formgrid"><label>Stato<select name="status"><?php foreach(['new'=>'Nuovo','in_progress'=>'In lavorazione','closed'=>'Chiuso','spam'=>'Spam'] as $k=>$v): ?><option value="<?= $k ?>" <?= $row['status']===$k?'selected':'' ?>><?= $v ?></option><?php endforeach; ?></select></label><label class="full">Note amministrative<textarea name="admin_notes" rows="5"><?= htmlspecialchars((string)($row['admin_notes']??'')) ?></textarea></label></div><p><button class="btn" type="submit">Salva</button></p></form>
+<?php endif; ?>
+<form method="post" action="/idemaclima/admin/contacts/<?= empty($row['deleted_at'])?'delete':'restore' ?>"<?= empty($row['deleted_at'])?' data-confirm="Spostare questa richiesta nel cestino? Potrai ripristinarla."':'' ?> style="margin-top:20px">
+<input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf,ENT_QUOTES,'UTF-8') ?>"><input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+<?php if(!empty($row['deleted_at'])): ?><p class="muted">Questa richiesta è nel cestino.</p><?php endif; ?>
+<button class="btn btn-secondary" type="submit"><?= empty($row['deleted_at'])?'Elimina':'Ripristina' ?></button>
+</form>
 </div>
 <?php require __DIR__.'/_layout_end.php'; ?>
+

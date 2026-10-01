@@ -20,9 +20,10 @@ final class ContactsAnalyticsController
     public static function contacts(): void
     {
         AdminAuth::requireLogin();
-        $status=(string)($_GET['status']??'');$allowed=['new','in_progress','closed','spam'];$pdo=Database::connection();self::backfillContactLocations($pdo);
-        if(in_array($status,$allowed,true)){$s=$pdo->prepare('SELECT * FROM contact_submissions WHERE status=? ORDER BY created_at DESC');$s->execute([$status]);$rows=$s->fetchAll(PDO::FETCH_ASSOC);}else{$rows=$pdo->query('SELECT * FROM contact_submissions ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);}
-        self::view('contacts',['title'=>'Contatti','rows'=>$rows,'status'=>$status]);
+        $status=(string)($_GET['status']??'');$trashed=($_GET['trash']??'')==='1';$allowed=['new','in_progress','closed','spam'];$pdo=Database::connection();self::backfillContactLocations($pdo);
+        $where=$trashed?'deleted_at IS NOT NULL':'deleted_at IS NULL';
+        if(in_array($status,$allowed,true)){$s=$pdo->prepare('SELECT * FROM contact_submissions WHERE '.$where.' AND status=? ORDER BY created_at DESC');$s->execute([$status]);$rows=$s->fetchAll(PDO::FETCH_ASSOC);}else{$rows=$pdo->query('SELECT * FROM contact_submissions WHERE '.$where.' ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);}
+        self::view('contacts',['title'=>'Contatti','rows'=>$rows,'status'=>$status,'trashed'=>$trashed]);
     }
 
 
@@ -36,13 +37,42 @@ final class ContactsAnalyticsController
     {
         AdminAuth::requireLogin();self::csrf();$id=(int)($_POST['id']??0);$status=in_array($_POST['status']??'', ['new','in_progress','closed','spam'],true)?$_POST['status']:'new';$notes=trim((string)($_POST['admin_notes']??''));
         if(mb_strlen($notes)>10000){http_response_code(422);exit('Note troppo lunghe');}
-        $pdo=Database::connection();$check=$pdo->prepare('SELECT status FROM contact_submissions WHERE id=?');$check->execute([$id]);$before=$check->fetchColumn();if($before===false){http_response_code(404);exit('Richiesta non trovata');}
+        $pdo=Database::connection();$check=$pdo->prepare('SELECT status FROM contact_submissions WHERE id=? AND deleted_at IS NULL');$check->execute([$id]);$before=$check->fetchColumn();if($before===false){http_response_code(404);exit('Richiesta non trovata');}
         $reviewedAt=$status==='new'?null:date('Y-m-d H:i:s');
         $s=$pdo->prepare('UPDATE contact_submissions SET status=?,admin_notes=?,reviewed_at=? WHERE id=?');$s->execute([$status,$notes?:null,$reviewedAt,$id]);
         Audit::log('contact.update','contact_submission',$id,['status_from'=>$before,'status_to'=>$status]);
         header('Location:/idemaclima/admin/contacts/view?id='.$id);exit;
     }
 
+
+    public static function deleteContact(): void
+    {
+        self::setContactTrashed(true);
+    }
+
+    public static function restoreContact(): void
+    {
+        self::setContactTrashed(false);
+    }
+
+    private static function setContactTrashed(bool $trashed): void
+    {
+        AdminAuth::requireLogin();
+        self::csrf();
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id < 1) { http_response_code(422); exit('Richiesta non valida'); }
+        $pdo = Database::connection();
+        $sql = $trashed
+            ? 'UPDATE contact_submissions SET deleted_at=? WHERE id=? AND deleted_at IS NULL'
+            : 'UPDATE contact_submissions SET deleted_at=? WHERE id=? AND deleted_at IS NOT NULL';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$trashed ? date('Y-m-d H:i:s') : null, $id]);
+        if ($stmt->rowCount() > 0) {
+            Audit::log($trashed ? 'contact.delete' : 'contact.restore', 'contact_submission', $id);
+        }
+        header('Location: /idemaclima/admin/contacts' . ($trashed ? '' : '?trash=1'));
+        exit;
+    }
 
     public static function attachment(string $id): void
     {
@@ -94,7 +124,7 @@ final class ContactsAnalyticsController
         $locations=json_decode((string)file_get_contents($path),true);
         if(!is_array($locations))return;
         $normalize=static fn(string $value):string=>mb_strtoupper(trim((string)preg_replace('/\s+/u',' ',$value)),'UTF-8');
-        $rows=$pdo->query("SELECT id,region,province,city,postal_code FROM contact_submissions WHERE COALESCE(region,'')='' OR COALESCE(province,'')='' OR COALESCE(city,'')='' OR COALESCE(postal_code,'')=''")->fetchAll(PDO::FETCH_ASSOC);
+        $rows=$pdo->query("SELECT id,region,province,city,postal_code FROM contact_submissions WHERE deleted_at IS NULL AND (COALESCE(region,'')='' OR COALESCE(province,'')='' OR COALESCE(city,'')='' OR COALESCE(postal_code,'')='')")->fetchAll(PDO::FETCH_ASSOC);
         $update=$pdo->prepare('UPDATE contact_submissions SET region=?,province=?,city=?,postal_code=? WHERE id=?');
         foreach($rows as $row){
             $wantedRegion=$normalize((string)($row['region']??''));
@@ -141,3 +171,4 @@ final class ContactsAnalyticsController
     private static function view(string $file,array $data):void{extract($data,EXTR_SKIP);$user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/'.$file.'.php';}
     private static function csrf():void{if(!Security::verifyCsrf($_POST['_csrf']??null)){http_response_code(419);exit('Sessione non valida');}}
 }
+
