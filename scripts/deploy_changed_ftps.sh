@@ -64,7 +64,7 @@ for attempt in range(1, 4):
     finally:
         ftp.close()
 else:
-    sys.exit("FTPS integrity check failed")
+    sys.exit("Integrity mismatch: " + remote)
 FTPS
 }
 
