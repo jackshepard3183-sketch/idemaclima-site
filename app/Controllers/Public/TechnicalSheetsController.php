@@ -21,7 +21,8 @@ final class TechnicalSheetsController
              LEFT JOIN product_categories child ON child.parent_id = c.id AND child.published = 1
              LEFT JOIN product_category_links pcl ON pcl.category_id = child.id
              LEFT JOIN products p ON p.published = 1 AND (p.category_id = child.id OR p.id = pcl.product_id)
-             LEFT JOIN document_links dl ON dl.product_id = p.id
+             LEFT JOIN product_models m ON m.product_id = p.id AND m.published = 1
+             LEFT JOIN document_links dl ON dl.product_id = p.id OR dl.model_id = m.id
              LEFT JOIN documents d ON d.id = dl.document_id AND d.published = 1
              WHERE c.parent_id IS NULL AND c.published = 1
              GROUP BY c.id
@@ -52,7 +53,7 @@ final class TechnicalSheetsController
                  JOIN product_categories c ON c.id = p.category_id
                  LEFT JOIN product_categories parent ON parent.id = c.parent_id
                  LEFT JOIN product_models m ON m.product_id = p.id AND m.published = 1
-                 LEFT JOIN document_links dl ON dl.product_id = p.id
+                 LEFT JOIN document_links dl ON dl.product_id = p.id OR dl.model_id = m.id
                  LEFT JOIN documents d ON d.id = dl.document_id AND d.published = 1
                  WHERE p.published = 1
                    AND (p.name LIKE ? OR p.description LIKE ? OR m.code LIKE ? OR d.title LIKE ? OR d.filename LIKE ?)
@@ -121,17 +122,17 @@ final class TechnicalSheetsController
 
         $stmt = $pdo->prepare(
             'SELECT p.id, p.name, p.slug, p.description, p.product_role, p.refrigerant,
-                    p.status, p.image_path, p.sort_order,
+                    p.status, p.image_path, p.badges_text, p.sort_order,
                     COUNT(DISTINCT m.id) AS model_count,
                     COUNT(DISTINCT d.id) AS document_count
              FROM products p
              LEFT JOIN product_category_links pcl ON pcl.product_id = p.id AND pcl.category_id = ?
              LEFT JOIN product_models m ON m.product_id = p.id AND m.published = 1
-             LEFT JOIN document_links dl ON dl.product_id = p.id
+             LEFT JOIN document_links dl ON dl.product_id = p.id OR dl.model_id = m.id
              LEFT JOIN documents d ON d.id = dl.document_id AND d.published = 1
              WHERE p.published = 1 AND (p.category_id = ? OR pcl.category_id IS NOT NULL)
              GROUP BY p.id
-             ORDER BY (p.status = "active") DESC, p.sort_order, p.name'
+             ORDER BY p.sort_order, p.name'
         );
         $stmt->execute([(int)$family['id'], (int)$family['id']]);
         $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -178,7 +179,7 @@ final class TechnicalSheetsController
         $stmt->execute([(int)$product['id']]);
         $secondaryCategories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $stmt = $pdo->prepare('SELECT id, code, name, cooling_kw, seer, seer_class, heating_kw, scop, scop_class, indoor_unit_code, outdoor_unit_code, sort_order FROM product_models WHERE product_id = ? AND published = 1 ORDER BY sort_order, code');
+        $stmt = $pdo->prepare('SELECT id, code, name, cooling_kw, seer, seer_class, heating_kw, scop, scop_class, indoor_unit_code, outdoor_unit_code, status, sort_order FROM product_models WHERE product_id = ? AND published = 1 ORDER BY sort_order, code');
         $stmt->execute([(int)$product['id']]);
         $models = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -196,14 +197,25 @@ final class TechnicalSheetsController
 
         $stmt = $pdo->prepare(
             'SELECT d.id, d.title, d.filename, d.file_path, d.revision, d.document_year,
-                    dt.name AS type_name, dt.slug AS type_slug, dl.model_id
-             FROM document_links dl
-             JOIN documents d ON d.id = dl.document_id AND d.published = 1
+                    dt.name AS type_name, dt.slug AS type_slug, MIN(links.model_id) AS model_id,
+                    d.sort_order
+             FROM (
+                 SELECT dl.document_id, dl.model_id
+                 FROM document_links dl
+                 WHERE dl.product_id = ?
+                 UNION
+                 SELECT dl.document_id, dl.model_id
+                 FROM document_links dl
+                 JOIN product_models linked_model ON linked_model.id = dl.model_id
+                 WHERE linked_model.product_id = ? AND linked_model.published = 1
+             ) links
+             JOIN documents d ON d.id = links.document_id AND d.published = 1
              JOIN document_types dt ON dt.id = d.document_type_id AND dt.active = 1
-             WHERE dl.product_id = ?
+             GROUP BY d.id, d.title, d.filename, d.file_path, d.revision, d.document_year,
+                      dt.name, dt.slug, d.sort_order, dt.sort_order
              ORDER BY dt.sort_order, dt.name, d.sort_order, d.title'
         );
-        $stmt->execute([(int)$product['id']]);
+        $stmt->execute([(int)$product['id'], (int)$product['id']]);
         $documents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $grouped = [];
@@ -226,7 +238,7 @@ final class TechnicalSheetsController
 
     public static function hasDedicatedPage(array $product): bool
     {
-        static $names=['ISPT-R32','ISAX-R32','ISZZ-R32','WTZ-R32','WTMC-R32','WTMC-R32 COLOR'];
+        static $names=['ISPT-R32','ISAX-R32','ISZZ-R32','WTZ-R32','WTMC-R32','WTMC-BLK-R32'];
         return ($product['category_slug']??'')==='linea-residenziale-r32'
             && ($product['family_name']??'')==='Mono Split'
             && in_array((string)($product['name']??''),$names,true);
@@ -238,13 +250,26 @@ final class TechnicalSheetsController
         $ids=array_values(array_unique(array_map('intval',$ids)));$in=implode(',',$ids);$details=[];
         foreach($ids as $id)$details[$id]=['models'=>[],'features'=>[],'specifications'=>[],'accessories'=>[],'documentGroups'=>[]];
         $queries=[
-            'models'=>"SELECT product_id,code,name FROM product_models WHERE published=1 AND product_id IN ($in) ORDER BY sort_order,code",
+            'models'=>"SELECT product_id,code,name,status FROM product_models WHERE published=1 AND product_id IN ($in) ORDER BY sort_order,code",
             'features'=>"SELECT product_id,label FROM product_features WHERE product_id IN ($in) ORDER BY sort_order,id",
             'specifications'=>"SELECT product_id,specification_key,specification_value FROM product_specifications WHERE product_id IN ($in) ORDER BY sort_order,id",
             'accessories'=>"SELECT product_id,code,name,description FROM product_accessories WHERE published=1 AND product_id IN ($in) ORDER BY sort_order,id",
         ];
         foreach($queries as $key=>$sql)foreach($pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row)$details[(int)$row['product_id']][$key][]=$row;
-        $sql="SELECT dl.product_id,d.id,d.title,d.filename,dt.name type_name FROM document_links dl JOIN documents d ON d.id=dl.document_id AND d.published=1 JOIN document_types dt ON dt.id=d.document_type_id AND dt.active=1 WHERE dl.product_id IN ($in) ORDER BY dt.sort_order,dt.name,d.sort_order,d.title";
+        $sql="SELECT links.product_id,d.id,d.title,d.filename,d.sort_order,dt.name type_name
+                FROM (
+                    SELECT dl.product_id,dl.document_id
+                    FROM document_links dl
+                    WHERE dl.product_id IN ($in)
+                    UNION
+                    SELECT linked_model.product_id,dl.document_id
+                    FROM document_links dl
+                    JOIN product_models linked_model ON linked_model.id=dl.model_id AND linked_model.published=1
+                    WHERE linked_model.product_id IN ($in)
+                ) links
+                JOIN documents d ON d.id=links.document_id AND d.published=1
+                JOIN document_types dt ON dt.id=d.document_type_id AND dt.active=1
+                ORDER BY links.product_id,dt.sort_order,dt.name,d.sort_order,d.title";
         foreach($pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row)$details[(int)$row['product_id']]['documentGroups'][(string)$row['type_name']][]=$row;
         foreach($details as &$detail)$detail['documentGroups']=self::normalizeDocumentGroups($detail['documentGroups']);
         unset($detail);
@@ -268,6 +293,27 @@ final class TechnicalSheetsController
             };
             $normalized[$key]=array_merge($normalized[$key]??[],$documents);
         }
+        foreach($normalized as $key=>&$documents){
+            if($key==='Schede tecniche'){
+                usort($documents,static fn(array $a,array $b):int=>strnatcasecmp((string)($a['title']??''),(string)($b['title']??'')));
+            }elseif($key==='Manuali'){
+                usort($documents,static function(array $a,array $b):int{
+                    $rank=static function(array $document):int{
+                        $title=mb_strtolower((string)($document['title']??''));
+                        return match(true){
+                            str_contains($title,'installaz')=>10,
+                            preg_match('/\bus(?:o|er)\b/u',$title)===1=>20,
+                            str_contains($title,'telecomando')=>30,
+                            preg_match('/\bcom(?:ando)?\.?\s*remoto\b/u',$title)===1=>40,
+                            str_contains($title,'wi-fi')||str_contains($title,'wifi')=>50,
+                            default=>60,
+                        };
+                    };
+                    return ($rank($a)<=>$rank($b))?:strnatcasecmp((string)($a['title']??''),(string)($b['title']??''));
+                });
+            }
+        }
+        unset($documents);
         $ordered=[];foreach(['Schede tecniche','Tabelle rese','Detrazioni fiscali','Conto termico','Manuali'] as $key)if(isset($normalized[$key])){$ordered[$key]=$normalized[$key];unset($normalized[$key]);}
         return $ordered+$normalized;
     }

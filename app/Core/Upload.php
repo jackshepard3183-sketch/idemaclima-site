@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Core;
 
 use RuntimeException;
-
+  
 final class Upload
 {
     private const IMAGE_MAX_BYTES = 8 * 1024 * 1024;
@@ -109,7 +109,7 @@ final class Upload
         if (!function_exists($loader)) throw new RuntimeException('Il formato dell’immagine non è supportato dal server.');
         $sourceImage = @$loader($source);
         if ($sourceImage === false) throw new RuntimeException('Impossibile leggere l’immagine candidata.');
-        $canvas = imagecreatetruecolor(600, 600);
+        $canvas = imagecreatetruecolor(1000, 1000);
         if ($canvas === false) {
             imagedestroy($sourceImage);
             throw new RuntimeException('Impossibile preparare l’immagine prodotto.');
@@ -120,12 +120,73 @@ final class Upload
         imagefill($canvas, 0, 0, $transparent);
         $sourceWidth = (int)$imageInfo[0];
         $sourceHeight = (int)$imageInfo[1];
-        $scale = min(600 / $sourceWidth, 600 / $sourceHeight, 1);
-        $targetWidth = max(1, (int)round($sourceWidth * $scale));
-        $targetHeight = max(1, (int)round($sourceHeight * $scale));
-        $targetX = (int)floor((600 - $targetWidth) / 2);
-        $targetY = (int)floor((600 - $targetHeight) / 2);
-        imagecopyresampled($canvas, $sourceImage, $targetX, $targetY, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
+        $sourceX = 0;
+        $sourceY = 0;
+        $contentWidth = $sourceWidth;
+        $contentHeight = $sourceHeight;
+
+        // Calcola l'ingombro reale del prodotto ignorando sia la tela
+        // trasparente sia un eventuale sfondo uniforme incorporato nel file.
+        if (in_array($sourceMime, ['image/png', 'image/webp'], true)) {
+            $corners = [
+                imagecolorat($sourceImage, 0, 0),
+                imagecolorat($sourceImage, $sourceWidth - 1, 0),
+                imagecolorat($sourceImage, 0, $sourceHeight - 1),
+                imagecolorat($sourceImage, $sourceWidth - 1, $sourceHeight - 1),
+            ];
+            $transparentBorder = false;
+            $bgR = $bgG = $bgB = 0;
+            foreach ($corners as $corner) {
+                if ((($corner >> 24) & 0x7F) >= 120) $transparentBorder = true;
+                $bgR += ($corner >> 16) & 0xFF;
+                $bgG += ($corner >> 8) & 0xFF;
+                $bgB += $corner & 0xFF;
+            }
+            $bgR = (int)round($bgR / 4);
+            $bgG = (int)round($bgG / 4);
+            $bgB = (int)round($bgB / 4);
+            $transparentSource = imagecolorallocatealpha($sourceImage, $bgR, $bgG, $bgB, 127);
+            imagealphablending($sourceImage, false);
+            imagesavealpha($sourceImage, true);
+            $minX = $sourceWidth;
+            $minY = $sourceHeight;
+            $maxX = -1;
+            $maxY = -1;
+            for ($y = 0; $y < $sourceHeight; $y++) {
+                for ($x = 0; $x < $sourceWidth; $x++) {
+                    $rgba = imagecolorat($sourceImage, $x, $y);
+                    $alpha = ($rgba >> 24) & 0x7F;
+                    // Considera prodotto solo i pixel sufficientemente opachi: ombre e aloni WebP non devono ampliare il riquadro.
+                    if ($alpha >= 32) continue;
+                    if (!$transparentBorder) {
+                        $r = ($rgba >> 16) & 0xFF;
+                        $g = ($rgba >> 8) & 0xFF;
+                        $b = $rgba & 0xFF;
+                        if (max(abs($r - $bgR), abs($g - $bgG), abs($b - $bgB)) <= 8) {
+                            imagesetpixel($sourceImage, $x, $y, $transparentSource);
+                            continue;
+                        }
+                    }
+                    if ($x < $minX) $minX = $x;
+                    if ($x > $maxX) $maxX = $x;
+                    if ($y < $minY) $minY = $y;
+                    if ($y > $maxY) $maxY = $y;
+                }
+            }
+            if ($maxX >= $minX && $maxY >= $minY) {
+                $sourceX = $minX;
+                $sourceY = $minY;
+                $contentWidth = $maxX - $minX + 1;
+                $contentHeight = $maxY - $minY + 1;
+            }
+        }
+
+        $scale = min(980 / $contentWidth, 980 / $contentHeight);
+        $targetWidth = max(1, (int)round($contentWidth * $scale));
+        $targetHeight = max(1, (int)round($contentHeight * $scale));
+        $targetX = (int)floor((1000 - $targetWidth) / 2);
+        $targetY = (int)floor((1000 - $targetHeight) / 2);
+        imagecopyresampled($canvas, $sourceImage, $targetX, $targetY, $sourceX, $sourceY, $targetWidth, $targetHeight, $contentWidth, $contentHeight);
         $temporary = $absoluteDir . '/.' . $base . '-' . bin2hex(random_bytes(6)) . '.webp';
         $written = imagewebp($canvas, $temporary, 88);
         imagedestroy($canvas);

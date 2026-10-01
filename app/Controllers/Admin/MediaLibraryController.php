@@ -67,8 +67,8 @@ final class MediaLibraryController
         AdminAuth::requireLogin();self::csrf();$id=Validator::int($_POST['id']??0);$pdo=Database::connection();$s=$pdo->prepare('SELECT file_path,category FROM media_assets WHERE id=? AND archived_at IS NULL');$s->execute([$id]);$asset=$s->fetch(PDO::FETCH_ASSOC);if(!$asset)self::redirect('','File non trovato.');$path=(string)$asset['file_path'];$uses=self::usageCount($pdo,$path);if($uses>0)self::redirect('','Il file è usato in '.$uses.' contenuti: rimuovi prima i collegamenti.');
         if(($_POST['delete_permanently']??'')==='1'){
             if((string)$asset['category']!=='images')self::redirect('','L’eliminazione definitiva è disponibile solo per le immagini.');
-            $absolute=dirname(__DIR__,3).'/public'.$path;$root=realpath(dirname(__DIR__,3).'/public/uploads');$parent=realpath(dirname($absolute));if($root===false||$parent===false||!str_starts_with($parent,$root)||!is_file($absolute))self::redirect('','Percorso del file non valido.');
-            if(!@unlink($absolute))self::redirect('','Non è stato possibile eliminare il file.');$pdo->prepare('DELETE FROM media_assets WHERE id=?')->execute([$id]);Audit::log('media.delete','media_asset',$id,['path'=>$path]);self::redirect('Immagine eliminata definitivamente.');
+            $absolute=dirname(__DIR__,3).'/public'.$path;$root=realpath(dirname(__DIR__,3).'/public/uploads');$parent=realpath(dirname($absolute));if(!str_starts_with($path,'/uploads/')||$root===false||$parent===false||!str_starts_with($parent,$root.DIRECTORY_SEPARATOR))self::redirect('','Percorso del file non valido.');
+            if(file_exists($absolute)&&(!is_file($absolute)||!@unlink($absolute)))self::redirect('','Non è stato possibile eliminare il file.');$pdo->prepare('DELETE FROM media_assets WHERE id=?')->execute([$id]);Audit::log('media.delete','media_asset',$id,['path'=>$path]);self::redirect('Immagine eliminata definitivamente.');
         }
         $pdo->prepare('UPDATE media_assets SET archived_at=NOW() WHERE id=?')->execute([$id]);Audit::log('media.archive','media_asset',$id,['path'=>$path]);self::redirect('File archiviato.');
     }

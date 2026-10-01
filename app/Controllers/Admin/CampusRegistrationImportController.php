@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\Auth\AdminAuth;
 use App\Core\Database;
 use App\Core\Security;
+use App\Core\Validator;
 use PDO;
 use RuntimeException;
 use Throwable;
@@ -20,7 +21,7 @@ final class CampusRegistrationImportController
         '10815' => 'sistemi-pdc-idronici-vertemate-27-01-2026',
         '10962' => 'sistemi-pdc-idronici-vertemate-30-04-2026',
         '11154' => 'r290-prodotti-sicurezza-limiti-operativi-r32-r410a-08-10-2026',
-        '11190' => 'r290-prodotti-sicurezza-limiti-operativi-r32-r410a-08-10-2026',
+        '11190' => 'r290-prodotti-sicurezza-e-limiti-operativi-confronto-con-r32-e-r410a',
     ];
 
     public static function index(): void
@@ -37,6 +38,8 @@ final class CampusRegistrationImportController
         AdminAuth::requireLogin();
         if (!Security::verifyCsrf($_POST['_csrf'] ?? null)) { http_response_code(419); exit('Sessione non valida'); }
         $execute = ($_POST['mode'] ?? '') === 'execute';
+        $selectedRaw=(array)($_POST['selected_ids']??[]); $selectedCsv=trim((string)($_POST['selected_ids_csv']??'')); if($selectedCsv!=='')$selectedRaw=array_merge($selectedRaw,explode(',',$selectedCsv)); $selectedIds=array_values(array_unique(array_filter(array_map('intval',$selectedRaw),static fn($id)=>$id>0))); 
+        if($execute&&$selectedIds===[]){http_response_code(422);self::respond(['mode'=>'execute','validated'=>0,'imported'=>0,'skipped'=>0,'to_import'=>[],'errors'=>['Seleziona almeno un’iscrizione da importare.']]);return;}
         try {
             $payload = self::payload();
             $rows = $payload['registrations'];
@@ -45,8 +48,8 @@ final class CampusRegistrationImportController
             if ($execute) $pdo->beginTransaction();
             try {
                 $eventIds = self::eventIds($pdo, $execute);
-                $result = self::process($pdo, $rows, $eventIds, $execute);
-                if ($execute) $pdo->commit();
+                $result = self::process($pdo, $rows, $eventIds, $execute, $selectedIds);
+                if ($execute) { self::verifySelected($pdo, $selectedIds); $pdo->commit(); }
             } catch (Throwable $e) {
                 if ($execute && $pdo->inTransaction()) $pdo->rollBack();
                 throw $e;
@@ -61,17 +64,62 @@ final class CampusRegistrationImportController
     private static function payload(): array
     {
         $file = $_FILES['manifest'] ?? null;
-        if (!is_array($file) || !is_uploaded_file((string)($file['tmp_name'] ?? ''))) throw new RuntimeException('Seleziona il manifest JSON.');
-        if ((int)($file['size'] ?? 0) > 2097152) throw new RuntimeException('Il file supera 2 MB.');
-        $payload = json_decode((string)file_get_contents((string)$file['tmp_name']), true);
-        if (!is_array($payload) || !is_array($payload['registrations'] ?? null)) throw new RuntimeException('Manifest non valido.');
+        if (!is_array($file) || !is_uploaded_file((string)($file['tmp_name'] ?? ''))) throw new RuntimeException('Seleziona un file XML WordPress oppure un manifest JSON.');
+        if ((int)($file['size'] ?? 0) > 5242880) throw new RuntimeException('Il file supera 5 MB.');
+        $raw = (string) file_get_contents((string)$file['tmp_name']);
+        $first = ltrim($raw)[0] ?? '';
+        if ($first === '<') return self::xmlPayload($raw);
+        $payload = json_decode($raw, true);
+        if (!is_array($payload) || !is_array($payload['registrations'] ?? null)) throw new RuntimeException('File non valido: carica un XML WordPress o un manifest JSON compatibile.');
         return $payload;
+    }
+
+    private static function xmlPayload(string $raw): array
+    {
+        $previous = libxml_use_internal_errors(true);
+        try {
+            $xml = simplexml_load_string($raw, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOCDATA);
+            if ($xml === false) throw new RuntimeException('XML WordPress non valido o danneggiato.');
+            $namespaces = $xml->getDocNamespaces(true);
+            $wpUri = (string)($namespaces['wp'] ?? 'http://wordpress.org/export/1.2/');
+            $rows = [];
+            foreach ($xml->channel->item as $item) {
+                $wp = $item->children($wpUri);
+                if (trim((string)$wp->post_type) !== 'event_registration') continue;
+                $meta = [];
+                foreach ($wp->postmeta as $entry) {
+                    $key = trim((string)$entry->meta_key);
+                    if ($key !== '') $meta[$key] = trim((string)$entry->meta_value);
+                }
+                $sourceId = (int)$wp->post_id;
+                if ($sourceId < 1) continue;
+                $attendee = trim((string)($meta['_attendee_name'] ?? ''));
+                $firstName = trim((string)($meta['_Nome'] ?? ''));
+                $lastName = trim((string)($meta['_Cognome'] ?? ''));
+                if ($firstName === '' && $attendee !== '') {
+                    $parts = preg_split('/\s+/u', $attendee, 2) ?: [];
+                    $firstName = (string)($parts[0] ?? '');
+                    if ($lastName === '') $lastName = (string)($parts[1] ?? '');
+                }
+                $rows[] = ['legacy_registration_id'=>$sourceId,'legacy_event_id'=>(int)$wp->post_parent,'source_event_title'=>(string)($meta['_event_registered_for']??''),'first_name'=>$firstName,'last_name'=>$lastName,'email'=>(string)($meta['_attendee_email']??''),'phone'=>(string)($meta['_Recapito_telefonico']??$meta['_Telefono']??''),'company'=>(string)($meta['_Azienda']??''),'registered_at'=>(string)$wp->post_date,'checked_in'=>self::truthy($meta['_check_in']??false),'checked_in_at'=>(string)($meta['_checkin_time']??''),'possible_duplicate'=>false,'send_notifications'=>false];
+            }
+            if ($rows === []) throw new RuntimeException('Nell’XML non sono state trovate iscrizioni Campus (event_registration).');
+            return ['format'=>'idemaclima_event_registrations_v1','source'=>'wordpress_xml','summary'=>['registrations_to_import'=>count($rows)],'options'=>['send_notifications'=>false],'registrations'=>$rows];
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+    }
+
+    private static function truthy(mixed $value): bool
+    {
+        return in_array(strtolower(trim((string)$value)), ['1','true','yes','si','sì','on'], true);
     }
 
     private static function validatePayload(array $payload, array $rows): void
     {
         if (($payload['format'] ?? '') !== 'idemaclima_event_registrations_v1') throw new RuntimeException('Formato manifest non riconosciuto.');
-        if (count($rows) !== 132 || (int)($payload['summary']['registrations_to_import'] ?? 0) !== 132) throw new RuntimeException('Il lotto deve contenere esattamente 132 registrazioni.');
+        if($rows===[]) throw new RuntimeException('Il file non contiene registrazioni.'); $declared=(int)($payload['summary']['registrations_to_import']??count($rows)); if($declared!==count($rows)) throw new RuntimeException('Il riepilogo del file non coincide con le registrazioni trovate.');
         if (($payload['options']['send_notifications'] ?? true) !== false) throw new RuntimeException('Le notifiche devono essere disattivate.');
         $ids = [];
         foreach ($rows as $row) {
@@ -104,27 +152,43 @@ final class CampusRegistrationImportController
         return $ids;
     }
 
-    private static function process(PDO $pdo, array $rows, array $eventIds, bool $execute): array
+    private static function process(PDO $pdo, array $rows, array $eventIds, bool $execute, array $selectedIds=[]): array
     {
-        $validated = $imported = $skipped = 0; $errors = [];
-        $check = $pdo->prepare('SELECT id FROM event_registrations WHERE source_wordpress_id=?');
+        $validated = $imported = $skipped = 0; $errors = []; $toImport = [];
+        $check = $pdo->prepare('SELECT id,event_id FROM event_registrations WHERE source_wordpress_id=?');
+        $updateEvent = $pdo->prepare('UPDATE event_registrations SET event_id=? WHERE id=?');
         $insert = $pdo->prepare('INSERT INTO event_registrations(source_wordpress_id,event_id,first_name,last_name,email,phone,company,role,notes,status,attended,legacy_checked_in_at,privacy_accepted_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
         foreach ($rows as $row) {
                 $sourceId = (int)$row['legacy_registration_id'];
+                if (str_starts_with(mb_strtoupper(trim((string)($row['source_event_title'] ?? '')), 'UTF-8'), 'TEST:')) { $skipped++; continue; }
                 $eventId = self::destinationEventId($row, $eventIds);
                 if ($eventId < 1 && $execute) throw new RuntimeException('#'.$sourceId.': evento di destinazione non disponibile.');
                 if (!filter_var((string)($row['email'] ?? ''), FILTER_VALIDATE_EMAIL)) throw new RuntimeException('#'.$sourceId.': email non valida.');
                 $check->execute([$sourceId]);
-                if ($check->fetchColumn()) { $skipped++; continue; }
+                $existing=$check->fetch(PDO::FETCH_ASSOC);
+                if ($existing && (int)$existing['event_id'] === $eventId) { $skipped++; continue; }
+                if($execute&&!in_array($sourceId,$selectedIds,true))continue;
                 $validated++;
+                $toImport[]=['id'=>$sourceId,'nome'=>trim((string)($row['first_name']??'').' '.(string)($row['last_name']??'')),'email'=>strtolower(trim((string)($row['email']??''))),'evento'=>(string)($row['source_event_title']??''),'realign'=>(bool)$existing];
                 if (!$execute) continue;
+                if ($existing) { $updateEvent->execute([$eventId,(int)$existing['id']]); $imported++; continue; }
                 $created = self::date((string)($row['registered_at'] ?? ''));
                 $checked = empty($row['checked_in_at']) ? null : self::date((string)$row['checked_in_at']);
                 $notes = !empty($row['possible_duplicate']) ? 'Possibile duplicato segnalato durante la migrazione WordPress.' : null;
                 $insert->execute([$sourceId,$eventId,self::name($row['first_name'] ?? ''),self::name($row['last_name'] ?? ''),strtolower(trim((string)$row['email'])),trim((string)($row['phone'] ?? '')) ?: null,Validator::companyName($row['company'] ?? '') ?: null,null,$notes,'registered',($row['checked_in'] ?? false) ? 1 : null,$checked,$created,$created]);
                 $imported++;
         }
-        return ['validated'=>$validated + $skipped,'imported'=>$imported,'skipped'=>$skipped,'errors'=>$errors];
+        $groups=[];foreach($toImport as $item){$key=strtolower(trim((string)$item['email'])).'|'.mb_strtolower(trim((string)$item['evento']),'UTF-8');$groups[$key]=($groups[$key]??0)+1;}foreach($toImport as &$item){$key=strtolower(trim((string)$item['email'])).'|'.mb_strtolower(trim((string)$item['evento']),'UTF-8');$item['possible_duplicate']=($groups[$key]??0)>1;}unset($item);
+        return ['validated'=>$validated,'imported'=>$imported,'skipped'=>$skipped,'to_import'=>$toImport,'errors'=>$errors];
+    }
+
+    private static function verifySelected(PDO $pdo, array $selectedIds): void
+    {
+        if ($selectedIds === []) throw new RuntimeException('Nessuna iscrizione selezionata.');
+        $marks = implode(',', array_fill(0, count($selectedIds), '?'));
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM event_registrations WHERE source_wordpress_id IN ($marks) AND event_id IS NOT NULL");
+        $stmt->execute($selectedIds);
+        if ((int)$stmt->fetchColumn() !== count($selectedIds)) throw new RuntimeException('Importazione incompleta: una o più iscrizioni non sono state associate al corso. Nessun dato è stato confermato.');
     }
 
     private static function destinationEventId(array $row, array $eventIds): int

@@ -25,7 +25,7 @@ final class DashboardController
             'cat_pending' => $count('SELECT COUNT(*) FROM cat_accounts WHERE active=0 AND verified_at IS NULL AND disabled_at IS NULL'),
         ];
         try {
-            $recent = $pdo->query('SELECT action,entity_type,entity_id,created_at FROM audit_log ORDER BY created_at DESC LIMIT 8')->fetchAll(\PDO::FETCH_ASSOC);
+            $recent = $pdo->query("SELECT al.action,al.entity_type,al.entity_id,al.created_at,al.admin_user_id,au.first_name,au.last_name,au.username,COALESCE(ar.name,au.role) AS actor_role FROM audit_log al LEFT JOIN admin_users au ON au.id=al.admin_user_id LEFT JOIN admin_roles ar ON ar.slug=au.role ORDER BY al.created_at DESC LIMIT 8")->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\Throwable) {
             $recent = [];
         }

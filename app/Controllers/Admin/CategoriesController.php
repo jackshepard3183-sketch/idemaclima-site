@@ -18,7 +18,7 @@ final class CategoriesController
     {
         AdminAuth::requireLogin();
         $sort=(string)($_GET['sort']??'order');$dir=strtolower((string)($_GET['dir']??'asc'))==='desc'?'DESC':'ASC';$columns=['name'=>'c.name','parent'=>'p.name','slug'=>'c.slug','order'=>'c.sort_order','status'=>'c.content_status'];$sort=isset($columns[$sort])?$sort:'order';
-        $categories = Database::connection()->query('SELECT c.*, p.name parent_name FROM product_categories c LEFT JOIN product_categories p ON p.id=c.parent_id ORDER BY '.$columns[$sort].' '.$dir.',c.sort_order,c.name')->fetchAll(PDO::FETCH_ASSOC);
+        $categories = Database::connection()->query('SELECT c.*, p.name parent_name, (SELECT COUNT(*) FROM product_categories child WHERE child.parent_id=c.id) child_count, ((SELECT COUNT(*) FROM products pr WHERE pr.category_id=c.id) + (SELECT COUNT(*) FROM product_category_links pcl WHERE pcl.category_id=c.id)) product_count FROM product_categories c LEFT JOIN product_categories p ON p.id=c.parent_id ORDER BY '.$columns[$sort].' '.$dir.',c.sort_order,c.name')->fetchAll(PDO::FETCH_ASSOC);
         $user = AdminAuth::user(); $csrf = Security::csrfToken();
         require dirname(__DIR__, 2) . '/Views/admin/categories.php';
     }
@@ -63,6 +63,46 @@ final class CategoriesController
         Audit::log($action,'product_category',$entityId,['name'=>$name,'parent_id'=>$parentId]); header('Location: /idemaclima/admin/categories'); exit;
     }
 
+    public static function delete(): void
+    {
+        AdminAuth::requireLogin();
+        if (!Security::verifyCsrf($_POST['_csrf'] ?? null)) { http_response_code(419); exit('Sessione non valida'); }
+
+        $id = Validator::int($_POST['id'] ?? 0);
+        if ($id <= 0) { header('Location: /idemaclima/admin/categories?delete_error=not-found'); exit; }
+
+        $pdo = Database::connection();
+        try {
+            $pdo->beginTransaction();
+            $s = $pdo->prepare('SELECT id,name FROM product_categories WHERE id=? FOR UPDATE');
+            $s->execute([$id]);
+            $category = $s->fetch(PDO::FETCH_ASSOC);
+            if (!$category) {
+                $pdo->rollBack();
+                header('Location: /idemaclima/admin/categories?delete_error=not-found'); exit;
+            }
+
+            $q = $pdo->prepare('SELECT EXISTS(SELECT 1 FROM product_categories WHERE parent_id=?) has_children, (EXISTS(SELECT 1 FROM products WHERE category_id=?) OR EXISTS(SELECT 1 FROM product_category_links WHERE category_id=?)) has_products');
+            $q->execute([$id, $id, $id]);
+            $usage = $q->fetch(PDO::FETCH_ASSOC) ?: ['has_children'=>1,'has_products'=>1];
+            if ((int)$usage['has_children'] === 1 || (int)$usage['has_products'] === 1) {
+                $pdo->rollBack();
+                header('Location: /idemaclima/admin/categories?delete_error=not-empty'); exit;
+            }
+
+            $d = $pdo->prepare('DELETE FROM product_categories WHERE id=?');
+            $d->execute([$id]);
+            if ($d->rowCount() !== 1) { throw new \RuntimeException('Categoria non eliminata.'); }
+            Audit::log('category.delete', 'product_category', $id, ['name'=>(string)$category['name']]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            header('Location: /idemaclima/admin/categories?delete_error=conflict'); exit;
+        }
+
+        header('Location: /idemaclima/admin/categories?deleted=1'); exit;
+    }
+
     private static function renderErrors(int $id, ?int $parentId,string $name,string $slug,int $sort,string $contentStatus,int $published,array $errors):void
     {
         $category=['id'=>$id,'parent_id'=>$parentId,'name'=>$name,'slug'=>$slug,'sort_order'=>$sort,'content_status'=>$contentStatus,'published'=>$published];
@@ -70,5 +110,3 @@ final class CategoriesController
         $user=AdminAuth::user();$csrf=Security::csrfToken();require dirname(__DIR__,2).'/Views/admin/category_form.php';
     }
 }
-
-

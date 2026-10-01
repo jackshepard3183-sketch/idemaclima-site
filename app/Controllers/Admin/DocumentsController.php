@@ -45,12 +45,32 @@ final class DocumentsController
     {
         AdminAuth::requireLogin();
         $id = Validator::int($_GET['id'] ?? 0);
-        $document = ['id'=>0,'document_type_id'=>'','title'=>'','filename'=>'','file_path'=>'','revision'=>'','document_year'=>'','published'=>1,'sort_order'=>0,'category_id'=>'','product_id'=>'','model_id'=>''];
+        $duplicateId = Validator::int($_GET['duplicate'] ?? 0);
+        $returnProductId = Validator::int($_GET['return_product_id'] ?? $_GET['product_id'] ?? 0);
+        $document = ['id'=>0,'duplicate_of'=>0,'document_type_id'=>'','title'=>'','filename'=>'','file_path'=>'','revision'=>'','document_year'=>'','published'=>1,'sort_order'=>0,'category_id'=>'','product_id'=>'','model_id'=>''];
         $pdo = Database::connection();
         if ($id) {
             $s = $pdo->prepare('SELECT d.*,dl.category_id,dl.product_id,dl.model_id FROM documents d LEFT JOIN document_links dl ON dl.document_id=d.id WHERE d.id=? ORDER BY dl.id LIMIT 1');
             $s->execute([$id]);
             $document = $s->fetch(PDO::FETCH_ASSOC) ?: $document;
+        } elseif ($duplicateId) {
+            $s = $pdo->prepare('SELECT d.*,dl.category_id,dl.product_id,dl.model_id FROM documents d LEFT JOIN document_links dl ON dl.document_id=d.id WHERE d.id=? ORDER BY dl.id LIMIT 1');
+            $s->execute([$duplicateId]);
+            $copy = $s->fetch(PDO::FETCH_ASSOC);
+            if ($copy) {
+                $document = $copy;
+                $document['id'] = 0;
+                $document['duplicate_of'] = $duplicateId;
+                $document['title'] = (string)$document['title'].' - copia';
+            }
+        }
+        if (!$id && !$duplicateId) {
+            $sourceProductId = Validator::int($_GET['product_id'] ?? 0);
+            if ($sourceProductId > 0) {
+                $sourceProduct = $pdo->prepare('SELECT 1 FROM products WHERE id=?');
+                $sourceProduct->execute([$sourceProductId]);
+                if ($sourceProduct->fetchColumn()) $document['product_id'] = $sourceProductId;
+            }
         }
         [$types,$categories,$products,$models] = self::formOptions($pdo);
         $errors = [];
@@ -69,6 +89,8 @@ final class DocumentsController
 
         $errors = [];
         $id = Validator::int($_POST['id'] ?? 0);
+        $duplicateOf = Validator::int($_POST['duplicate_of'] ?? 0);
+        $returnProductId = Validator::int($_POST['return_product_id'] ?? 0);
         $typeId = Validator::int($_POST['document_type_id'] ?? 0);
         $pdo = Database::connection();
         $type = $pdo->prepare('SELECT 1 FROM document_types WHERE id=? AND active=1');
@@ -108,6 +130,17 @@ final class DocumentsController
             }
         }
 
+        if (!$id && $duplicateOf) {
+            $s = $pdo->prepare('SELECT filename,file_path FROM documents WHERE id=?');
+            $s->execute([$duplicateOf]);
+            $source = $s->fetch(PDO::FETCH_ASSOC);
+            if (!$source) $errors[] = 'Documento da duplicare non trovato.';
+            else {
+                $existingFilename = (string)$source['filename'];
+                $existingPath = (string)$source['file_path'];
+            }
+        }
+
         $uploaded = Upload::pdf('document_file', $errors);
         $filename = $uploaded['filename'] ?? $existingFilename;
         $path = $uploaded['path'] ?? $existingPath;
@@ -115,7 +148,7 @@ final class DocumentsController
 
         if ($errors) {
             if ($uploaded) Upload::removeManaged($uploaded['path']);
-            $document = ['id'=>$id,'document_type_id'=>$typeId,'title'=>$title,'filename'=>$filename,'file_path'=>$path,'revision'=>$revision,'document_year'=>$year,'published'=>$published,'sort_order'=>$sort,'category_id'=>$categoryId,'product_id'=>$productId,'model_id'=>$modelId];
+            $document = ['id'=>$id,'duplicate_of'=>$duplicateOf,'document_type_id'=>$typeId,'title'=>$title,'filename'=>$filename,'file_path'=>$path,'revision'=>$revision,'document_year'=>$year,'published'=>$published,'sort_order'=>$sort,'category_id'=>$categoryId,'product_id'=>$productId,'model_id'=>$modelId];
             [$types,$categories,$products,$models] = self::formOptions($pdo);
             $user = AdminAuth::user();
             $csrf = Security::csrfToken();
@@ -140,7 +173,7 @@ final class DocumentsController
             $l = $pdo->prepare('INSERT INTO document_links(document_id,category_id,product_id,model_id) VALUES(?,?,?,?)');
             $l->execute([$entityId,$categoryId,$productId,$modelId]);
             $pdo->commit();
-            if ($uploaded && $existingPath && $existingPath !== $path) Upload::removeManaged($existingPath);
+            if ($id && $uploaded && $existingPath && $existingPath !== $path) Upload::removeManaged($existingPath);
             Audit::log($action, 'document', $entityId, ['title'=>$title,'file_path'=>$path,'category_id'=>$categoryId,'product_id'=>$productId,'model_id'=>$modelId]);
         } catch (\Throwable $e) {
             $pdo->rollBack();
@@ -148,7 +181,11 @@ final class DocumentsController
             throw $e;
         }
 
-        header('Location: /idemaclima/admin/documents');
+        if ($returnProductId > 0 && $productId === $returnProductId) {
+            header('Location: /idemaclima/admin/products/form?id=' . $returnProductId . '#product-documents');
+        } else {
+            header('Location: /idemaclima/admin/documents');
+        }
         exit;
     }
 

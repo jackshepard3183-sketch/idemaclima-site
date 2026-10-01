@@ -31,6 +31,13 @@ final class SettingsController
                 $value=$meta['type']==='bool'?(isset($_POST[$key])?'1':'0'):trim((string)($_POST[$key]??''));
                 if(mb_strlen($value)>(int)($meta['max']??2000))throw new \RuntimeException('Il valore di '.$meta['label'].' è troppo lungo.');
                 if(($meta['type']??'')==='email'&&$value!==''&&!filter_var($value,FILTER_VALIDATE_EMAIL))throw new \RuntimeException('Indirizzo email non valido: '.$meta['label'].'.');
+                if(($meta['type']??'')==='emaillist'&&$value!==''){
+                    $emails=preg_split('/[;,\s]+/',trim($value))?:[];
+                    $emails=array_values(array_unique(array_filter(array_map('trim',$emails))));
+                    if(!$emails)throw new \RuntimeException('Inserisci almeno un destinatario per '.$meta['label'].'.');
+                    foreach($emails as $email){if(!filter_var($email,FILTER_VALIDATE_EMAIL))throw new \RuntimeException('Indirizzo email non valido in '.$meta['label'].': '.$email);}
+                    $value=implode(', ',$emails);
+                }
                 if(($meta['type']??'')==='url'&&$value!==''&&!filter_var($value,FILTER_VALIDATE_URL))throw new \RuntimeException('Indirizzo non valido: '.$meta['label'].'.');
                 $upsert->execute([$group,$key,$value,(int)($admin['id']??0)]);
             }
@@ -65,21 +72,22 @@ final class SettingsController
 
     public static function users():void
     {
-        AdminAuth::requireManager();$rows=Database::connection()->query('SELECT id,first_name,last_name,email,username,role,active,last_login_at FROM admin_users ORDER BY last_name,first_name')->fetchAll(PDO::FETCH_ASSOC);
-        self::view('settings_users',['title'=>'Utenti e accessi','rows'=>$rows,'saved'=>isset($_GET['saved'])]);
+        AdminAuth::requireManager();self::ensureRolesSchema();$pdo=Database::connection();$rows=$pdo->query('SELECT id,first_name,last_name,email,username,role,active,last_login_at FROM admin_users ORDER BY last_name,first_name')->fetchAll(PDO::FETCH_ASSOC);
+        $roles=$pdo->query('SELECT slug,name,is_system FROM admin_roles ORDER BY is_system DESC,name')->fetchAll(PDO::FETCH_ASSOC);$permissions=[];foreach($pdo->query('SELECT role_slug,section_key FROM admin_role_permissions')->fetchAll(PDO::FETCH_ASSOC) as $p){$permissions[$p['role_slug']][]=$p['section_key'];}
+        self::view('settings_users',['title'=>'Utenti e accessi','rows'=>$rows,'roles'=>$roles,'permissions'=>$permissions,'sections'=>self::permissionSections(),'saved'=>isset($_GET['saved']),'roleSaved'=>isset($_GET['role_saved'])]);
     }
     public static function userForm():void
     {
-        AdminAuth::requireManager();$id=max(0,(int)($_GET['id']??0));
+        AdminAuth::requireManager();self::ensureRolesSchema();$id=max(0,(int)($_GET['id']??0));
         $row=['id'=>0,'first_name'=>'','last_name'=>'','email'=>'','username'=>'','role'=>'content','active'=>1];
         if($id){$s=Database::connection()->prepare('SELECT id,first_name,last_name,email,username,role,active FROM admin_users WHERE id=?');$s->execute([$id]);$row=$s->fetch(PDO::FETCH_ASSOC)?:null;if(!$row){http_response_code(404);exit('Utente non trovato');}}
-        self::view('settings_user_form',['title'=>$id?'Modifica utente':'Nuovo utente','row'=>$row]);
+        $roles=Database::connection()->query('SELECT slug,name FROM admin_roles ORDER BY is_system DESC,name')->fetchAll(PDO::FETCH_ASSOC);self::view('settings_user_form',['title'=>$id?'Modifica utente':'Nuovo utente','row'=>$row,'roles'=>$roles]);
     }
     public static function saveUser():void
     {
-        $manager=AdminAuth::requireManager();self::csrf();$pdo=Database::connection();$id=max(0,(int)($_POST['id']??0));$errors=[];
+        $manager=AdminAuth::requireManager();self::csrf();self::ensureRolesSchema();$pdo=Database::connection();if(($_POST['_entity']??'user')==='role'){self::saveRole($pdo);return;}$id=max(0,(int)($_POST['id']??0));$errors=[];
         $first=trim((string)($_POST['first_name']??''));$last=trim((string)($_POST['last_name']??''));$email=strtolower(trim((string)($_POST['email']??'')));$username=trim((string)($_POST['username']??''));$password=(string)($_POST['password']??'');$role=(string)($_POST['role']??'content');$active=isset($_POST['active'])?1:0;
-        if($first===''||mb_strlen($first)>120)$errors[]='Nome obbligatorio o troppo lungo.';if($last===''||mb_strlen($last)>120)$errors[]='Cognome obbligatorio o troppo lungo.';if(!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>190)$errors[]='Email non valida.';if(!preg_match('/^[A-Za-z0-9._-]{3,80}$/',$username))$errors[]='Username non valido.';if(!in_array($role,['admin','content','requests'],true))$errors[]='Ruolo non valido.';if(($id===0&&strlen($password)<12)||($password!==''&&strlen($password)<12))$errors[]='La password deve contenere almeno 12 caratteri.';if($id===(int)$manager['id']&&!$active)$errors[]='Non puoi disabilitare il tuo account.';
+        if($first===''||mb_strlen($first)>120)$errors[]='Nome obbligatorio o troppo lungo.';if($last===''||mb_strlen($last)>120)$errors[]='Cognome obbligatorio o troppo lungo.';if(!filter_var($email,FILTER_VALIDATE_EMAIL)||mb_strlen($email)>190)$errors[]='Email non valida.';if(!preg_match('/^[A-Za-z0-9._-]{3,80}$/',$username))$errors[]='Username non valido.';$rs=$pdo->prepare('SELECT COUNT(*) FROM admin_roles WHERE slug=?');$rs->execute([$role]);if(!(bool)$rs->fetchColumn())$errors[]='Ruolo non valido.';if(($id===0&&strlen($password)<12)||($password!==''&&strlen($password)<12))$errors[]='La password deve contenere almeno 12 caratteri.';if($id===(int)$manager['id']&&!$active)$errors[]='Non puoi disabilitare il tuo account.';
         if($errors){http_response_code(422);exit(htmlspecialchars(implode(' ',$errors),ENT_QUOTES,'UTF-8'));}
         try{
             if($id){$sql='UPDATE admin_users SET first_name=?,last_name=?,email=?,username=?,role=?,active=?'.($password!==''?',password_hash=?':'').' WHERE id=?';$params=[$first,$last,$email,$username,$role,$active];if($password!=='')$params[]=password_hash($password,PASSWORD_DEFAULT);$params[]=$id;$pdo->prepare($sql)->execute($params);}
@@ -115,10 +123,10 @@ final class SettingsController
             'email'=>[
                 'sender_name'=>['label'=>'Nome mittente','type'=>'text','max'=>190],
                 'sender_email'=>['label'=>'Email mittente','type'=>'email','max'=>190],
-                'contacts_recipients'=>['label'=>'Destinatari Contatti','type'=>'text','max'=>1000],
-                'warranty_recipients'=>['label'=>'Destinatari Garanzia','type'=>'text','max'=>1000],
-                'incentives_recipients'=>['label'=>'Destinatari Detrazioni','type'=>'text','max'=>1000],
-                'campus_recipients'=>['label'=>'Destinatari Campus','type'=>'text','max'=>1000],
+                'contacts_recipients'=>['label'=>'Destinatari Contatti','type'=>'emaillist','max'=>1000],
+                'warranty_recipients'=>['label'=>'Destinatari Garanzia','type'=>'emaillist','max'=>1000],
+                'incentives_recipients'=>['label'=>'Destinatari Detrazioni','type'=>'emaillist','max'=>1000],
+                'campus_recipients'=>['label'=>'Destinatari Campus','type'=>'emaillist','max'=>1000],
                 'notifications_enabled'=>['label'=>'Notifiche email attive','type'=>'bool','max'=>1],
             ],
             'site'=>[
@@ -132,6 +140,25 @@ final class SettingsController
             ],
             default=>[]
         };
+    }
+    public static function permissionSections():array
+    {
+        return ['dashboard'=>'Dashboard','media'=>'Media Library','catalogs'=>'Cataloghi','references'=>'Referenze','technical'=>'Schede tecniche','assistance'=>'Assistenza','campus'=>'Campus','warranties'=>'Garanzie','incentives'=>'Detrazioni e incentivi','contacts'=>'Contatti','settings'=>'Impostazioni generali','users'=>'Utenti e accessi','analytics'=>'Analytics e integrazioni','redirects'=>'Redirect SEO'];
+    }
+    private static function ensureRolesSchema():void
+    {
+        $pdo=Database::connection();$pdo->exec("CREATE TABLE IF NOT EXISTS admin_roles (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,slug VARCHAR(80) NOT NULL UNIQUE,name VARCHAR(120) NOT NULL,is_system TINYINT(1) NOT NULL DEFAULT 0,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS admin_role_permissions (role_slug VARCHAR(80) NOT NULL,section_key VARCHAR(80) NOT NULL,PRIMARY KEY(role_slug,section_key)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        $seed=$pdo->prepare('INSERT IGNORE INTO admin_roles(slug,name,is_system) VALUES(?,?,1)');foreach([['administrator','Amministratore completo'],['content','Gestione contenuti'],['requests','Gestione richieste']] as $r)$seed->execute($r);
+        $count=(int)$pdo->query('SELECT COUNT(*) FROM admin_role_permissions')->fetchColumn();if($count===0){$ins=$pdo->prepare('INSERT IGNORE INTO admin_role_permissions(role_slug,section_key) VALUES(?,?)');$defaults=['content'=>['dashboard','media','catalogs','references','technical','assistance','campus'],'requests'=>['dashboard','campus','warranties','incentives','contacts']];foreach($defaults as $role=>$sections)foreach($sections as $section)$ins->execute([$role,$section]);}
+    }
+    private static function saveRole(PDO $pdo):void
+    {
+        $action=(string)($_POST['role_action']??'save');$original=trim((string)($_POST['original_slug']??''));$name=trim((string)($_POST['role_name']??''));$slug=strtolower(trim((string)($_POST['role_slug']??'')));
+        if($action==='delete'){if($original===''||in_array($original,['admin','administrator','content','requests'],true)){http_response_code(422);exit('Questa tipologia non può essere eliminata.');}$q=$pdo->prepare('SELECT COUNT(*) FROM admin_users WHERE role=?');$q->execute([$original]);if((int)$q->fetchColumn()>0){http_response_code(422);exit('La tipologia è assegnata a uno o più utenti. Modifica prima gli utenti interessati.');}$pdo->prepare('DELETE FROM admin_role_permissions WHERE role_slug=?')->execute([$original]);$pdo->prepare('DELETE FROM admin_roles WHERE slug=?')->execute([$original]);Audit::log('admin_role.delete','admin_role',null,['slug'=>$original]);header('Location:/idemaclima/admin/settings/users?role_saved=1');exit;}
+        if(!preg_match('/^[a-z0-9_-]{3,80}$/',$slug)||$name===''||mb_strlen($name)>120){http_response_code(422);exit('Nome o codice tipologia non valido.');}
+        if($original!==''&&$original!==$slug){http_response_code(422);exit('Il codice di una tipologia esistente non può essere modificato.');}
+        $pdo->prepare('INSERT INTO admin_roles(slug,name,is_system) VALUES(?,?,0) ON DUPLICATE KEY UPDATE name=VALUES(name)')->execute([$slug,$name]);$pdo->prepare('DELETE FROM admin_role_permissions WHERE role_slug=?')->execute([$slug]);$ins=$pdo->prepare('INSERT INTO admin_role_permissions(role_slug,section_key) VALUES(?,?)');$valid=array_keys(self::permissionSections());foreach((array)($_POST['permissions']??[]) as $section)if(in_array($section,$valid,true))$ins->execute([$slug,$section]);Audit::log('admin_role.save','admin_role',null,['slug'=>$slug]);header('Location:/idemaclima/admin/settings/users?role_saved=1');exit;
     }
     private static function ensureSchema():void
     {

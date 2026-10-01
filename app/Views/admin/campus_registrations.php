@@ -8,8 +8,21 @@
 .registration-actions{display:grid;gap:6px;margin:0}.registration-actions select,.registration-actions .btn{width:100%;min-width:0;font-size:12px;padding:7px 6px}.registration-actions .btn{white-space:nowrap}
 .course-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 18px}.course-card{display:flex;flex-direction:column;gap:8px;min-height:132px;padding:16px;border:1px solid var(--border);border-radius:12px;background:#fff;color:inherit;text-decoration:none;box-shadow:var(--shadow-sm)}.course-card:hover,.course-card.is-active{border-color:var(--primary);background:#f7fbf2}.course-card strong{line-height:1.3}.course-meta{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:auto}.course-count{font-size:22px;font-weight:800;color:var(--primary)}
 @media(max-width:1200px){.course-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:900px){.registrations-table,.registrations-table tbody,.registrations-table tr,.registrations-table td{display:block;width:100%}.registrations-table{table-layout:auto}.registrations-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.registrations-table tr{margin-bottom:14px;border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}.registrations-table td{display:grid;grid-template-columns:minmax(105px,32%) minmax(0,1fr);gap:10px;border-bottom:1px solid var(--border);padding:10px 12px}.registrations-table td:last-child{border-bottom:0}.registrations-table td::before{content:attr(data-label);font-weight:700;color:var(--text)}.registration-actions{max-width:280px}}
-@media(max-width:620px){.course-grid{grid-template-columns:1fr}}
+@media(max-width:900px){
+.registrations-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;padding-bottom:8px}
+.registrations-table{width:1180px!important;min-width:1180px!important;table-layout:fixed!important}
+.registrations-table thead{display:table-header-group!important;position:static!important;width:auto!important;height:auto!important;overflow:visible!important;clip:auto!important;white-space:normal!important}
+.registrations-table tbody{display:table-row-group!important}
+.registrations-table tr{display:table-row!important;width:auto!important;margin:0!important;border:0!important;border-radius:0!important;background:#fff!important;box-shadow:none!important}
+.registrations-table th,.registrations-table td{display:table-cell!important;width:auto!important;min-width:0!important;padding:12px 10px!important;vertical-align:top!important;text-align:left!important;white-space:normal!important;word-break:normal!important;overflow-wrap:anywhere!important;border-bottom:1px solid var(--border)!important}
+.registrations-table td::before{display:none!important;content:none!important}
+.registrations-table th:nth-child(1){width:250px!important}.registrations-table th:nth-child(2){width:170px!important}.registrations-table th:nth-child(3){width:220px!important}.registrations-table th:nth-child(4){width:190px!important}.registrations-table th:nth-child(5){width:110px!important}.registrations-table th:nth-child(6){width:110px!important}.registrations-table th:nth-child(7){width:120px!important}.registrations-table th:nth-child(8){width:180px!important}
+.registrations-table th:nth-child(2),.registrations-table td:nth-child(2){position:sticky;left:0;z-index:2;background:#fff;box-shadow:6px 0 10px -10px rgba(8,49,83,.65)}
+.registrations-table th:nth-child(2){z-index:4;background:#f5f9fc}
+.registration-actions{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;width:100%!important;max-width:none!important}
+.registration-actions select,.registration-actions .btn{width:100%!important;min-width:0!important;min-height:42px!important;margin:0!important;padding:8px 10px!important;font-size:13px!important}.registration-actions .btn{justify-content:center!important;white-space:nowrap!important}
+}
+@media(max-width:700px){.toolbar>div:last-child{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;width:100%!important}.toolbar>div:last-child .btnlink{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:48px!important;margin:0!important}.course-grid{grid-template-columns:1fr}}
 </style>
 
 <div class="toolbar">

@@ -2,12 +2,12 @@
 <style>
 .import-help{margin:0 0 18px}.import-picker{display:grid;gap:14px}.import-picker input[type=file]{padding:14px;background:#f8fafc}.queue-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.queue-actions .btn[disabled],.queue-actions button[disabled]{cursor:not-allowed;opacity:.55}.import-summary{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:10px;margin:18px 0}.import-stat{padding:12px;border:1px solid var(--line);border-radius:10px;background:#f8fafc}.import-stat strong{display:block;font-size:22px}.progress-track{height:12px;overflow:hidden;border-radius:999px;background:#e8edf2;margin:14px 0}.progress-bar{width:0;height:100%;background:var(--blue);transition:width .2s ease}.queue-table td:first-child{width:54px;text-align:center}.queue-table td:last-child{width:150px}.queue-file{font-weight:700}.queue-detail{display:block;margin-top:3px;color:var(--muted);font-size:12px}.queue-order{display:inline-flex;gap:4px}.queue-order button{width:34px;height:34px;padding:0;border:1px solid var(--line);border-radius:7px;background:#fff}.state-pending{color:var(--muted)}.state-running{color:#15568a;font-weight:700}.state-success{color:#287238;font-weight:700}.state-error{color:#991b1b;font-weight:700}.import-log{display:none;margin-top:16px;padding:14px;border-radius:10px;background:#0f2742;color:#eaf2f8;white-space:pre-wrap;overflow-wrap:anywhere}.import-log.is-visible{display:block}@media(max-width:760px){.import-summary{grid-template-columns:1fr 1fr}.queue-actions>*{width:100%}.queue-table{min-width:720px}}
 </style>
-<div class="toolbar"><div><h1>Importazione garanzie WPForms</h1><p class="muted">Carica più lotti e importali automaticamente, uno alla volta.</p></div><a class="btnlink" href="/idemaclima/admin/warranties">Torna alle registrazioni</a></div>
+<div class="toolbar"><div><h1>Importazione garanzie WPForms</h1><p class="muted">Carica direttamente gli XLSX esportati da WPForms oppure i manifest JSON già preparati.</p></div><a class="btnlink" href="/idemaclima/admin/warranties?view=list">Torna alle registrazioni</a></div>
 <div class="panel">
-<p class="import-help"><strong>Seleziona tutti i file JSON da importare.</strong> Saranno ordinati automaticamente per nome (per esempio <code>batch_05_1</code>, <code>batch_05_2</code>…). Ogni lotto viene inviato separatamente; gli ID WPForms già acquisiti vengono ignorati e gli avvisi di verifica vengono conservati.</p>
+<p class="import-help"><strong>Seleziona uno o più file XLSX di WPForms oppure JSON compatibili.</strong> I file vengono elaborati uno alla volta; gli ID WPForms già acquisiti vengono ignorati e le righe incomplete vengono segnalate senza essere forzate.</p>
 <div class="import-picker">
-<label>Manifest JSON
-<input id="manifest-files" type="file" accept="application/json,.json" multiple required>
+<label>File garanzie WPForms (XLSX o JSON)
+<input id="manifest-files" type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx,application/json,.json" multiple required>
 </label>
 <div class="queue-actions">
 <button class="btn" id="start-import" type="button" disabled>Avvia importazione</button>
@@ -22,7 +22,7 @@
 <div class="import-stat"><span>Errori</span><strong id="items-errors">0</strong></div>
 </div>
 <div class="progress-track" role="progressbar" aria-label="Avanzamento importazione" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-bar" id="progress-bar"></div></div>
-<div class="table-wrap"><table class="queue-table"><thead><tr><th>#</th><th>File</th><th>Ordine</th><th>Stato</th></tr></thead><tbody id="import-queue"><tr><td colspan="4" class="empty">Seleziona uno o più file JSON.</td></tr></tbody></table></div>
+<div class="table-wrap"><table class="queue-table"><thead><tr><th>#</th><th>File</th><th>Ordine</th><th>Stato</th></tr></thead><tbody id="import-queue"><tr><td colspan="4" class="empty">Seleziona uno o più file XLSX o JSON.</td></tr></tbody></table></div>
 <pre class="import-log" id="import-log" aria-live="polite"></pre>
 </div>
 <script nonce="<?= htmlspecialchars(\App\Core\Security::nonce(),ENT_QUOTES,'UTF-8') ?>">
@@ -30,7 +30,7 @@
 const csrf=<?= json_encode($csrf,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) ?>;
 const input=document.getElementById('manifest-files'),start=document.getElementById('start-import'),sortButton=document.getElementById('sort-import'),body=document.getElementById('import-queue'),note=document.getElementById('selection-note'),bar=document.getElementById('progress-bar'),track=bar.parentElement,log=document.getElementById('import-log');
 const complete=document.getElementById('files-complete'),imported=document.getElementById('items-imported'),skipped=document.getElementById('items-skipped'),errors=document.getElementById('items-errors');
-let queue=[],running=false,current=0,totals={imported:0,skipped:0,errors:0};
+let queue=[],running=false,current=0,totals={imported:0,skipped:0,errors:0,items:[]};
 
 const naturalSort=()=>queue.sort((a,b)=>a.file.name.localeCompare(b.file.name,'it',{numeric:true,sensitivity:'base'}));
 const escapeText=value=>String(value==null?'':value);
@@ -42,7 +42,7 @@ const setProgress=()=>{
 };
 const render=()=>{
  body.textContent='';
- if(!queue.length){const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=4;cell.className='empty';cell.textContent='Seleziona uno o più file JSON.';row.appendChild(cell);body.appendChild(row);}
+ if(!queue.length){const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=4;cell.className='empty';cell.textContent='Seleziona uno o più file XLSX o JSON.';row.appendChild(cell);body.appendChild(row);}
  queue.forEach((item,index)=>{
   const row=document.createElement('tr'),number=document.createElement('td'),fileCell=document.createElement('td'),order=document.createElement('td'),state=document.createElement('td');
   number.textContent=String(index+1);
@@ -71,18 +71,18 @@ const run=async()=>{
   const item=queue[current];item.status='running';item.detail='';render();
   try{
    const result=await importOne(item),fileErrors=result.errors||[];
-   totals.imported+=Number(result.imported||0);totals.skipped+=Number(result.skipped||0);totals.errors+=fileErrors.length;
+   totals.imported+=Number(result.imported||0);totals.skipped+=Number(result.skipped||0);totals.errors+=fileErrors.length;totals.items.push(...(Array.isArray(result.imported_items)?result.imported_items:[]));
    if(fileErrors.length)throw new Error(fileErrors.join(' | '));
    item.status='success';item.detail=Number(result.imported||0)+' importate, '+Number(result.skipped||0)+' già presenti';render();
   }catch(error){
    item.status='error';item.detail=error instanceof Error?error.message:escapeText(error);running=false;start.textContent='Riprova dal file bloccato';log.textContent='Importazione interrotta su '+item.file.name+'\n'+item.detail;log.classList.add('is-visible');render();return;
   }
  }
- running=false;start.textContent='Importazione completata';log.textContent='Tutti i file sono stati elaborati nell’ordine indicato.';log.classList.add('is-visible');render();
+ running=false;start.textContent='Importazione completata';log.textContent=totals.items.length?'Importate '+totals.items.length+' garanzie:\n'+totals.items.map(item=>'#'+item.id+' — '+item.nome+' — '+item.email+' — '+item.modello).join('\n'):'Nessuna nuova garanzia da importare.';log.classList.add('is-visible');render();
 };
 input.addEventListener('change',()=>{
- const unique=new Map();Array.from(input.files||[]).filter(file=>/\.json$/i.test(file.name)).forEach(file=>unique.set(file.name+'|'+file.size+'|'+file.lastModified,file));
- queue=Array.from(unique.values()).map(file=>({file,status:'pending',detail:''}));naturalSort();running=false;current=0;totals={imported:0,skipped:0,errors:0};start.textContent='Avvia importazione';log.classList.remove('is-visible');render();
+ const unique=new Map();Array.from(input.files||[]).filter(file=>/\.(xlsx|json)$/i.test(file.name)).forEach(file=>unique.set(file.name+'|'+file.size+'|'+file.lastModified,file));
+ queue=Array.from(unique.values()).map(file=>({file,status:'pending',detail:''}));naturalSort();running=false;current=0;totals={imported:0,skipped:0,errors:0,items:[]};start.textContent='Avvia importazione';log.classList.remove('is-visible');render();
 });
 sortButton.addEventListener('click',()=>{naturalSort();render()});start.addEventListener('click',run);
 window.addEventListener('beforeunload',event=>{if(!running)return;event.preventDefault();event.returnValue=''});

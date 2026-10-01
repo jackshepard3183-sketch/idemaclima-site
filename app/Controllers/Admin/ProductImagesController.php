@@ -21,6 +21,7 @@ final class ProductImagesController
     public static function index(): void
     {
         AdminAuth::requireLogin(); $pdo=Database::connection(); self::syncProducts($pdo);
+        if(isset($_GET['normalize_approved_margin']))self::normalizeApprovedMargin($pdo);
         $sql="SELECT r.*,p.name,p.slug,p.image_path,c.name category_name,parent.name category_group
               FROM product_image_reviews r JOIN products p ON p.id=r.product_id
               JOIN product_categories c ON c.id=p.category_id LEFT JOIN product_categories parent ON parent.id=c.parent_id
@@ -40,7 +41,7 @@ final class ProductImagesController
         if(($_POST['audit_transparency']??'')==='1')self::auditTransparency($pdo);
         $productId=Validator::int($_POST['product_id']??0); $review=self::review($pdo,$productId);
         if(!$review)self::redirectError('Prodotto non trovato.');
-        if((int)$review['protected']===1&&self::managedImageExists((string)($review['product_image_path']??'')))self::redirectError('Le immagini dei 6 Mono Split sono protette.');
+        
         $status=(string)($_POST['review_status']??'to_review'); if(!in_array($status,array_diff(self::STATUSES,['approved']),true))$status='to_review';
         $catalog=trim((string)($_POST['source_catalog']??'')); $page=Validator::int($_POST['source_page']??0)?:null; $notes=trim((string)($_POST['notes']??''));
         $errors=[]; if(self::hasUpload('candidate_file')&&!self::transparentImageFile((string)$_FILES['candidate_file']['tmp_name']))$errors[]='L’immagine candidata deve avere uno sfondo realmente trasparente.'; $uploaded=$errors?null:Upload::contentImage('candidate_file','products',$errors); $candidate=(string)($review['candidate_path']??'');
@@ -62,19 +63,21 @@ final class ProductImagesController
         AdminAuth::requireLogin(); self::csrf(); $pdo=Database::connection(); self::syncProducts($pdo);
         $files=$_FILES['candidate_files']??null; $catalog=trim((string)($_POST['source_catalog']??''));
         if(!is_array($files)||!isset($files['name'])||!is_array($files['name']))self::redirectError('Seleziona almeno un’immagine.');
-        $rows=$pdo->query("SELECT r.product_id,r.review_status,r.protected,p.name,p.slug FROM product_image_reviews r JOIN products p ON p.id=r.product_id")->fetchAll(PDO::FETCH_ASSOC);
-        $lookup=[]; foreach($rows as $row){if((int)$row['protected']===1||$row['review_status']==='approved')continue;foreach([(string)$row['name'],(string)$row['slug']] as $value)$lookup[self::key($value)][]=$row;}
+        $rows=$pdo->query("SELECT r.product_id,r.review_status,r.protected,p.name,p.slug,c.name category_name,parent.name category_group FROM product_image_reviews r JOIN products p ON p.id=r.product_id JOIN product_categories c ON c.id=p.category_id LEFT JOIN product_categories parent ON parent.id=c.parent_id")->fetchAll(PDO::FETCH_ASSOC);
+        $lookup=[]; foreach($rows as $row){if((int)$row['protected']===1)continue;foreach([(string)$row['name'],(string)$row['slug']] as $value)$lookup[self::key($value)][]=$row;}
         $imported=0;$skipped=0;$errors=[];$count=count($files['name']);
         for($i=0;$i<$count;$i++){
             if((int)($files['error'][$i]??UPLOAD_ERR_NO_FILE)===UPLOAD_ERR_NO_FILE)continue;
             $_FILES['candidate_file']=['name'=>$files['name'][$i]??'','type'=>$files['type'][$i]??'','tmp_name'=>$files['tmp_name'][$i]??'','error'=>$files['error'][$i]??UPLOAD_ERR_NO_FILE,'size'=>$files['size'][$i]??0];
-            if(!self::transparentImageFile((string)($_FILES['candidate_file']['tmp_name']??''))){$skipped++;$errors[]=(string)$files['name'][$i].': sfondo non trasparente.';continue;}
+            $key=self::key(pathinfo((string)$files['name'][$i],PATHINFO_FILENAME));$matches=$lookup[$key]??[];
+            $residentialMatch=(bool)array_filter($matches,static fn($match)=>self::isResidential($match));
+            if(!self::transparentImageFile((string)($_FILES['candidate_file']['tmp_name']??''),$residentialMatch?0.60:0.90)){$skipped++;$errors[]=(string)$files['name'][$i].': sfondo non trasparente.';continue;}
             $uploadErrors=[];$uploaded=Upload::contentImage('candidate_file','products',$uploadErrors);
             if(!$uploaded){$skipped++;$errors=array_merge($errors,$uploadErrors);continue;}
-            $key=self::key(pathinfo((string)$files['name'][$i],PATHINFO_FILENAME));$matches=$lookup[$key]??[];
             if(!$matches){Upload::removeManaged((string)$uploaded['path']);$skipped++;$errors[]='Nessun prodotto corrisponde a '.(string)$files['name'][$i].'.';continue;}
             [$width,$height]=self::dimensions((string)$uploaded['path']);
-            foreach($matches as $match){$q=$pdo->prepare("UPDATE product_image_reviews SET review_status='recovered',candidate_path=?,candidate_width=?,candidate_height=?,source_catalog=?,notes=?,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=? AND protected=0 AND review_status<>'approved'");$q->execute([(string)$uploaded['path'],$width,$height,$catalog?:'Importazione multipla','Importata automaticamente dal nome del file; candidata da verificare e non assegnata al frontend.',AdminAuth::id(),(int)$match['product_id']]);if($q->rowCount()>0){$imported++;Audit::log('product_image.bulk_import','product',(int)$match['product_id'],['candidate_path'=>$uploaded['path'],'source_name'=>$files['name'][$i]]);}}
+            if(array_filter($matches,static fn($match)=>self::isResidential($match))&&($width!==1000||$height!==1000)){Upload::removeManaged((string)$uploaded['path']);$skipped++;$errors[]=(string)$files['name'][$i].': la Linea Residenziale richiede 1000×1000 px.';continue;}
+            foreach($matches as $match){$q=$pdo->prepare("UPDATE product_image_reviews SET review_status='recovered',candidate_path=?,candidate_width=?,candidate_height=?,source_catalog=?,notes=?,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=? AND protected=0");$q->execute([(string)$uploaded['path'],$width,$height,$catalog?:'Importazione multipla','Importata automaticamente dal nome del file; candidata da verificare e non assegnata al frontend.',AdminAuth::id(),(int)$match['product_id']]);if($q->rowCount()>0){$imported++;Audit::log('product_image.bulk_import','product',(int)$match['product_id'],['candidate_path'=>$uploaded['path'],'source_name'=>$files['name'][$i]]);}}
         }
         unset($_FILES['candidate_file']);$_SESSION['product_image_bulk_errors']=array_slice(array_values(array_unique($errors)),0,20);
         header('Location: /idemaclima/admin/product-images?bulk_imported='.$imported.'&bulk_skipped='.$skipped);exit;
@@ -86,10 +89,11 @@ final class ProductImagesController
         AdminAuth::requireLogin(); self::csrf(); $pdo=Database::connection(); $productId=Validator::int($_POST['product_id']??0); $review=self::review($pdo,$productId);
         if(!$review)self::redirectError('Prodotto non trovato.');
         $current=(string)($review['product_image_path']??''); $recoverMissing=!self::managedImageExists($current);
-        if((int)$review['protected']===1&&!$recoverMissing)self::redirectError('Le immagini dei 6 Mono Split sono protette.');
-        $candidate=(string)($review['candidate_path']??''); if($candidate==='')self::redirectError('Carica o seleziona prima un’immagine candidata.'); if(!$recoverMissing&&!self::transparentManagedImage($candidate))self::redirectError('L’immagine candidata non supera il controllo dello sfondo trasparente.');
+        
+        $candidate=(string)($review['candidate_path']??''); if($candidate==='')self::redirectError('Carica o seleziona prima un’immagine candidata.'); if(!$recoverMissing&&!self::transparentManagedImage($candidate,self::isResidential($review)?0.60:0.90))self::redirectError('L’immagine candidata non supera il controllo dello sfondo trasparente.');
         $replaceExisting=isset($_POST['replace_existing'])&&$_POST['replace_existing']==='1';
-        if($recoverMissing&&in_array((string)$review['product_name'],['ISA-R32','ISAT-R32'],true))$assigned=self::copyRecovered150($candidate,(string)$review['product_name']);
+        if(self::isResidential($review)||self::dimensions($candidate)===[1000,1000])try{$assigned=self::copyOriginal1000($candidate,(string)$review['product_name']);}catch(\Throwable $e){self::redirectError($e->getMessage());}
+        elseif($recoverMissing&&in_array((string)$review['product_name'],['ISA-R32','ISAT-R32'],true))$assigned=self::copyRecovered150($candidate,(string)$review['product_name']);
         elseif($recoverMissing)$assigned=$candidate;
         else try{$assigned=Upload::copyProductImage($candidate,(string)$review['product_name'],$replaceExisting);}
         catch(\Throwable $e){self::redirectError($e->getMessage());}
@@ -103,7 +107,7 @@ final class ProductImagesController
     public static function removeCandidate(): void
     {
         AdminAuth::requireLogin(); self::csrf(); $pdo=Database::connection(); $productId=Validator::int($_POST['product_id']??0); $review=self::review($pdo,$productId);
-        if(!$review||(int)$review['protected']===1)self::redirectError('Le immagini dei 6 Mono Split sono protette.');
+        if(!$review)self::redirectError('Prodotto non trovato.');
         $candidate=(string)($review['candidate_path']??'');
         if($review['review_status']==='approved'||$candidate==='')self::redirectError('Non risulta presente un’immagine candidata da rimuovere.');
         $pdo->prepare("UPDATE product_image_reviews SET candidate_path=NULL,candidate_width=NULL,candidate_height=NULL,review_status='to_review',reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=?")->execute([AdminAuth::id(),$productId]);
@@ -117,7 +121,7 @@ final class ProductImagesController
     public static function removeAssigned(): void
     {
         AdminAuth::requireLogin(); self::csrf(); $pdo=Database::connection(); $productId=Validator::int($_POST['product_id']??0); $review=self::review($pdo,$productId);
-        if(!$review||(int)$review['protected']===1)self::redirectError('Le immagini dei 6 Mono Split sono protette.');
+        if(!$review)self::redirectError('Prodotto non trovato.');
         $assigned=(string)($review['candidate_path']??'');$current=(string)($review['product_image_path']??'');
         if($review['review_status']!=='approved'||$assigned===''||$current!==$assigned)self::redirectError('L’immagine nuova non risulta attualmente assegnata al prodotto.');
         $restore=(string)($review['original_image_path']??'');$pdo->beginTransaction();
@@ -133,15 +137,99 @@ final class ProductImagesController
     }
 
 
+
+    private static function normalizeProtectedCandidates(PDO $pdo): void
+    {
+        $rows=$pdo->query("SELECT r.product_id,r.candidate_path,r.candidate_width,r.candidate_height,p.name FROM product_image_reviews r JOIN products p ON p.id=r.product_id WHERE r.protected=1 AND r.candidate_path IS NOT NULL AND r.candidate_path<>''")->fetchAll(PDO::FETCH_ASSOC);
+        foreach($rows as $row){
+            $path=(string)$row['candidate_path'];
+            [$width,$height]=self::dimensions($path);
+            if(($width===600&&$height===600)||($width===1000&&$height===1000))continue;
+            try{
+                $normalized=Upload::copyProductImage($path,(string)$row['name'].'-candidate',true);
+                $pdo->prepare('UPDATE product_image_reviews SET candidate_path=?,candidate_width=600,candidate_height=600 WHERE product_id=?')->execute([$normalized,(int)$row['product_id']]);
+                Audit::log('product_image.normalize_candidate','product',(int)$row['product_id'],['previous_path'=>$path,'candidate_path'=>$normalized,'width'=>600,'height'=>600]);
+            }catch(\Throwable $e){
+                // La gestione immagini resta accessibile anche se una singola sorgente non è convertibile.
+            }
+        }
+    }
+
+    private static function normalizeApprovedMargin(PDO $pdo): never
+    {
+        $after=max(0,Validator::int($_GET['after']??0));
+        $normalized=max(0,Validator::int($_GET['normalized']??0));
+        $errors=max(0,Validator::int($_GET['normalization_errors']??0));
+        $q=$pdo->prepare("SELECT r.product_id,r.candidate_path,p.name
+                         FROM product_image_reviews r
+                         JOIN products p ON p.id=r.product_id
+                         WHERE r.protected=0 AND r.review_status='approved'
+                           AND NOT EXISTS (SELECT 1 FROM product_categories c LEFT JOIN product_categories parent ON parent.id=c.parent_id JOIN products pr ON pr.category_id=c.id WHERE pr.id=r.product_id AND (c.name='Linea Residenziale R32' OR parent.name='Linea Residenziale R32'))
+                           AND r.candidate_path IS NOT NULL AND r.candidate_path<>''
+                           AND r.product_id>?
+                         ORDER BY r.product_id LIMIT 20");
+        $q->execute([$after]);
+        $rows=$q->fetchAll(PDO::FETCH_ASSOC);
+        $last=$after;
+        foreach($rows as $row){
+            $productId=(int)$row['product_id'];
+            $last=max($last,$productId);
+            $path=(string)$row['candidate_path'];
+            if(self::dimensions($path)===[1000,1000])continue;
+            try{
+                $assigned=Upload::copyProductImage($path,(string)$row['name'],true);
+                $pdo->prepare('UPDATE products SET image_path=? WHERE id=?')->execute([$assigned,$productId]);
+                $pdo->prepare("UPDATE product_image_reviews SET candidate_path=?,candidate_width=600,candidate_height=600,notes=CONCAT_WS(' ',NULLIF(notes,''),'Normalizzata automaticamente: prodotto entro 580×580 px su tela trasparente 600×600 px.'),reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=?")->execute([$assigned,AdminAuth::id(),$productId]);
+                Audit::log('product_image.normalize_approved_margin','product',$productId,['previous_path'=>$path,'assigned_path'=>$assigned,'content_max'=>580,'canvas'=>600]);
+                $normalized++;
+            }catch(\Throwable $e){
+                $errors++;
+                Audit::log('product_image.normalize_approved_margin_error','product',$productId,['path'=>$path,'error'=>$e->getMessage()]);
+            }
+        }
+        if(count($rows)===20){
+            header('Location: /idemaclima/admin/product-images?normalize_approved_margin=1&after='.$last.'&normalized='.$normalized.'&normalization_errors='.$errors);
+            exit;
+        }
+        header('Location: /idemaclima/admin/product-images?margin_normalized='.$normalized.'&normalization_errors='.$errors);
+        exit;
+    }
+
     private static function syncProducts(PDO $pdo): void
     {
         $marks=implode(',',array_fill(0,count(self::PROTECTED_PRODUCTS),'?'));
-        $pdo->prepare("INSERT IGNORE INTO product_image_reviews(product_id,review_status,protected) SELECT id,'to_review',CASE WHEN name IN ({$marks}) THEN 1 ELSE 0 END FROM products")->execute(self::PROTECTED_PRODUCTS);
+        $pdo->prepare("INSERT IGNORE INTO product_image_reviews(product_id,review_status,protected) SELECT id,'to_review',0 FROM products")->execute();
+        $pdo->prepare("UPDATE product_image_reviews r JOIN products p ON p.id=r.product_id JOIN product_categories c ON c.id=p.category_id LEFT JOIN product_categories parent ON parent.id=c.parent_id SET r.protected=0 WHERE r.protected=1 AND p.name IN ({$marks}) AND (c.name='Linea Residenziale R32' OR parent.name='Linea Residenziale R32')")->execute(self::PROTECTED_PRODUCTS);
     }
     private static function review(PDO $pdo,int $productId): array|false
     {
-        self::syncProducts($pdo);$q=$pdo->prepare('SELECT r.*,p.name product_name,p.image_path product_image_path FROM product_image_reviews r JOIN products p ON p.id=r.product_id WHERE r.product_id=?');$q->execute([$productId]);return $q->fetch(PDO::FETCH_ASSOC);
+        self::syncProducts($pdo);$q=$pdo->prepare('SELECT r.*,p.name product_name,p.image_path product_image_path,c.name category_name,parent.name category_group FROM product_image_reviews r JOIN products p ON p.id=r.product_id JOIN product_categories c ON c.id=p.category_id LEFT JOIN product_categories parent ON parent.id=c.parent_id WHERE r.product_id=?');$q->execute([$productId]);return $q->fetch(PDO::FETCH_ASSOC);
     }
+    private static function isResidential(array $row): bool
+    {
+        return ($row['category_group']??'')==='Linea Residenziale R32'||($row['category_name']??'')==='Linea Residenziale R32';
+    }
+
+    private static function copyOriginal1000(string $path,string $model): string
+    {
+        if(!str_starts_with($path,'/uploads/'))throw new \RuntimeException('Percorso immagine non valido.');
+        $public=realpath(dirname(__DIR__,3).'/public');
+        $source=realpath(dirname(__DIR__,3).'/public'.$path);
+        if($public===false||$source===false||!str_starts_with($source,$public.DIRECTORY_SEPARATOR))throw new \RuntimeException('Immagine non disponibile.');
+        $info=@getimagesize($source);
+        if(!$info||$info[0]!==1000||$info[1]!==1000||!in_array($info['mime'],['image/png','image/webp'],true)||!self::transparentImageFile($source,0.50))throw new \RuntimeException('È richiesta un’immagine PNG o WebP trasparente da 1000×1000 px.');
+        $base=iconv('UTF-8','ASCII//TRANSLIT//IGNORE',$model)?:'prodotto';
+        $base=strtolower(trim((string)preg_replace('/[^a-zA-Z0-9]+/','-',$base),'-'))?:'prodotto';
+        $ext=$info['mime']==='image/png'?'png':'webp';
+        $dir='/uploads/products/'.date('Y').'/'.date('m');
+        $absolute=$public.$dir;
+        if(!is_dir($absolute)&&!mkdir($absolute,0755,true)&&!is_dir($absolute))throw new \RuntimeException('Impossibile creare la cartella immagini.');
+        $filename=$base.'-1000-'.substr(hash_file('sha256',$source),0,12).'.'.$ext;
+        if(!is_file($absolute.'/'.$filename)&&!copy($source,$absolute.'/'.$filename))throw new \RuntimeException('Impossibile copiare l’immagine originale.');
+        @chmod($absolute.'/'.$filename,0644);
+        return $dir.'/'.$filename;
+    }
+
     private static function dimensions(string $path): array
     {
         if($path===''||!str_starts_with($path,'/uploads/'))return[null,null];$file=dirname(__DIR__,3).'/public'.$path;$info=is_file($file)?@getimagesize($file):false;return $info===false?[null,null]:[(int)$info[0],(int)$info[1]];
@@ -169,17 +257,18 @@ final class ProductImagesController
         return $file!==false&&$root!==false&&str_starts_with($file,$root.DIRECTORY_SEPARATOR)&&is_file($file)&&@getimagesize($file)!==false;
     }
     private static function hasUpload(string $field):bool{return isset($_FILES[$field])&&is_array($_FILES[$field])&&(int)($_FILES[$field]['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE;}
-    private static function transparentManagedImage(string $path):bool
+    private static function transparentManagedImage(string $path,float $minimum=0.90):bool
     {
-        if($path===''||!str_starts_with($path,'/uploads/'))return false;return self::transparentImageFile(dirname(__DIR__,3).'/public'.$path);
+        if($path===''||!str_starts_with($path,'/uploads/'))return false;return self::transparentImageFile(dirname(__DIR__,3).'/public'.$path,$minimum);
     }
-    private static function transparentImageFile(string $file):bool
+    private static function transparentImageFile(string $file,float $minimum=0.90):bool
     {
         if($file===''||!is_file($file))return false;$info=@getimagesize($file);if($info===false||((int)$info[0]*(int)$info[1])>50000000)return false;$mime=(string)($info['mime']??'');
+        if((int)$info[0]===1000&&(int)$info[1]===1000&&$minimum===0.90)$minimum=0.50;
         $image=$mime==='image/png'?@imagecreatefrompng($file):($mime==='image/webp'?@imagecreatefromwebp($file):false);if(!$image)return false;$w=imagesx($image);$h=imagesy($image);if($w<2||$h<2){imagedestroy($image);return false;}
         $step=max(1,(int)floor(max($w,$h)/600));$transparent=0;$total=0;$check=static function($im,int $x,int $y):bool{return ((imagecolorat($im,$x,$y)>>24)&0x7F)>=16;};
         for($x=0;$x<$w;$x+=$step){$total+=2;$transparent+=(int)$check($image,$x,0)+(int)$check($image,$x,$h-1);}for($y=0;$y<$h;$y+=$step){$total+=2;$transparent+=(int)$check($image,0,$y)+(int)$check($image,$w-1,$y);}
-        $corners=$check($image,0,0)&&$check($image,$w-1,0)&&$check($image,0,$h-1)&&$check($image,$w-1,$h-1);imagedestroy($image);return $corners&&$total>0&&($transparent/$total)>=0.90;
+        $corners=$check($image,0,0)&&$check($image,$w-1,0)&&$check($image,0,$h-1)&&$check($image,$w-1,$h-1);imagedestroy($image);return $corners&&$total>0&&($transparent/$total)>=$minimum;
     }
     private static function auditTransparency(PDO $pdo):never
     {
@@ -200,4 +289,4 @@ final class ProductImagesController
         header('Location: /idemaclima/admin/product-images?error='.rawurlencode($message));exit;
     }
 }
-// Deployment sync: transparent candidate validation.
+// Deployment sync: protected Mono Split candidates normalized to 600x600.

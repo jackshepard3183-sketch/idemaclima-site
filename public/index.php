@@ -107,6 +107,7 @@ $router->post('/admin/reference-import/run', [ReferenceImportController::class, 
 $router->get('/admin/categories', [CategoriesController::class, 'index']);
 $router->get('/admin/categories/form', [CategoriesController::class, 'form']);
 $router->post('/admin/categories/save', [CategoriesController::class, 'save']);
+$router->post('/admin/categories/delete', [CategoriesController::class, 'delete']);
 $router->get('/admin/products', [ProductsController::class, 'index']);
 $router->get('/admin/products/inventory', [ProductsController::class, 'inventory']);
 $router->get('/admin/products/form', [ProductsController::class, 'form']);
@@ -136,6 +137,7 @@ $router->post('/admin/warranties/import/run', [WarrantyImportController::class, 
 $router->get('/admin/warranties/registration', [AdminWarrantyController::class, 'registration']);
 $router->post('/admin/warranties/status', [AdminWarrantyController::class, 'updateStatus']);
 $router->post('/admin/warranties/update', [AdminWarrantyController::class, 'updateRegistration']);
+$router->post('/admin/warranties/document/replace', [AdminWarrantyController::class, 'replaceDocument']);
 $router->post('/admin/warranties/delete', [AdminWarrantyController::class, 'deleteRegistration']);
 $router->post('/admin/warranties/certificate/generate', [AdminWarrantyController::class, 'generateCertificate']);
 $router->get('/admin/warranties/certificate/{id}', [AdminWarrantyController::class, 'certificateFile']);

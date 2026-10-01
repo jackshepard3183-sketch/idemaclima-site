@@ -55,11 +55,8 @@ final class WarrantyImportController
     {
         AdminAuth::requireLogin();
         if (!Security::verifyCsrf($_POST['_csrf'] ?? null)) { http_response_code(419); exit('Sessione non valida'); }
-        if (!isset($_FILES['manifest']) || !is_uploaded_file((string)($_FILES['manifest']['tmp_name'] ?? ''))) { http_response_code(422); exit('Seleziona il file JSON.'); }
-        $raw = file_get_contents((string)$_FILES['manifest']['tmp_name']);
-        $payload = json_decode((string)$raw, true);
-        if (!is_array($payload) || !is_array($payload['items'] ?? null)) { http_response_code(422); exit('Manifest non valido.'); }
-        $done = 0; $skipped = 0; $errors = [];
+        try { $payload=self::importPayload($_FILES['manifest']??null); } catch (Throwable $e) { http_response_code(422); header('Content-Type: application/json; charset=UTF-8'); echo json_encode(['imported'=>0,'skipped'=>0,'errors'=>[$e->getMessage()]],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE); return; }
+        $done = 0; $skipped = 0; $errors = []; $importedItems = [];
         try {
             if (function_exists('set_time_limit')) @set_time_limit(0);
             $pdo = Database::connection();
@@ -153,6 +150,7 @@ final class WarrantyImportController
                     ->execute([$registrationId,$isMulti ? 'multi' : 'mono',$modelCode,$combination]);
                 $pdo->commit();
                 $done++;
+                $importedItems[]=['id'=>$sourceId,'nome'=>trim((string)($item['first_name']??'').' '.(string)($item['last_name']??'')),'email'=>strtolower(trim((string)($item['email']??''))),'modello'=>$modelCode];
             } catch (Throwable $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
                 self::removeImportedDocument($invoicePath);
@@ -161,9 +159,43 @@ final class WarrantyImportController
             }
         }
         header('Content-Type: application/json; charset=UTF-8');
-        echo json_encode(['imported'=>$done,'skipped'=>$skipped,'errors'=>$errors], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);
+        echo json_encode(['imported'=>$done,'skipped'=>$skipped,'imported_items'=>$importedItems,'errors'=>$errors], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);
     }
 
+
+    private static function importPayload(mixed $file): array
+    {
+        if(!is_array($file)||!is_uploaded_file((string)($file['tmp_name']??''))) throw new RuntimeException('Seleziona il file XLSX esportato da WPForms oppure il manifest JSON.');
+        if((int)($file['size']??0)>15728640) throw new RuntimeException('Il file supera 15 MB.');
+        $name=strtolower((string)($file['name']??''));
+        if(str_ends_with($name,'.xlsx')) return ['items'=>self::xlsxItems((string)$file['tmp_name'])];
+        $payload=json_decode((string)file_get_contents((string)$file['tmp_name']),true);
+        if(!is_array($payload)||!is_array($payload['items']??null)) throw new RuntimeException('File non valido: usa un XLSX WPForms o un manifest JSON compatibile.');
+        return $payload;
+    }
+
+    private static function xlsxItems(string $path): array
+    {
+        if(!class_exists('ZipArchive')) throw new RuntimeException('La lettura XLSX non è disponibile sul server.');
+        $zip=new \ZipArchive(); if($zip->open($path)!==true) throw new RuntimeException('File XLSX non valido o danneggiato.');
+        try {
+            $shared=[];$sharedRaw=$zip->getFromName('xl/sharedStrings.xml');
+            if(is_string($sharedRaw)){ $sx=simplexml_load_string($sharedRaw,'SimpleXMLElement',LIBXML_NONET|LIBXML_NOCDATA); if($sx){$sxNs=$sx->getNamespaces(true);$sxRoot=$sx->children($sxNs['']??'http://schemas.openxmlformats.org/spreadsheetml/2006/main');foreach($sxRoot->si as $si){$parts=[];foreach($si->xpath('.//*[local-name()="t"]')?:[] as $t)$parts[]=(string)$t;$shared[]=implode('',$parts);}} }
+            $sheetRaw=$zip->getFromName('xl/worksheets/sheet1.xml'); if(!is_string($sheetRaw))throw new RuntimeException('Il foglio principale non è presente nel file XLSX.');
+            $sheet=simplexml_load_string($sheetRaw,'SimpleXMLElement',LIBXML_NONET|LIBXML_NOCDATA); if(!$sheet)throw new RuntimeException('Il foglio XLSX non può essere letto.');
+            $sheetNs=$sheet->getNamespaces(true);$sheetUri=$sheetNs['']??'http://schemas.openxmlformats.org/spreadsheetml/2006/main';$sheetRoot=$sheet->children($sheetUri);
+            $matrix=[];foreach($sheetRoot->sheetData->row as $row){$values=[];foreach($row->c as $cell){$ref=(string)$cell['r'];preg_match('/^[A-Z]+/',$ref,$m);$index=self::columnIndex($m[0]??'A');$type=(string)$cell['t'];$nodes=$cell->children($sheetUri);if($type==='inlineStr'){$parts=[];foreach($nodes->is->xpath('.//*[local-name()="t"]')?:[] as $t)$parts[]=(string)$t;$value=implode('',$parts);}else{$value=(string)$nodes->v;if($type==='s')$value=(string)($shared[(int)$value]??'');}$values[$index]=trim($value);}if($values!==[]){ksort($values);$matrix[]=$values;}}
+        } finally {$zip->close();}
+        if(count($matrix)<2)throw new RuntimeException('Il file XLSX non contiene registrazioni.');
+        $headers=[];foreach($matrix[0] as $i=>$label)$headers[$i]=self::headerKey((string)$label);$items=[];
+        foreach(array_slice($matrix,1) as $row){$record=[];foreach($headers as $i=>$key)if($key!=='')$record[$key]=(string)($row[$i]??'');if(count(array_filter($record,static fn($v)=>trim((string)$v)!==''))===0)continue;$sourceId=(int)self::pick($record,['entry id','id iscrizione','id','numero']);$created=self::pick($record,['date','data','data creazione','created at','data invio']);$invoiceDate=self::pick($record,['data fattura','invoice date','data di acquisto']);$indoor=[];foreach($record as $key=>$value)if($value!==''&&(str_contains($key,'matricola')||str_contains($key,'serial'))&&(str_contains($key,'interna')||str_contains($key,'indoor')))$indoor[]=$value;$required=['nome'=>self::pick($record,['nome','first name']),'cognome'=>self::pick($record,['cognome','last name']),'email'=>self::pick($record,['email','e-mail']),'modello'=>self::pick($record,['modello','model code','unita esterna','unità esterna'])];$missing=[];foreach($required as $label=>$value)if(trim($value)==='')$missing[]=$label;$items[]=['source_id'=>$sourceId,'source_created_at'=>self::xlsxDate($created),'first_name'=>$required['nome'],'last_name'=>$required['cognome'],'fiscal_code'=>self::pick($record,['codice fiscale','cf','fiscal code']),'email'=>$required['email'],'phone'=>self::pick($record,['telefono','recapito telefonico','phone']),'address'=>self::pick($record,['indirizzo','address']),'postal_code'=>self::pick($record,['cap','postal code']),'city'=>self::pick($record,['citta','città','city']),'province'=>self::pick($record,['provincia','province']),'region'=>self::pick($record,['regione','region']),'invoice_date'=>self::xlsxDate($invoiceDate,true),'invoice_url'=>self::pick($record,['fattura','allega fattura','invoice','file fattura']),'fgas_url'=>self::pick($record,['f-gas','fgas','certificato f-gas','file f-gas']),'product_type'=>self::pick($record,['tipologia','tipo prodotto','product type']),'model_code'=>$required['modello'],'combination'=>self::pick($record,['combinazione','combination','configurazione']),'outdoor_serial'=>self::pick($record,['matricola unita esterna','matricola unità esterna','outdoor serial','numero seriale esterna']),'indoor_serials'=>$indoor,'import_status'=>$missing===[]?'IMPORTABILE':'IMPORTABILE CON VERIFICA','review_warning'=>$missing===[]?'':'Campi XLSX da verificare: '.implode(', ',$missing)];}
+        if($items===[])throw new RuntimeException('Nessuna registrazione riconosciuta nel file XLSX.');return $items;
+    }
+
+    private static function columnIndex(string $letters): int {$value=0;foreach(str_split($letters) as $letter)$value=$value*26+(ord($letter)-64);return max(0,$value-1);}
+    private static function headerKey(string $value): string {$value=html_entity_decode($value,ENT_QUOTES|ENT_HTML5,'UTF-8');$value=mb_strtolower(trim($value),'UTF-8');$value=strtr($value,['à'=>'a','á'=>'a','è'=>'e','é'=>'e','ì'=>'i','ò'=>'o','ù'=>'u']);return trim(preg_replace('/\s+/u',' ',preg_replace('/[^a-z0-9@._ -]+/u',' ',$value)??$value)??$value);}
+    private static function pick(array $record,array $aliases): string {foreach($aliases as $alias){$key=self::headerKey($alias);if(isset($record[$key])&&trim((string)$record[$key])!=='')return trim((string)$record[$key]);}foreach($aliases as $alias){$key=self::headerKey($alias);foreach($record as $header=>$value)if($value!==''&&(str_contains($header,$key)||str_contains($key,$header)))return trim((string)$value);}return '';}
+    private static function xlsxDate(string $value,bool $dateOnly=false): string {$value=trim($value);if($value==='')return '';if(is_numeric($value)){$seconds=((float)$value-25569)*86400;return gmdate($dateOnly?'Y-m-d':'Y-m-d H:i:s',(int)round($seconds));}$timestamp=strtotime(str_replace('/','-',$value));if($timestamp!==false)return date($dateOnly?'Y-m-d':'Y-m-d H:i:s',$timestamp);return $value;}
 
     private static function copyDocument(string $url, string $kind, int $sourceId, bool $allowMissing = false): ?string
     {

@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\Auth\AdminAuth;
 use App\Core\Audit;
 use App\Core\Database;
+use App\Core\PrivateUpload;
 use App\Core\Security;
 use App\Core\Validator;
 use App\Services\WarrantyService;
@@ -194,6 +195,53 @@ final class WarrantyController
         if ($certificatePath) self::removePrivatePath((string)$certificatePath);
         Audit::log('warranty.registration.update','warranty_registration',$id,['model_id'=>$modelId]);
         header('Location: /idemaclima/admin/warranties/registration?id='.$id); exit;
+    }
+
+    public static function replaceDocument(): void
+    {
+        AdminAuth::requireLogin();
+        if (!Security::verifyCsrf($_POST['_csrf'] ?? null)) { http_response_code(419); exit('Sessione non valida'); }
+
+        $id = Validator::int($_POST['id'] ?? 0);
+        $kind = (string)($_POST['kind'] ?? '');
+        if (!in_array($kind, ['invoice', 'fgas'], true)) { http_response_code(422); exit('Tipo documento non valido.'); }
+
+        $errors = [];
+        $uploaded = PrivateUpload::warrantyDocument('replacement_file', $errors);
+        if ($errors || !$uploaded) {
+            http_response_code(422);
+            exit($errors ? implode(' ', array_values(array_unique($errors))) : 'Seleziona un documento da caricare.');
+        }
+
+        $column = $kind === 'invoice' ? 'invoice_file' : 'fgas_file';
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare("SELECT {$column} FROM warranty_registrations WHERE id=? LIMIT 1");
+        $stmt->execute([$id]);
+        $current = $stmt->fetchColumn();
+        if ($current === false) {
+            PrivateUpload::remove($uploaded['path']);
+            http_response_code(404); exit('Registrazione non trovata');
+        }
+
+        try {
+            $pdo->beginTransaction();
+            $stmt = $pdo->prepare("UPDATE warranty_registrations SET {$column}=? WHERE id=?");
+            $stmt->execute([$uploaded['path'], $id]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            PrivateUpload::remove($uploaded['path']);
+            http_response_code(500); exit('Impossibile sostituire il documento.');
+        }
+
+        PrivateUpload::remove(is_string($current) ? $current : null);
+        Audit::log('warranty.document.replace', 'warranty_registration', $id, [
+            'kind' => $kind,
+            'replaced_existing' => is_string($current) && $current !== '',
+            'mime' => $uploaded['mime'],
+            'size' => $uploaded['size'],
+        ]);
+        header('Location: /idemaclima/admin/warranties/registration?id=' . $id . '&document_replaced=' . rawurlencode($kind)); exit;
     }
 
     public static function deleteRegistration(): void

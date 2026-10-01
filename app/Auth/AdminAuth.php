@@ -153,33 +153,42 @@ final class AdminAuth
     public static function requireManager(): array
     {
         $user = self::user();
-        if ($user === null) {
-            header('Location: /idemaclima/admin/login', true, 302);
-            exit;
-        }
-        if (in_array(strtolower((string)($user['role'] ?? '')), ['content','requests'], true)) {
-            http_response_code(403);
-            exit('Accesso riservato agli amministratori completi.');
+        if ($user === null) { header('Location: /idemaclima/admin/login', true, 302); exit; }
+        if (!in_array(strtolower((string)($user['role'] ?? '')), ['admin','administrator'], true) && !self::hasPermission((string)$user['role'], 'users')) {
+            http_response_code(403); exit('Non disponi dei permessi per gestire utenti e accessi.');
         }
         return $user;
     }
 
+    public static function hasPermission(string $role, string $section): bool
+    {
+        $role=strtolower(trim($role));if(in_array($role,['admin','administrator'],true))return true;
+        try{$s=Database::connection()->prepare('SELECT COUNT(*) FROM admin_role_permissions WHERE role_slug=? AND section_key=?');$s->execute([$role,$section]);return (bool)$s->fetchColumn();}
+        catch(\Throwable){$legacy=['content'=>['dashboard','media','catalogs','references','technical','assistance','campus'],'requests'=>['dashboard','campus','warranties','incentives','contacts']];return in_array($section,$legacy[$role]??[],true);}
+    }
+
     public static function authorizeRequest(string $path): void
     {
-        if (!self::check() || !str_starts_with($path, '/admin/')) return;
-        $role = strtolower((string)(self::user()['role'] ?? ''));
-        if (!in_array($role, ['content','requests'], true)) return;
-
-        $settings = ['/admin/settings','/admin/analytics','/admin/redirects','/admin/catalog-import','/admin/reference-import'];
-        $content = ['/admin/categories','/admin/products','/admin/documents','/admin/media','/admin/mono-split-import','/admin/content','/admin/assistance','/admin/editorial','/admin/campus/events'];
-        $requests = ['/admin/contacts','/admin/incentives','/admin/warranties','/admin/campus/registrations','/admin/cat/users'];
-        $blocked = $role === 'content' ? array_merge($settings, $requests) : array_merge($settings, $content);
-        foreach ($blocked as $prefix) {
-            if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
-                http_response_code(403);
-                exit('Non disponi dei permessi necessari per questa sezione.');
-            }
-        }
+        if (!self::check() || !str_starts_with($path, '/admin')) return;
+        $user=self::user();if($user===null)return;$role=strtolower((string)($user['role']??''));if(in_array($role,['admin','administrator'],true))return;
+        if($path==='/admin/account'||str_starts_with($path,'/admin/account/'))return;
+        $map=[
+            'users'=>['/admin/settings/users'],
+            'analytics'=>['/admin/analytics'],
+            'redirects'=>['/admin/redirects'],
+            'settings'=>['/admin/settings'],
+            'media'=>['/admin/media'],
+            'catalogs'=>['/admin/content/catalogs','/admin/catalog-import'],
+            'references'=>['/admin/content/references','/admin/reference-import'],
+            'assistance'=>['/admin/assistance'],
+            'campus'=>['/admin/campus'],
+            'warranties'=>['/admin/warranties'],
+            'incentives'=>['/admin/incentives'],
+            'contacts'=>['/admin/contacts'],
+            'technical'=>['/admin/categories','/admin/products','/admin/product-images','/admin/documents','/admin/mono-split-import','/admin/editorial','/admin/cat/users'],
+        ];
+        $section='dashboard';foreach($map as $key=>$prefixes)foreach($prefixes as $prefix)if($path===$prefix||str_starts_with($path,$prefix.'/')){$section=$key;break 2;}
+        if(!self::hasPermission($role,$section)){http_response_code(403);exit('Non disponi dei permessi necessari per questa sezione.');}
     }
 
     public static function logout(): void
