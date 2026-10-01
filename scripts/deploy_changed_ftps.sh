@@ -20,51 +20,57 @@ is_managed_path() {
 }
 
 transfer_and_verify() {
-  local relative="$1" source="$package_root/$1" remote="$remote_root/$1"
-  local remote_copy remote_tmp attempt
-  remote_copy="$(mktemp)"
-  remote_tmp="${remote}.deploying.${GITHUB_RUN_ID:-$}.${RANDOM}"
-  for attempt in 1 2 3; do
-    rm -f "$remote_copy"
-    lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
-set ftp:ssl-allow yes
-set ssl:verify-certificate yes
-set ssl:check-hostname no
-set net:max-retries 2
-set net:timeout 20
-mkdir -p "$(dirname "$remote")"
-put "$source" -o "$remote_tmp"
-get "$remote_tmp" -o "$remote_copy"
-bye
-EOF
-    if cmp -s "$source" "$remote_copy"; then
-      lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
-set ftp:ssl-allow yes
-set ssl:verify-certificate yes
-set ssl:check-hostname no
-mv "$remote_tmp" "$remote"
-bye
-EOF
-      rm -f "$remote_copy"
-      echo "Verified and published $relative"
-      return 0
-    fi
-    echo "Integrity retry $attempt: $relative"
-  done
-  lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF || true
-set ftp:ssl-allow yes
-set ssl:verify-certificate yes
-set ssl:check-hostname no
-rm -f "$remote_tmp"
-bye
-EOF
-  rm -f "$remote_copy"
-  echo "Integrity mismatch: $relative" >&2
-  return 1
+  python3 - "$package_root/$1" "$remote_root/$1" <<'FTPS'
+import ftplib, hashlib, os, ssl, sys, uuid
+from urllib.parse import urlparse
+source, remote = sys.argv[1:]
+endpoint = os.environ["FTP_SERVER"]
+url = urlparse(endpoint if "://" in endpoint else "ftp://" + endpoint)
+context = ssl.create_default_context()
+# Match the existing Aruba configuration: validate the CA chain; its
+# certificate names the provider rather than the configured customer host.
+context.check_hostname = False
+expected = open(source, "rb").read()
+temporary = remote + ".deploying." + uuid.uuid4().hex
+for attempt in range(1, 4):
+    ftp = ftplib.FTP_TLS(context=context, timeout=30)
+    try:
+        ftp.connect(url.hostname, url.port or 21)
+        ftp.login(os.environ["FTP_USERNAME"], os.environ["FTP_PASSWORD"])
+        ftp.prot_p()
+        directory = ""
+        for part in remote.rsplit("/", 1)[0].split("/"):
+            if not part:
+                continue
+            directory += "/" + part
+            try:
+                ftp.mkd(directory)
+            except ftplib.error_perm:
+                ftp.cwd(directory)
+        with open(source, "rb") as stream:
+            ftp.storbinary("STOR " + temporary, stream, blocksize=8192)
+        downloaded = bytearray()
+        ftp.retrbinary("RETR " + temporary, downloaded.extend, blocksize=8192)
+        if downloaded != expected:
+            print("Integrity retry %s: %s / %s bytes" % (attempt, len(downloaded), len(expected)))
+            continue
+        ftp.rename(temporary, remote)
+        print("Verified and published " + remote)
+        break
+    except Exception as error:
+        print("FTPS retry %s: %s" % (attempt, type(error).__name__))
+        if attempt == 3:
+            sys.exit(1)
+    finally:
+        ftp.close()
+else:
+    sys.exit("FTPS integrity check failed")
+FTPS
 }
 
 # Keep the frontend audit fix together across retried deployments.
 for audit_path in \
+  app/Views/admin/_layout_start.php \
   app/Controllers/Public/TechnicalSheetsController.php \
   app/Views/public/home.php \
   app/Views/public/content/catalogs.php \
