@@ -26,21 +26,18 @@ transfer_and_verify() {
   remote_tmp="${remote}.deploying.${GITHUB_RUN_ID:-$}.${RANDOM}"
   for attempt in 1 2 3; do
     rm -f "$remote_copy"
-    lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
-set ftp:ssl-allow yes
-set ssl:use-shutdown yes
-set ssl:verify-certificate yes
-set ssl:check-hostname no
-set net:max-retries 2
-set net:timeout 20
-set cmd:fail-exit no
-mkdir -p "$(dirname "$remote")"
-set cmd:fail-exit yes
-put "$source" -o "$remote_tmp"
-sleep 3
-get "$remote_tmp" -o "$remote_copy"
-bye
-EOF
+    local transfer_url="${FTP_SERVER%/}$remote_tmp"
+    [[ "$transfer_url" == *://* ]] || transfer_url="ftp://$transfer_url"
+    if ! curl --fail --silent --show-error --ssl-reqd --connect-timeout 20 --max-time 60 \
+      --user "$FTP_USERNAME:$FTP_PASSWORD" --ftp-create-dirs --upload-file "$source" "$transfer_url"; then
+      echo "Upload retry $attempt: $relative"
+      continue
+    fi
+    if ! curl --fail --silent --show-error --ssl-reqd --connect-timeout 20 --max-time 60 \
+      --user "$FTP_USERNAME:$FTP_PASSWORD" --output "$remote_copy" "$transfer_url"; then
+      echo "Download verification retry $attempt: $relative"
+      continue
+    fi
     if cmp -s "$source" "$remote_copy"; then
       lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
 set ftp:ssl-allow yes
