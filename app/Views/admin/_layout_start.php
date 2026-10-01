@@ -197,7 +197,7 @@ main button:not(.global-sort-button):not(.menu-button){min-height:36px;padding:7
 .admin-modern main .idema-action .admin-btn-icon{display:inline-flex;width:14px;height:14px;flex:0 0 14px}
 .admin-modern main .idema-action svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:760px){.admin-modern main .idema-action{min-height:44px!important}}
-.admin-page-title{display:block;line-height:1.3}.admin-page-title>span{display:block}.admin-page-subtitle{font-size:12px;font-weight:500;margin-top:3px}.admin-modern .admin-topbar{height:auto;min-height:64px;padding-top:10px;padding-bottom:10px}.admin-topbar-title{flex:1;min-width:0}.admin-topbar-tools{flex:0 0 auto}
+.admin-page-title{display:block;line-height:1.3;text-align:center}.admin-page-title>span{display:block}.admin-page-subtitle{font-size:12px;font-weight:500;margin-top:3px}.admin-modern .admin-topbar{height:auto;min-height:64px;padding-top:10px;padding-bottom:10px}.admin-topbar-title{flex:1;min-width:0;text-align:center}.admin-topbar-tools{flex:0 0 auto}
 .admin-user-initials{display:none}
 @media(max-width:760px){.admin-user{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 auto;max-width:none!important;min-width:38px;height:38px;padding:0 10px!important}.admin-user-full{display:none}.admin-user-initials{display:inline;font-weight:750}.admin-topbar-title{min-width:0}.admin-topbar-title strong{overflow-wrap:anywhere}}
 </style><?php endif; ?><script nonce="<?= htmlspecialchars(Security::nonce(),ENT_QUOTES,'UTF-8') ?>">
