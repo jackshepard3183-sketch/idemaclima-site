@@ -28,6 +28,7 @@ transfer_and_verify() {
     rm -f "$remote_copy"
     lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
 set ftp:ssl-allow yes
+set ssl:use-shutdown yes
 set ssl:verify-certificate yes
 set ssl:check-hostname no
 set net:max-retries 2
@@ -36,6 +37,7 @@ set cmd:fail-exit no
 mkdir -p "$(dirname "$remote")"
 set cmd:fail-exit yes
 put "$source" -o "$remote_tmp"
+sleep 3
 get "$remote_tmp" -o "$remote_copy"
 bye
 EOF
