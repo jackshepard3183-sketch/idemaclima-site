@@ -77,62 +77,6 @@ do
   printf 'M\t%s\n' "$audit_path" >> "$changed_list"
 done
 
-# Brand assets and their consuming views are intentionally deployed together.
-# This prevents partial staging updates when rapid consecutive commits cancel older runs.
-for required_path in \
-  app/Views/public/_layout_start.php \
-  app/Views/public/_layout_end.php \
-  app/Views/public/warranty/form.php \
-  public/brand-assets/idema-logo-96.png.php \
-  public/brand-assets/idema-logo-180.png.php \
-  public/brand-assets/idema-logo-512.png.php \
-  public/brand-assets/idema-logo-nero.png.php \
-  public/brand-assets/idema-clima.png.php \
-  public/brand-assets/garanzia-10anni.png.php \
-  public/brand-assets/garanzia-5anni.png.php \
-  public/brand-assets/campus-logo-colorato.webp \
-  public/brand-assets/campus-eventi-aperti.webp.php \
-  public/brand-assets/campus-eventi-cat.webp.php \
-  public/brand-assets/campus-casa-ecologica.webp \
-  public/brand-assets/campus-sala-corsi.webp \
-  app/Views/public/campus/index.php \
-  app/Controllers/Admin/WarrantyCertificateActionsTrait.php \
-  app/Controllers/Admin/WarrantyCertificateLayoutTrait.php \
-  app/Views/admin/warranty_certificate_layout.php \
-  app/Views/public/contact/form.php \
-  app/Views/public/editorial/incentives_easytool_form.php \
-  app/Views/public/campus/cat_register.php \
-  app/Views/public/campus/event.php \
-  app/Views/public/warranty/form_fields.php \
-  scripts/mirror_remote_assets.php \
-  database/import/rendered_asset_sources.txt \
-  app/Core/Url.php \
-  app/Core/Seo.php \
-  app/Services/CampusMailService.php \
-  app/Services/ContactMailService.php \
-  app/Services/IncentivesMailService.php \
-  app/Services/WarrantyService.php \
-  public/index.php \
-  app/Controllers/Admin/WarrantyController.php \
-  app/Controllers/Admin/WarrantyImportController.php \
-  app/Controllers/Admin/ProductsController.php \
-  app/Views/admin/_layout_start.php \
-  app/Views/admin/products.php \
-  app/Views/admin/product_inventory.php \
-  app/Views/admin/warranty_import.php \
-  app/Views/admin/warranty_registrations.php \
-  database/migrations/064_warranty_historical_import.sql \
-  app/Controllers/Admin/WpformsRequestImportController.php \
-  app/Views/admin/wpforms_request_import.php \
-  app/Views/admin/contacts.php \
-  app/Views/admin/contact_detail.php \
-  app/Views/admin/incentive_requests.php \
-  app/Views/admin/incentive_request.php \
-  database/migrations/066_wpforms_request_import.sql
-do
-  printf 'M\t%s\n' "$required_path" >> "$changed_list"
-done
-
 while IFS=$'\t' read -r status first second; do
   [[ -n "$status" ]] || continue
   path="${second:-$first}"
