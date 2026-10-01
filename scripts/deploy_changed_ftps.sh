@@ -26,18 +26,17 @@ transfer_and_verify() {
   remote_tmp="${remote}.deploying.${GITHUB_RUN_ID:-$}.${RANDOM}"
   for attempt in 1 2 3; do
     rm -f "$remote_copy"
-    local transfer_url="${FTP_SERVER%/}$remote_tmp"
-    [[ "$transfer_url" == *://* ]] || transfer_url="ftp://$transfer_url"
-    if ! curl --fail --silent --show-error --ssl-reqd --connect-timeout 20 --max-time 60 \
-      --user "$FTP_USERNAME:$FTP_PASSWORD" --ftp-create-dirs --upload-file "$source" "$transfer_url"; then
-      echo "Upload retry $attempt: $relative"
-      continue
-    fi
-    if ! curl --fail --silent --show-error --ssl-reqd --connect-timeout 20 --max-time 60 \
-      --user "$FTP_USERNAME:$FTP_PASSWORD" --output "$remote_copy" "$transfer_url"; then
-      echo "Download verification retry $attempt: $relative"
-      continue
-    fi
+    lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
+set ftp:ssl-allow yes
+set ssl:verify-certificate yes
+set ssl:check-hostname no
+set net:max-retries 2
+set net:timeout 20
+mkdir -p "$(dirname "$remote")"
+put "$source" -o "$remote_tmp"
+get "$remote_tmp" -o "$remote_copy"
+bye
+EOF
     if cmp -s "$source" "$remote_copy"; then
       lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
 set ftp:ssl-allow yes
@@ -49,11 +48,6 @@ EOF
       rm -f "$remote_copy"
       echo "Verified and published $relative"
       return 0
-    fi
-    if [[ -f "$remote_copy" ]]; then
-      echo "Transferred file differs: $(wc -c < "$source") source bytes, $(wc -c < "$remote_copy") remote bytes"
-    else
-      echo "Remote verification copy was not downloaded: $relative"
     fi
     echo "Integrity retry $attempt: $relative"
   done
@@ -71,7 +65,6 @@ EOF
 
 # Keep the frontend audit fix together across retried deployments.
 for audit_path in \
-  app/Views/admin/_layout_start.php \
   app/Controllers/Public/TechnicalSheetsController.php \
   app/Views/public/home.php \
   app/Views/public/content/catalogs.php \
