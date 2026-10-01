@@ -38,6 +38,13 @@ for attempt in range(1, 4):
         ftp.connect(url.hostname, url.port or 21)
         ftp.login(os.environ["FTP_USERNAME"], os.environ["FTP_PASSWORD"])
         ftp.prot_p()
+        if attempt == 1 and "/Views/admin/" in remote:
+            previous = bytearray()
+            try:
+                ftp.retrbinary("RETR " + remote, previous.extend, blocksize=8192)
+                print("Existing admin template: %s; remote=%s bytes; source=%s bytes; identical=%s" % (remote, len(previous), len(expected), previous == expected))
+            except ftplib.error_perm:
+                print("Existing admin template missing: " + remote)
         directory = ""
         for part in remote.rsplit("/", 1)[0].split("/"):
             if not part:
@@ -71,6 +78,8 @@ FTPS
 # Keep the frontend audit fix together across retried deployments.
 for audit_path in \
   app/Views/admin/_layout_start.php \
+  app/Views/admin/dashboard.php \
+  app/Views/admin/_layout_end.php \
   app/Controllers/Public/TechnicalSheetsController.php \
   app/Views/public/home.php \
   app/Views/public/content/catalogs.php \
