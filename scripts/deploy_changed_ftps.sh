@@ -32,7 +32,9 @@ set ssl:verify-certificate yes
 set ssl:check-hostname no
 set net:max-retries 2
 set net:timeout 20
+set cmd:fail-exit no
 mkdir -p "$(dirname "$remote")"
+set cmd:fail-exit yes
 put "$source" -o "$remote_tmp"
 get "$remote_tmp" -o "$remote_copy"
 bye
@@ -48,6 +50,11 @@ EOF
       rm -f "$remote_copy"
       echo "Verified and published $relative"
       return 0
+    fi
+    if [[ -f "$remote_copy" ]]; then
+      echo "Transferred file differs: $(wc -c < "$source") source bytes, $(wc -c < "$remote_copy") remote bytes"
+    else
+      echo "Remote verification copy was not downloaded: $relative"
     fi
     echo "Integrity retry $attempt: $relative"
   done
@@ -65,6 +72,7 @@ EOF
 
 # Keep the frontend audit fix together across retried deployments.
 for audit_path in \
+  app/Views/admin/_layout_start.php \
   app/Controllers/Public/TechnicalSheetsController.php \
   app/Views/public/home.php \
   app/Views/public/content/catalogs.php \
