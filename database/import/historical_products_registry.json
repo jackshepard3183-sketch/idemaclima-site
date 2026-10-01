@@ -39,7 +39,7 @@
             {"name":"IGC-V16WD2RN8-B-R32","slug":"igc-v16wd2rn8-b-r32","role":"complete_system","refrigerant":"R32","status":"discontinued","models":["IGC-V16WD2RN8-B-R32"]},
             {"name":"IGC-V5-V7W/D2N1","slug":"igc-v5-v7w-d2n1","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["IGC-V5W/D2N1","IGC-V7W/D2N1"]},
             {"name":"IGC-V10-12W/D2N1","slug":"igc-v10-12w-d2n1","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["IGC-V10W/D2N1","IGC-V12W/D2N1"]},
-            {"name":"IGC-V12-14-16W/D2RN1","slug":"igc-v12-14-16w-d2rn1","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["IGC-V12W/DR2N1","IGC-V14W/DR2N1","IGC-V16W/DR2N1"]}
+            {"name":"IGC-V12-14-16W/D2RN1","slug":"igc-v12-14-16w-d2rn1","role":"complete_system","refrigerant":"R410A","status":"discontinued","models":["IGC-V12W/D2RN1","IGC-V14W/D2RN1","IGC-V16W/D2RN1"]}
           ]
         },
         {

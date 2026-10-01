@@ -148,6 +148,11 @@ final class TechnicalSheetsController
 
     public static function product(string $slug): void
     {
+        if ($slug === 'linea-residenziale-r32-mono-split-wtmc-r32-color') {
+            header('Location: ' . Url::to('/schede-tecniche/prodotto/linea-residenziale-r32-mono-split-wtmc-blk-r32'), true, 301);
+            return;
+        }
+
         $pdo = Database::connection();
         $stmt = $pdo->prepare(
             'SELECT p.*, c.name AS family_name, c.slug AS family_slug,

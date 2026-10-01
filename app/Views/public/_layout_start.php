@@ -30,9 +30,7 @@ $base = '/idemaclima';
 <meta property="og:url" content="<?= e((string)$seo['canonical']) ?>">
 <meta property="og:type" content="website">
 <?php if(!empty($ga4['search_console_verification'])): ?><meta name="google-site-verification" content="<?= e((string)$ga4['search_console_verification']) ?>"><?php endif; ?>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="<?=e(\App\Core\Url::to('/public/assets/fonts/fonts.css'))?>" rel="stylesheet">
 <?php if($iubendaActive): ?>
 <script nonce="<?= e(\App\Core\Security::nonce()) ?>">var _iub=_iub||[];_iub.csConfiguration={siteId:<?= json_encode((int)$ga4['iubenda_site_id']) ?>,cookiePolicyId:<?= json_encode((int)$ga4['iubenda_cookie_policy_id']) ?>,lang:"it",storage:{useSiteId:true},banner:{acceptButtonDisplay:true,rejectButtonDisplay:true,customizeButtonDisplay:true,closeButtonDisplay:false,position:"float-top-center"}};</script>
 <script src="https://cdn.iubenda.com/cs/gpp/stub.js"></script><script src="https://cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" async></script>
