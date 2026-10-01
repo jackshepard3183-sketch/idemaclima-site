@@ -217,6 +217,7 @@ $router->get('/admin/contacts/view', [AdminContactsAnalyticsController::class, '
 $router->post('/admin/contacts/update', [AdminContactsAnalyticsController::class, 'updateContact']);
 $router->post('/admin/contacts/delete', [AdminContactsAnalyticsController::class, 'deleteContact']);
 $router->post('/admin/contacts/restore', [AdminContactsAnalyticsController::class, 'restoreContact']);
+$router->post('/admin/contacts/purge', [AdminContactsAnalyticsController::class, 'purgeContact']);
 $router->get('/admin/contacts/file/{id}', [AdminContactsAnalyticsController::class, 'attachment']);
 $router->get('/admin/analytics', [AdminContactsAnalyticsController::class, 'analytics']);
 $router->post('/admin/analytics/save', [AdminContactsAnalyticsController::class, 'saveAnalytics']);

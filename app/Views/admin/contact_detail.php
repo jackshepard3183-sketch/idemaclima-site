@@ -15,6 +15,12 @@
 <?php if(!empty($row['deleted_at'])): ?><p class="muted">Questa richiesta è nel cestino.</p><?php endif; ?>
 <button class="btn btn-secondary" type="submit"><?= empty($row['deleted_at'])?'Elimina':'Ripristina' ?></button>
 </form>
+<?php if(!empty($row['deleted_at'])): ?>
+<form method="post" action="/idemaclima/admin/contacts/purge" data-confirm="Eliminare definitivamente questa richiesta e l’eventuale allegato? Questa operazione non può essere annullata." style="margin-top:12px">
+<input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf,ENT_QUOTES,'UTF-8') ?>"><input type="hidden" name="id" value="<?= (int)$row['id'] ?>"><input type="hidden" name="confirm_permanent" value="1">
+<button class="btn btn-secondary" type="submit">Elimina definitivamente</button>
+</form>
+<?php endif; ?>
 </div>
 <?php require __DIR__.'/_layout_end.php'; ?>
 

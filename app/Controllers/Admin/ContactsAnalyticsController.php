@@ -21,9 +21,18 @@ final class ContactsAnalyticsController
     {
         AdminAuth::requireLogin();
         $status=(string)($_GET['status']??'');$trashed=($_GET['trash']??'')==='1';$allowed=['new','in_progress','closed','spam'];$pdo=Database::connection();self::backfillContactLocations($pdo);
+        $query=mb_substr(trim((string)($_GET['q']??'')),0,200);
         $where=$trashed?'deleted_at IS NOT NULL':'deleted_at IS NULL';
-        if(in_array($status,$allowed,true)){$s=$pdo->prepare('SELECT * FROM contact_submissions WHERE '.$where.' AND status=? ORDER BY created_at DESC');$s->execute([$status]);$rows=$s->fetchAll(PDO::FETCH_ASSOC);}else{$rows=$pdo->query('SELECT * FROM contact_submissions WHERE '.$where.' ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);}
-        self::view('contacts',['title'=>'Contatti','rows'=>$rows,'status'=>$status,'trashed'=>$trashed]);
+        $params=[];
+        if(in_array($status,$allowed,true)){$where.=' AND status=?';$params[]=$status;}
+        if($query!==''){
+            $like='%'.str_replace(['!','%','_'],['!!','!%','!_'],$query).'%';
+            $where.=" AND (CONCAT_WS(' ',first_name,last_name) LIKE ? ESCAPE '!' OR email LIKE ? ESCAPE '!' OR phone LIKE ? ESCAPE '!' OR subject LIKE ? ESCAPE '!' OR message LIKE ? ESCAPE '!' OR CAST(id AS CHAR)=?)";
+            $params=array_merge($params,[$like,$like,$like,$like,$like,$query]);
+        }
+        $stmt=$pdo->prepare('SELECT * FROM contact_submissions WHERE '.$where.' ORDER BY created_at DESC');
+        $stmt->execute($params);$rows=$stmt->fetchAll(PDO::FETCH_ASSOC);
+        self::view('contacts',['title'=>'Contatti','rows'=>$rows,'status'=>$status,'trashed'=>$trashed,'query'=>$query]);
     }
 
 
@@ -72,6 +81,40 @@ final class ContactsAnalyticsController
         }
         header('Location: /idemaclima/admin/contacts' . ($trashed ? '' : '?trash=1'));
         exit;
+    }
+
+    public static function purgeContact(): void
+    {
+        AdminAuth::requireLogin();
+        self::csrf();
+        $id=(int)($_POST['id']??0);
+        if($id<1 || ($_POST['confirm_permanent']??'')!=='1'){
+            http_response_code(422);exit('Conferma richiesta per l’eliminazione definitiva.');
+        }
+        $pdo=Database::connection();
+        $pdo->beginTransaction();
+        try {
+            $stmt=$pdo->prepare('SELECT attachment_path FROM contact_submissions WHERE id=? AND deleted_at IS NOT NULL FOR UPDATE');
+            $stmt->execute([$id]);$row=$stmt->fetch(PDO::FETCH_ASSOC);
+            if(!$row){$pdo->rollBack();http_response_code(404);exit('Richiesta non presente nel cestino.');}
+            $stmt=$pdo->prepare('DELETE FROM contact_submissions WHERE id=? AND deleted_at IS NOT NULL');
+            $stmt->execute([$id]);
+            Audit::log('contact.purge','contact_submission',$id);
+            $pdo->commit();
+        } catch (\Throwable $error) {
+            if($pdo->inTransaction()){$pdo->rollBack();}
+            throw $error;
+        }
+        if(!empty($row['attachment_path'])){
+            $stmt=$pdo->prepare('SELECT COUNT(*) FROM contact_submissions WHERE attachment_path=?');
+            $stmt->execute([$row['attachment_path']]);
+            $root=realpath(dirname(__DIR__,3).'/storage/private');
+            $path=realpath(dirname(__DIR__,3).'/storage/private/'.ltrim((string)$row['attachment_path'],'/'));
+            if((int)$stmt->fetchColumn()===0 && $root && $path && str_starts_with($path,$root.DIRECTORY_SEPARATOR) && is_file($path)){
+                if(!unlink($path)){Audit::log('contact.purge_attachment_failed','contact_submission',$id);}
+            }
+        }
+        header('Location: /idemaclima/admin/contacts?trash=1');exit;
     }
 
     public static function attachment(string $id): void
