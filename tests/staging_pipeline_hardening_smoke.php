@@ -46,7 +46,7 @@ $checks=[
     [$workflow,'cleanup_migration_wrapper','rimozione wrapper migration'],
     [$workflow,"--accept-legacy-baseline",'baseline legacy accettato solo dal wrapper interno'],
     [$workflow,"grep -q 'Completato. Migration applicate:'",'verifica esecuzione migration'],
-    [file_get_contents($root.'/scripts/deploy_changed_ftps.sh'),'cmp -s', 'verifica integrita file trasferiti'],
+    [file_get_contents($root.'/scripts/deploy_changed_ftps.sh'),'if downloaded != expected:', 'verifica integrita file trasferiti'],
     [file_get_contents($root.'/scripts/deploy_changed_ftps.sh'),'Integrity mismatch:', 'errore file remoto identificabile'],
 ];
 foreach($checks as [$haystack,$needle,$label]){if(!str_contains($haystack,$needle))throw new RuntimeException('Check staging pipeline fallito: '.$label);}
