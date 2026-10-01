@@ -63,6 +63,20 @@ EOF
   return 1
 }
 
+# Keep the frontend audit fix together across retried deployments.
+for audit_path in \
+  app/Controllers/Public/TechnicalSheetsController.php \
+  app/Views/public/home.php \
+  app/Views/public/content/catalogs.php \
+  app/Views/public/technical_sheets/index.php \
+  database/migrations/074_correct_idronica_igc_badges.sql \
+  public/catalogs.js \
+  public/assets/fonts/fonts.css \
+  public/assets/fonts/*.woff
+do
+  printf 'M\t%s\n' "$audit_path" >> "$changed_list"
+done
+
 # Brand assets and their consuming views are intentionally deployed together.
 # This prevents partial staging updates when rapid consecutive commits cancel older runs.
 for required_path in \

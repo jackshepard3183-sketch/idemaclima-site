@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 $root=dirname(__DIR__);$family=file_get_contents($root.'/app/Views/public/technical_sheets/family.php');$product=file_get_contents($root.'/app/Views/public/technical_sheets/product.php');$controller=file_get_contents($root.'/app/Controllers/Public/TechnicalSheetsController.php');$search=file_get_contents($root.'/app/Views/public/technical_sheets/search.php');$index=file_get_contents($root.'/app/Views/public/technical_sheets/index.php');
 foreach([$family,$product,$controller,$search,$index] as $content)if(!is_string($content)||$content==='')throw new RuntimeException('File Schede tecniche non leggibile.');
-foreach(['ISPT-R32','ISAX-R32','ISZZ-R32','WTZ-R32','WTMC-R32','WTMC-R32 COLOR'] as $name)if(!str_contains($controller,"'".$name."'"))throw new RuntimeException('Mono Split dedicato mancante: '.$name);
+foreach(['ISPT-R32','ISAX-R32','ISZZ-R32','WTZ-R32','WTMC-R32','WTMC-BLK-R32'] as $name)if(!str_contains($controller,"'".$name."'"))throw new RuntimeException('Mono Split dedicato mancante: '.$name);
 $checks=[
  [$family,'class="product-item dedicated-product"','link diretto per i sei Mono Split'],
  [$family,'<?php else:?><details class="product-item"','accordion per gli altri prodotti'],
