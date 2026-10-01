@@ -184,8 +184,35 @@ main button:not(.global-sort-button):not(.menu-button){min-height:36px;padding:7
 .admin-modern main table.admin-data-table{border-collapse:separate;border-spacing:0}.admin-modern main table.admin-data-table tbody tr:last-child td{border-bottom:0}
 .admin-modern .icon-only{width:40px;padding-left:0!important;padding-right:0!important}.admin-modern .icon-only .admin-btn-icon{margin:0}
 @media(max-width:760px){.admin-modern .toolbar-actions,.admin-modern .page-actions,.admin-modern .button-group,.admin-modern .action-group{display:grid;grid-template-columns:1fr;gap:12px;width:100%}.admin-modern .toolbar-actions>.btn,.admin-modern .toolbar-actions>.btnlink,.admin-modern .page-actions>.btn,.admin-modern .page-actions>.btnlink{width:100%}.admin-modern .filters,.admin-modern .filter-bar,.admin-modern .search-panel,.admin-modern .actions-bar{padding:14px;border-radius:13px}.admin-modern .tabs{border-radius:12px}}
+
+.admin-modern main .idema-action{display:inline-flex!important;align-items:center!important;justify-content:center;gap:7px!important;min-height:32px!important;padding:6px 10px!important;border:1px solid #cbdced!important;border-radius:8px!important;background:#fff!important;color:#0056a6!important;font-size:12px!important;font-weight:600!important;line-height:1.5!important;text-decoration:none!important;box-shadow:0 2px 5px rgba(15,39,66,.04)!important}
+.admin-modern main .idema-action[data-action-style="edit"]{background:#edfafd!important;border-color:#67cde0!important;color:#00839a!important}
+.admin-modern main .idema-action[data-action-style="delete"]{background:#fff4f4!important;border-color:#ffc6cb!important;color:#d52b38!important}
+.admin-modern main .idema-action:hover{filter:brightness(.97);transform:none!important}
+.admin-modern main .idema-action:focus-visible{outline:2px solid currentColor!important;outline-offset:3px}
+.admin-modern main .idema-action:before{content:none!important}
+.admin-modern main .idema-action .admin-btn-icon{display:inline-flex;width:14px;height:14px;flex:0 0 14px}
+.admin-modern main .idema-action svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:760px){.admin-modern main .idema-action{min-height:44px!important}}
 </style><?php endif; ?><script>
 function applyAdminUi(){
+ const actionIcons={
+ open:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+ edit:'<path d="m4 16 12-12 4 4L8 20H4v-4Z"/><path d="m14 6 4 4"/>',
+ duplicate:'<rect x="9" y="9" width="11" height="12" rx="1"/><path d="M6 15H3V3h11v3"/>',
+ delete:'<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/>'
+ };
+ document.querySelectorAll('main a,main button').forEach(function(el){
+  if(el.closest('.admin-nav')||el.classList.contains('global-sort-button'))return;
+  const raw=(el.textContent||'').replace(/^[\s↗✎⌫⧉]+/,'').trim();
+  const kind=/^apri(?:\s|$)/i.test(raw)?'open':/^modifica(?:\s|$)/i.test(raw)?'edit':/^duplica(?:\s|$)/i.test(raw)?'duplicate':/^elimina(?:\s|$)/i.test(raw)?'delete':null;
+  if(!kind)return;
+  if(el.dataset.actionStyle===kind)return;
+  el.querySelectorAll('.admin-btn-icon').forEach(function(icon){icon.remove()});
+  const icon=document.createElement('span');icon.className='admin-btn-icon';icon.setAttribute('aria-hidden','true');
+  icon.innerHTML='<svg viewBox="0 0 24 24">'+actionIcons[kind]+'</svg>';
+  el.prepend(icon);el.classList.add('idema-action');el.dataset.actionStyle=kind;el.dataset.uiIcon='1';
+ });
  const rules=[[/^(apri|visualizza|dettagli|vai a)/i,'↗'],[/^(modifica|gestisci|editor)/i,'✎'],[/^(elimina|rimuovi|cancella)/i,'⌫'],[/^(salva|conferma|applica)/i,'✓'],[/^(aggiungi|nuov[oa]|crea|inserisci)/i,'＋'],[/^(importa|carica|upload)/i,'↑'],[/^(esporta|scarica|download)/i,'↓'],[/^(cerca|trova)/i,'⌕'],[/^(filtra|filtro)/i,'≡'],[/^(duplica|copia)/i,'⧉'],[/^(approva|assegna)/i,'✓'],[/^(verifica|controlla)/i,'◉'],[/^(invia|reinvia)/i,'➜'],[/^(torna|indietro)/i,'←']];
  document.querySelectorAll('main a.btn,main a.btnlink,main button:not(.global-sort-button):not(.menu-button),main table tbody td:last-child a').forEach(function(el){
   if(el.querySelector('.admin-btn-icon')||el.closest('.admin-nav'))return;
