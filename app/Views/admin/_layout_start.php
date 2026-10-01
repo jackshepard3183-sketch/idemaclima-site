@@ -202,6 +202,29 @@ main button:not(.global-sort-button):not(.menu-button){min-height:36px;padding:7
 @media(max-width:760px){.admin-user{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 auto;max-width:none!important;min-width:38px;height:38px;padding:0 10px!important}.admin-user-full{display:none}.admin-user-initials{display:inline;font-weight:750}.admin-topbar-title{min-width:0}.admin-topbar-title strong{overflow-wrap:anywhere}}
 </style><?php endif; ?><script nonce="<?= htmlspecialchars(Security::nonce(),ENT_QUOTES,'UTF-8') ?>">
 function applyAdminUi(){
+ const current=new URL(location.href);
+ const candidates=[...document.querySelectorAll('.admin-nav a[href]')].map(link=>({link,url:new URL(link.href,location.href)})).filter(({url})=>{
+  if(current.pathname!==url.pathname&&!current.pathname.startsWith(url.pathname+'/'))return false;
+  if(url.pathname==='/idemaclima/admin'&&current.pathname!==url.pathname)return false;
+  const audience=url.searchParams.get('audience');
+  return !audience||audience===(current.searchParams.get('audience')||'public');
+ }).sort((a,b)=>b.url.pathname.length-a.url.pathname.length);
+ const matched=candidates[0];
+ if(matched){
+  const label=matched.link.textContent.trim(),group=matched.link.closest('.nav-children')?.parentElement.querySelector('.nav-summary')?.textContent.trim();
+  const heading=document.querySelector('.admin-page-title');
+  if(heading){
+   const primary=document.createElement('span');primary.textContent=group||label;
+   heading.replaceChildren(primary);
+   if(group){const secondary=document.createElement('span');secondary.className='admin-page-subtitle';secondary.textContent=label;heading.appendChild(secondary)}
+  }
+  document.title=(group?group+' — ':'')+label;
+  if(current.pathname===matched.url.pathname){
+   const pageHeading=document.querySelector('main>.toolbar h1,main>h1');
+   if(pageHeading)pageHeading.textContent=label;
+  }
+ }
+
  const actionIcons={
  open:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
  edit:'<path d="m4 16 12-12 4 4L8 20H4v-4Z"/><path d="m14 6 4 4"/>',
