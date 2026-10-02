@@ -179,8 +179,8 @@ final class ProductImagesController
             try{
                 $assigned=Upload::copyProductImage($path,(string)$row['name'],true);
                 $pdo->prepare('UPDATE products SET image_path=? WHERE id=?')->execute([$assigned,$productId]);
-                $pdo->prepare("UPDATE product_image_reviews SET candidate_path=?,candidate_width=600,candidate_height=600,notes=CONCAT_WS(' ',NULLIF(notes,''),'Normalizzata automaticamente: prodotto entro 580×580 px su tela trasparente 600×600 px.'),reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=?")->execute([$assigned,AdminAuth::id(),$productId]);
-                Audit::log('product_image.normalize_approved_margin','product',$productId,['previous_path'=>$path,'assigned_path'=>$assigned,'content_max'=>580,'canvas'=>600]);
+                $pdo->prepare("UPDATE product_image_reviews SET candidate_path=?,candidate_width=1000,candidate_height=1000,notes=CONCAT_WS(' ',NULLIF(notes,''),'Normalizzata automaticamente: prodotto entro 980×980 px su tela trasparente 1000×1000 px.'),reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP WHERE product_id=?")->execute([$assigned,AdminAuth::id(),$productId]);
+                Audit::log('product_image.normalize_approved_margin','product',$productId,['previous_path'=>$path,'assigned_path'=>$assigned,'content_max'=>980,'canvas'=>1000]);
                 $normalized++;
             }catch(\Throwable $e){
                 $errors++;
