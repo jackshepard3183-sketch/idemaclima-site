@@ -21,7 +21,7 @@ final class DashboardController
             'contacts_new' => $count("SELECT COUNT(*) FROM contact_submissions WHERE status='new' AND deleted_at IS NULL"),
             'warranties_new' => $count("SELECT COUNT(*) FROM warranty_registrations WHERE status='pending'"),
             'campus_new' => $count("SELECT COUNT(*) FROM event_registrations WHERE status IN ('registered','waitlist')"),
-            'incentives_new' => $count("SELECT COUNT(*) FROM incentive_requests WHERE status='new'"),
+            'incentives_new' => self::incentivesCount(),
             'cat_pending' => $count('SELECT COUNT(*) FROM cat_accounts WHERE active=0 AND verified_at IS NULL AND disabled_at IS NULL'),
         ];
         try {
@@ -35,4 +35,10 @@ final class DashboardController
 
         require dirname(__DIR__, 2) . '/Views/admin/dashboard.php';
     }
+    private static function incentivesCount():int
+    {
+        try { IncentivesController::ensureTable();return (int)Database::connection()->query("SELECT COUNT(*) FROM incentive_requests WHERE status='new' AND deleted_at IS NULL")->fetchColumn(); }
+        catch(\Throwable){return 0;}
+    }
+
 }

@@ -170,6 +170,9 @@ $router->get('/admin/incentives/import', static fn() => WpformsRequestImportCont
 $router->post('/admin/incentives/import/run', static fn() => WpformsRequestImportController::run('incentives'));
 $router->get('/admin/incentives/request', [AdminIncentivesController::class, 'request']);
 $router->post('/admin/incentives/update', [AdminIncentivesController::class, 'update']);
+$router->post('/admin/incentives/delete', [AdminIncentivesController::class, 'delete']);
+$router->post('/admin/incentives/restore', [AdminIncentivesController::class, 'restore']);
+$router->post('/admin/incentives/purge', [AdminIncentivesController::class, 'purge']);
 $router->get('/admin/campus/events', [AdminCampusController::class, 'events']);
 $router->get('/admin/campus/events/form', [AdminCampusController::class, 'eventForm']);
 $router->post('/admin/campus/events/save', [AdminCampusController::class, 'saveEvent']);
