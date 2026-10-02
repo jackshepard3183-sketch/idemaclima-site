@@ -4,11 +4,15 @@ $contactSubject=preg_replace('/[\r\n]+/u',' ',(string)($row['subject']??''));
 $contactEmail=trim((string)($row['email']??''));
 $contactDate=(string)($row['created_at']??'');
 $contactTimestamp=$contactDate!==''?strtotime($contactDate):false;
-if($contactTimestamp!==false)$contactDate=date('d/m/Y H:i',$contactTimestamp);
+if($contactTimestamp!==false){
+    $contactMonths=[1=>'gennaio',2=>'febbraio',3=>'marzo',4=>'aprile',5=>'maggio',6=>'giugno',7=>'luglio',8=>'agosto',9=>'settembre',10=>'ottobre',11=>'novembre',12=>'dicembre'];
+    $contactDate=date('j',$contactTimestamp).' '.$contactMonths[(int)date('n',$contactTimestamp)].' '.date('Y',$contactTimestamp);
+}
 $contactOriginal="— Richiesta originale —\r\nDa: ".$contactName." — ".$contactEmail
+    ."\r\nOggetto: ".$contactSubject
     .($contactDate!==''?"\r\nData: ".$contactDate:'')
-    ."\r\nOggetto: ".$contactSubject."\r\n\r\n".str_replace(["\r\n","\r"],"\n",(string)($row['message']??''));
-$contactBody="Buongiorno ".$contactName.",\r\n\r\n\r\n\r\n".$contactOriginal;
+    ."\r\n\r\n".str_replace(["\r\n","\r"],"\n",(string)($row['message']??''));
+$contactBody=$contactOriginal;
 $contactReplyUrl=filter_var($contactEmail,FILTER_VALIDATE_EMAIL)
     ?'mailto:'.rawurlencode($contactEmail).'?subject='.rawurlencode('Re: '.$contactSubject).'&body='.rawurlencode($contactBody)
     :'';
