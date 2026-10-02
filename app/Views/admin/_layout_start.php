@@ -9,7 +9,7 @@ $adminInitials=mb_strtoupper(mb_substr(trim((string)($user['first_name']??'')),0
 if($adminInitials==='')$adminInitials=mb_strtoupper(mb_substr((string)($user['username']??'U'),0,1));
 $modernPreview=!isset($_GET['preview'])||$_GET['preview']!=='legacy';
 ?>
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title><?= htmlspecialchars($title??'IDEMA Admin',ENT_QUOTES,'UTF-8') ?></title><link rel="icon" type="image/png" sizes="96x96" href="/idemaclima/public/brand-assets/idema-logo-96.png.php"><link rel="icon" type="image/png" sizes="512x512" href="/idemaclima/public/brand-assets/idema-logo-512.png.php"><link rel="apple-touch-icon" sizes="180x180" href="/idemaclima/public/brand-assets/idema-logo-180.png.php"><style>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title><?= htmlspecialchars(($title??'Amministrazione').' | Idema Clima Srl',ENT_QUOTES,'UTF-8') ?></title><link rel="icon" type="image/png" sizes="96x96" href="/idemaclima/public/brand-assets/idema-logo-96.png.php"><link rel="icon" type="image/png" sizes="512x512" href="/idemaclima/public/brand-assets/idema-logo-512.png.php"><link rel="apple-touch-icon" sizes="180x180" href="/idemaclima/public/brand-assets/idema-logo-180.png.php"><style>
 :root{--navy:#0f2742;--navy2:#173b61;--blue:#1c5a91;--surface:#fff;--canvas:#f3f6f9;--line:#dfe6ed;--text:#17212b;--muted:#64748b;--sidebar:270px}*{box-sizing:border-box}html{font-size:16px}body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;background:var(--canvas);color:var(--text);line-height:1.5}.admin-shell{min-height:100vh;display:grid;grid-template-columns:var(--sidebar) minmax(0,1fr)}.admin-sidebar{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--navy);color:#fff;padding:20px 14px;z-index:40}.brand{padding:6px 10px 22px;border-bottom:1px solid rgba(255,255,255,.13);margin-bottom:14px}.brand strong{font-size:17px;letter-spacing:.02em}.brand span{opacity:.7;font-size:13px}.nav-section{margin:18px 0 6px;padding:0 10px;color:#9fb4c8;font-size:11px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}.admin-nav a,.nav-summary{display:flex;align-items:center;gap:10px;min-height:42px;margin:3px 0;padding:9px 11px;border-radius:9px;color:#eaf2f8;text-decoration:none;font-size:14px;font-weight:600}.admin-nav a:hover,.admin-nav a:focus-visible,.admin-nav a.is-active,.nav-summary:hover{background:rgba(255,255,255,.11);color:#fff}.admin-nav a.is-active{box-shadow:inset 3px 0 0 #68aee7}.admin-nav details{margin:2px 0}.nav-summary{cursor:pointer;list-style:none}.nav-summary::-webkit-details-marker{display:none}.nav-summary:after{content:'›';margin-left:auto;transition:transform .18s}.admin-nav details[open]>.nav-summary:after{transform:rotate(90deg)}.nav-children{padding-left:14px}.nav-children a{font-weight:500;color:#cbd9e5}.sidebar-footer{padding:18px 8px 4px}.logout{width:100%;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35);padding:9px 12px;border-radius:8px}.admin-content{min-width:0}.admin-topbar{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:25}.admin-topbar strong{font-size:14px}.admin-user{color:var(--muted);font-size:13px}.menu-button{display:none;width:42px;height:42px;border:1px solid var(--line);background:#fff;border-radius:9px;font-size:22px}.admin-overlay{display:none}main{max-width:1440px;margin:0 auto;padding:30px 28px 54px}h1{font-size:clamp(26px,3vw,34px);line-height:1.15;margin:0 0 8px}h2{line-height:1.25}.page-lead{margin:0 0 26px;color:var(--muted)}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}.card,.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:19px}.card strong{display:block;font-size:28px;margin-top:5px}.card-link{display:block;color:inherit;text-decoration:none;transition:transform .15s,box-shadow .15s}.card-link:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(15,39,66,.09)}.card-link small{display:block;margin-top:9px;color:var(--blue);font-weight:700}.section-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.75fr);gap:20px;margin-top:22px}.section-grid .table-wrap table{min-width:0;table-layout:fixed}table{width:100%;border-collapse:collapse;background:#fff}th,td{text-align:left;padding:12px;border-bottom:1px solid #e8edf2;font-size:14px;vertical-align:top}th{background:#f8fafc;white-space:nowrap}.table-wrap{width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#fff}.table-wrap table{min-width:720px}.admin-data-table{width:100%;table-layout:auto}.admin-data-table .col-compact{width:1%;white-space:nowrap}.admin-data-table .col-date{width:118px;min-width:108px}.admin-data-table .col-status{width:112px;min-width:92px}.admin-data-table .col-action{width:1%;min-width:72px;white-space:nowrap}.admin-data-table .col-primary{min-width:190px}.admin-data-table td:not(.col-compact):not(.col-date):not(.col-status):not(.col-action):not(.col-primary){min-width:120px}.muted{color:var(--muted)}.badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#eef2f7;font-size:12px}.badge-new{background:#e4f2ff;color:#15568a}.badge-warning{background:#fff3cd;color:#765600}button{cursor:pointer;font:inherit}input,select,textarea{width:100%;padding:10px 12px;border:1px solid #cad4df;border-radius:8px;margin-top:5px;background:#fff;font:inherit}textarea{min-height:112px}.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.formgrid .full{grid-column:1/-1}.check{display:flex;align-items:center;gap:8px}.check input{width:auto;margin:0}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.toolbar h1{margin:0}.btnlink,.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--navy);color:#fff;text-decoration:none;border:0;border-radius:8px;padding:10px 14px;font-weight:700}.btnlink:hover,.btn:hover{background:var(--navy2)}.inlineform{display:grid;grid-template-columns:2fr 2fr 100px auto auto;gap:10px;align-items:end;margin-bottom:18px}.error{background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;margin-bottom:12px}.quick-list{display:grid;gap:9px}.quick-list a{display:flex;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;color:var(--text);text-decoration:none}.empty{padding:26px;text-align:center;color:var(--muted)}
 main,.panel,.card,.cards>*,.section-grid>*,.formgrid>*,.toolbar>*,.quick-list>*,td,th,label{min-width:0}
 .panel,.card,td,th,p,li,dd,a,span,strong,small,label{overflow-wrap:anywhere;word-break:normal}
@@ -204,6 +204,30 @@ main button:not(.global-sort-button):not(.menu-button){min-height:36px;padding:7
 .admin-page-title{display:block;line-height:1.3;text-align:center}.admin-page-title>span{display:block}.admin-page-subtitle{font-size:12px;font-weight:500;margin-top:3px}.admin-modern .admin-topbar{height:auto;min-height:64px;padding-top:10px;padding-bottom:10px}.admin-topbar-title{flex:1;min-width:0;text-align:center}.admin-topbar-tools{flex:0 0 auto}
 .admin-user-initials{display:none}
 @media(max-width:760px){.admin-user{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 auto;max-width:none!important;min-width:38px;height:38px;padding:0 10px!important}.admin-user-full{display:none}.admin-user-initials{display:inline;font-weight:750}.admin-topbar-title{min-width:0}.admin-topbar-title strong{overflow-wrap:anywhere}}
+
+/* Componenti dai riferimenti grafici approvati, ottobre 2026. */
+.admin-modern main .idema-action{min-height:38px!important;padding:8px 14px!important;border-radius:7px!important;background:#eaf1f8!important;border-color:transparent!important;color:#153a60!important;font-size:13px!important;font-weight:700!important;box-shadow:none!important}
+.admin-modern main .idema-action[data-action-style="new"]{background:#43a928!important;color:#fff!important}
+.admin-modern main .idema-action[data-action-style="save"]{background:#0875ed!important;color:#fff!important}
+.admin-modern main .idema-action[data-action-style="delete"]{background:#ef2936!important;color:#fff!important}
+.admin-modern main .idema-action[data-action-style="edit"]{background:#eaf1f8!important;border-color:transparent!important;color:#153a60!important}
+.admin-modern main .idema-action[data-action-style="back"]{background:#4b647c!important;color:#fff!important}
+.admin-modern main .idema-action[data-action-style="cancel"]{background:#fff!important;border-color:#214b76!important;color:#153a60!important}
+.admin-modern main .idema-action .admin-btn-icon,.admin-modern main .idema-action svg{width:18px;height:18px;flex-basis:18px}
+.admin-modern main .idema-action:hover{filter:brightness(.93)}
+.admin-modern main .idema-action:disabled{opacity:.5;cursor:not-allowed}
+.admin-modern main .badge[data-status-style]{border:0;border-radius:9px;gap:8px;padding:6px 12px;font-weight:600}
+.admin-modern main .badge[data-status-style]::before{content:'';width:12px;height:12px;flex:0 0 12px;border-radius:50%;background:currentColor}
+.admin-modern main .badge[data-status-style="active"]{background:#e2f4e5;color:#078638}
+.admin-modern main .badge[data-status-style="inactive"]{background:#edf0f2;color:#738391}
+.admin-modern main .badge[data-status-style="draft"]{background:#e1efff;color:#006cef}
+.admin-modern main .badge[data-status-style="review"]{background:#fff3d7;color:#ad7100}
+.admin-modern main .badge[data-status-style="error"]{background:#ffe2e5;color:#de1429}
+.admin-modern main .pagination{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;padding:8px 0}
+.admin-modern main .pagination a,.admin-modern main .pagination span{display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:34px;padding:6px 9px;border:1px solid #e0e9f1;border-radius:6px;background:#fff;color:#173b61;font-size:13px;font-weight:650;text-decoration:none}
+.admin-modern main .pagination [aria-current="page"]{background:#123b60;color:#fff;border-color:#123b60;box-shadow:0 2px 5px #123b6033}
+.admin-modern main .pagination .pagination-gap{border:0;background:transparent;color:#7a8e9f}
+@media(max-width:760px){.admin-modern main .idema-action{min-height:44px!important}.admin-modern main .pagination a{min-width:44px;min-height:44px}}
 </style><?php endif; ?><script nonce="<?= htmlspecialchars(Security::nonce(),ENT_QUOTES,'UTF-8') ?>">
 function applyAdminUi(){
  const current=new URL(location.href);
@@ -222,7 +246,7 @@ function applyAdminUi(){
    heading.replaceChildren(primary);
    if(group){const secondary=document.createElement('span');secondary.className='admin-page-subtitle';secondary.textContent=label;heading.appendChild(secondary)}
   }
-  document.title=(group?group+' — ':'')+label;
+  document.title=(document.querySelector('main>.toolbar h1,main>h1')?.textContent.trim()||label)+' | Idema Clima Srl';
   if(current.pathname===matched.url.pathname){
    const pageHeading=document.querySelector('main>.toolbar h1,main>h1');
    if(pageHeading)pageHeading.textContent=label;
@@ -233,25 +257,33 @@ function applyAdminUi(){
  open:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
  edit:'<path d="m4 16 12-12 4 4L8 20H4v-4Z"/><path d="m14 6 4 4"/>',
  duplicate:'<rect x="9" y="9" width="11" height="12" rx="1"/><path d="M6 15H3V3h11v3"/>',
- delete:'<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/>'
+ delete:'<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/>',
+ new:'<path d="M12 5v14M5 12h14"/>',
+ save:'<path d="M4 3h13l4 4v14H3V3h1Z"/><path d="M7 3v6h10V3M7 21v-8h10v8"/>',
+ download:'<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>',
+ upload:'<path d="M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5"/>',
+ back:'<path d="m10 5-7 7 7 7M3 12h18"/>',
+ filter:'<path d="M3 3h18l-7 8v8l-4 2V11Z"/>',
+ search:'<circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/>',
+ more:'<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
+ cancel:'<path d="m6 6 12 12M6 18 18 6"/>'
  };
- document.querySelectorAll('main a,main button').forEach(function(el){
-  if(el.closest('.admin-nav')||el.classList.contains('global-sort-button')||el.querySelector('h1,h2,h3,p'))return;
-  const raw=(el.textContent||'').replace(/^[\s↗✎⌫⧉]+/,'').trim();
-  const kind=/^apri(?:\s|$)/i.test(raw)?'open':/^modifica(?:\s|$)/i.test(raw)?'edit':/^duplica(?:\s|$)/i.test(raw)?'duplicate':/^elimina(?:\s|$)/i.test(raw)?'delete':null;
+ const rules=[[/^(elimina|rimuovi|cancella)\b/i,'delete'],[/^(salva|conferma e salva|conferma|applica)\b/i,'save'],[/^(aggiungi|nuov[oa]|crea|inserisci)\b/i,'new'],[/^(modifica|gestisci|editor)\b/i,'edit'],[/^(duplica|copia)\b/i,'duplicate'],[/^(esporta|scarica|download)\b/i,'download'],[/^(importa|carica|upload)\b/i,'upload'],[/^(torna|indietro)\b/i,'back'],[/^annulla\b/i,'cancel'],[/^(filtra|filtro)\b/i,'filter'],[/^(cerca|trova)\b/i,'search'],[/^(apri|visualizza|dettagli|vai a)\b/i,'open'],[/^altro\b/i,'more']];
+ document.querySelectorAll('main a,main button').forEach(el=>{
+  if(el.classList.contains('global-sort-button')||el.closest('.pagination')||el.querySelector('h1,h2,h3,p'))return;
+  const raw=(el.textContent||'').replace(/^[\s↗✎⌫⧉✓↓↑＋+←◉➜≡⌕]+/,'').trim();
+  const kind=rules.find(([pattern])=>pattern.test(raw))?.[1];
   if(!kind)return;
-  if(el.dataset.actionStyle===kind)return;
-  el.querySelectorAll('.admin-btn-icon').forEach(function(icon){icon.remove()});
+  el.querySelectorAll('.admin-btn-icon').forEach(icon=>icon.remove());
+  if(el.firstChild?.nodeType===Node.TEXT_NODE)el.firstChild.textContent=el.firstChild.textContent.replace(/^[\s↗✎⌫⧉✓↓↑＋+←◉➜≡⌕]+/,'');
   const icon=document.createElement('span');icon.className='admin-btn-icon';icon.setAttribute('aria-hidden','true');
   icon.innerHTML='<svg viewBox="0 0 24 24">'+actionIcons[kind]+'</svg>';
   el.prepend(icon);el.classList.add('idema-action');el.dataset.actionStyle=kind;el.dataset.uiIcon='1';
  });
- const rules=[[/^(apri|visualizza|dettagli|vai a)/i,'↗'],[/^(modifica|gestisci|editor)/i,'✎'],[/^(elimina|rimuovi|cancella)/i,'⌫'],[/^(salva|conferma|applica)/i,'✓'],[/^(aggiungi|nuov[oa]|crea|inserisci)/i,'＋'],[/^(importa|carica|upload)/i,'↑'],[/^(esporta|scarica|download)/i,'↓'],[/^(cerca|trova)/i,'⌕'],[/^(filtra|filtro)/i,'≡'],[/^(duplica|copia)/i,'⧉'],[/^(approva|assegna)/i,'✓'],[/^(verifica|controlla)/i,'◉'],[/^(invia|reinvia)/i,'➜'],[/^(torna|indietro)/i,'←']];
- document.querySelectorAll('main a.btn,main a.btnlink,main button:not(.global-sort-button):not(.menu-button),main table tbody td:last-child a').forEach(function(el){
-  if(el.querySelector('.admin-btn-icon')||el.closest('.admin-nav'))return;
-  const raw=(el.textContent||'').trim();
-  if('✓✎↗↓＋+←⌫⧉◉➜≡⌕'.includes(raw.charAt(0))){el.dataset.uiIcon='1';return;}
-  for(const rule of rules){if(rule[0].test(raw)){const i=document.createElement('span');i.className='admin-btn-icon';i.setAttribute('aria-hidden','true');i.textContent=rule[1];el.prepend(i);el.dataset.uiIcon='1';break;}}
+ document.querySelectorAll('main .badge').forEach(badge=>{
+  const label=badge.textContent.trim().toLocaleLowerCase('it');
+  const state=/^(attivo|attiva|pubblicato|pubblicata|approvato|approvata|completato|completata)$/.test(label)?'active':/^(inattivo|inattiva|disattivo|disattiva|disabilitato|disabilitata)$/.test(label)?'inactive':/^(bozza|nuova|nuovo)$/.test(label)?'draft':/^(in revisione|da approvare|in attesa|in lavorazione|pending)$/.test(label)?'review':/^(errore|rifiutato|rifiutata)$/.test(label)?'error':null;
+  if(state)badge.dataset.statusStyle=state;
  });
  document.querySelectorAll('main table:not(.modern-activity)').forEach(function(t){t.classList.add('admin-data-table')});
  document.querySelectorAll('main .toolbar').forEach(function(tb){const groups=[...tb.children].filter(function(c){return c.querySelectorAll&&c.querySelectorAll('.btn,.btnlink,button').length>1});groups.forEach(function(g){g.classList.add('toolbar-actions')})});
