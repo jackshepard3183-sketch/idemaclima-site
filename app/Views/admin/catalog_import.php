@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
-    <title>Importazione catalogo | IDEMA Clima</title>
+    <title>Importazione catalogo | Idema Clima Srl</title>
     <style>
         body{font-family:Arial,sans-serif;background:#f4f6f8;color:#17202a;margin:0;padding:32px}
         main{max-width:980px;margin:auto;background:#fff;border-radius:12px;padding:28px;box-shadow:0 4px 18px #0001}
@@ -15,7 +15,7 @@
         table{border-collapse:collapse;width:100%;margin-top:18px}th,td{padding:9px;border-bottom:1px solid #dfe5ea;text-align:left}
         .ok{background:#e9f7ef;padding:14px;border-left:4px solid #168249}.error{background:#fdeaea;padding:14px;border-left:4px solid #b42318}
         .note{background:#fff8df;padding:14px;border-left:4px solid #c18b00}.section{margin-top:30px;padding-top:22px;border-top:1px solid #dfe5ea}code{font-size:.92em}
-    </style>
+    button{background:#eaf1f8;color:#153a60}.danger{background:#eaf1f8;color:#153a60}a.button{background:#4b647c;color:#fff}button:focus-visible,a.button:focus-visible{outline:2px solid #0875ed;outline-offset:3px}@media(max-width:760px){body{padding:16px}main{padding:18px}button,a.button{min-height:44px}}</style>
 </head>
 <body><main>
     <h1>Importazione catalogo IDEMA</h1>
