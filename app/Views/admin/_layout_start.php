@@ -246,7 +246,7 @@ function applyAdminUi(){
    heading.replaceChildren(primary);
    if(group){const secondary=document.createElement('span');secondary.className='admin-page-subtitle';secondary.textContent=label;heading.appendChild(secondary)}
   }
-  document.title=(document.querySelector('main>.toolbar h1,main>h1')?.textContent.trim()||label)+' | Idema Clima Srl';
+  document.title=(current.pathname===matched.url.pathname?label:(document.querySelector('main>.toolbar h1,main>h1')?.textContent.trim()||label))+' | Idema Clima Srl';
   if(current.pathname===matched.url.pathname){
    const pageHeading=document.querySelector('main>.toolbar h1,main>h1');
    if(pageHeading)pageHeading.textContent=label;
