@@ -1,7 +1,53 @@
+<?php
+$contactName=trim((string)($registration['customer_first_name']??'').' '.(string)($registration['customer_last_name']??''));
+$contactSubject=preg_replace('/[\r\n]+/u',' ',(string)('Richiesta di garanzia '.(trim((string)($registration['certificate_number']??''))?:'#'.(int)$registration['id'])));
+$contactEmail=trim((string)($registration['email']??''));
+$contactDate=(string)($registration['created_at']??'');
+$contactTimestamp=$contactDate!==''?strtotime($contactDate):false;
+if($contactTimestamp!==false){
+    $contactMonths=[1=>'gennaio',2=>'febbraio',3=>'marzo',4=>'aprile',5=>'maggio',6=>'giugno',7=>'luglio',8=>'agosto',9=>'settembre',10=>'ottobre',11=>'novembre',12=>'dicembre'];
+    $contactDate=date('j',$contactTimestamp).' '.$contactMonths[(int)date('n',$contactTimestamp)].' '.date('Y',$contactTimestamp);
+}
+$warrantySummary=[];
+foreach(['Prodotto'=>'product_name','Modello'=>'code','Data fattura'=>'invoice_date','Formula garanzia'=>'extension_formula'] as $label=>$field){
+    $value=trim((string)($registration[$field]??''));
+    if($value!=='')$warrantySummary[]=$label.': '.$value;
+}
+if(isset($registration['warranty_years']))$warrantySummary[]='Durata garanzia: '.(int)$registration['warranty_years'].' anni';
+foreach(['Unità esterna'=>'outer_unit','Combinazione'=>'combination'] as $label=>$field){
+    $value=trim((string)($details[$field]??''));
+    if($value!=='')$warrantySummary[]=$label.': '.$value;
+}
+foreach($units as $unit){
+    $unitLabel=($unit['unit_type']??'')==='outdoor'?'Unità esterna':((($unit['unit_type']??'')==='indoor')?'Unità interna':(string)($unit['unit_type']??'Unità'));
+    $warrantySummary[]='Seriale '.$unitLabel.': '.(string)($unit['serial_number']??'');
+}
+if(!empty($registration['message']))$warrantySummary[]=(string)$registration['message'];
+$contactOriginal="— Richiesta originale —\r\nDa: ".$contactName." — ".$contactEmail
+    ."\r\nOggetto: ".$contactSubject
+    .($contactDate!==''?"\r\nData: ".$contactDate:'')
+    ."\r\n\r\n".str_replace(["\r\n","\r"],"\n",implode("\r\n",$warrantySummary));
+$contactBody="\r\n\r\n".$contactOriginal;
+$contactReplyUrl=filter_var($contactEmail,FILTER_VALIDATE_EMAIL)
+    ?'mailto:'.rawurlencode($contactEmail).'?subject='.rawurlencode('Re: '.$contactSubject).'&body='.rawurlencode($contactBody)
+    :'';
+?>
 <?php require __DIR__.'/_layout_start.php'; ?>
 <?php $warrantyHeading=(string)($registration['certificate_number'] ?? 'IN VERIFICA'); ?>
 <div class="toolbar"><div><h1>Garanzia <?= htmlspecialchars($warrantyHeading,ENT_QUOTES,'UTF-8') ?></h1><p class="muted"><?= htmlspecialchars($registration['product_name'].' - '.$registration['code']) ?></p></div><a class="btnlink" href="/idemaclima/admin/warranties">Torna alle registrazioni</a></div>
 <div class="cards" style="margin-bottom:18px"><div class="panel"><strong>Cliente</strong><p><?= htmlspecialchars($registration['customer_last_name'].' '.$registration['customer_first_name']) ?><br><?= htmlspecialchars($registration['fiscal_code']) ?><br><?= htmlspecialchars($registration['email']) ?><?php if(!empty($registration['phone'])): ?><br><?= htmlspecialchars((string)$registration['phone']) ?><?php endif; ?></p></div><div class="panel"><strong>Indirizzo</strong><p><?= htmlspecialchars($registration['address']) ?><br><?= htmlspecialchars($registration['postal_code'].' '.$registration['city'].' ('.$registration['province'].')') ?><br><?= htmlspecialchars($registration['region']) ?></p></div><div class="panel"><strong>Garanzia</strong><p><?= $registration['warranty_years'] === null ? 'Da verificare' : (int)$registration['warranty_years'].' anni' ?><?php if($registration['extension_formula']): ?><br><?= htmlspecialchars($registration['extension_formula']) ?><?php endif; ?><br>Fattura: <?= htmlspecialchars($registration['invoice_date']) ?><?php if(array_key_exists('invoice_required_snapshot',$registration)): ?><br>Fattura richiesta: <?= (int)$registration['invoice_required_snapshot']===1?'Sì':'No' ?><?php endif; ?><?php if(array_key_exists('fgas_required_snapshot',$registration)): ?><br>F-GAS richiesto: <?= (int)$registration['fgas_required_snapshot']===1?'Sì':'No' ?><?php endif; ?><?php if(!empty($registration['reviewed_at'])): ?><br>Ultima verifica: <?= htmlspecialchars($registration['reviewed_at']) ?><?php endif; ?></p></div></div>
+<div class="panel" style="margin-bottom:18px"><div style="display:flex;flex-wrap:wrap;gap:10px;margin:18px 0">
+<?php if($contactReplyUrl!==''): ?><a class="btnlink" href="<?= htmlspecialchars($contactReplyUrl,ENT_QUOTES,'UTF-8') ?>">Contatta via email</a><?php endif; ?>
+<button class="btn btn-secondary" type="button" id="contact-copy-request">Copia richiesta</button>
+</div>
+<p class="muted" id="contact-copy-status" role="status" aria-live="polite"></p>
+<div id="contact-copy-fallback" hidden>
+<label>Richiesta da copiare<textarea id="contact-original-text" readonly rows="8"><?= htmlspecialchars($contactOriginal,ENT_QUOTES,'UTF-8') ?></textarea></label>
+</div>
+<script nonce="<?= htmlspecialchars(\App\Core\Security::nonce(),ENT_QUOTES,'UTF-8') ?>">
+(()=>{const button=document.getElementById('contact-copy-request'),text=document.getElementById('contact-original-text'),status=document.getElementById('contact-copy-status'),fallback=document.getElementById('contact-copy-fallback');button.addEventListener('click',async()=>{try{if(!navigator.clipboard?.writeText)throw new Error('clipboard');await navigator.clipboard.writeText(text.value);fallback.hidden=true;status.textContent='Richiesta copiata.';}catch(error){fallback.hidden=false;text.focus();text.select();status.textContent='Seleziona e copia il testo con Ctrl+C oppure con il comando Copia del dispositivo.';}});})();
+</script>
+</div>
 <div class="panel" style="margin-bottom:18px"><h2>Unità registrate</h2><table><thead><tr><th>Tipo</th><th>Seriale</th></tr></thead><tbody><?php foreach($units as $u): ?><tr><td><?= htmlspecialchars($u['unit_type']) ?></td><td><?= htmlspecialchars($u['serial_number']) ?></td></tr><?php endforeach; ?></tbody></table></div>
 <div class="panel" style="margin-bottom:18px">
 <h2>Documenti privati</h2>
