@@ -2,6 +2,7 @@
 declare(strict_types=1);
 use App\Core\Security;
 Security::adminNoStore();
+\App\Core\AdminUi::install();
 $currentPath=(string)parse_url($_SERVER['REQUEST_URI']??'/idemaclima/admin',PHP_URL_PATH);
 $active=static fn(string $prefix):string=>str_starts_with($currentPath,$prefix)?' is-active':'';
 $adminDisplayName=trim(($user['first_name']??'').' '.($user['last_name']??''));
@@ -253,38 +254,6 @@ function applyAdminUi(){
   }
  }
 
- const actionIcons={
- open:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
- edit:'<path d="m4 16 12-12 4 4L8 20H4v-4Z"/><path d="m14 6 4 4"/>',
- duplicate:'<rect x="9" y="9" width="11" height="12" rx="1"/><path d="M6 15H3V3h11v3"/>',
- delete:'<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/>',
- new:'<path d="M12 5v14M5 12h14"/>',
- save:'<path d="M4 3h13l4 4v14H3V3h1Z"/><path d="M7 3v6h10V3M7 21v-8h10v8"/>',
- download:'<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>',
- upload:'<path d="M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5"/>',
- back:'<path d="m10 5-7 7 7 7M3 12h18"/>',
- filter:'<path d="M3 3h18l-7 8v8l-4 2V11Z"/>',
- search:'<circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/>',
- more:'<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
- cancel:'<path d="m6 6 12 12M6 18 18 6"/>'
- };
- const rules=[[/^(elimina|rimuovi|cancella)\b/i,'delete'],[/^(salva|conferma e salva|conferma|applica)\b/i,'save'],[/^(aggiungi|nuov[oa]|crea|inserisci)\b/i,'new'],[/^(modifica|gestisci|editor)\b/i,'edit'],[/^(duplica|copia)\b/i,'duplicate'],[/^(esporta|scarica|download)\b/i,'download'],[/^(importa|carica|upload)\b/i,'upload'],[/^(torna|indietro)\b/i,'back'],[/^annulla\b/i,'cancel'],[/^(filtra|filtro)\b/i,'filter'],[/^(cerca|trova)\b/i,'search'],[/^(apri|visualizza|dettagli|vai a)\b/i,'open'],[/^altro\b/i,'more']];
- document.querySelectorAll('main a,main button').forEach(el=>{
-  if(el.classList.contains('global-sort-button')||el.closest('.pagination')||el.querySelector('h1,h2,h3,p'))return;
-  const raw=(el.textContent||'').replace(/^[\s↗✎⌫⧉✓↓↑＋+←◉➜≡⌕]+/,'').trim();
-  const kind=rules.find(([pattern])=>pattern.test(raw))?.[1];
-  if(!kind)return;
-  el.querySelectorAll('.admin-btn-icon').forEach(icon=>icon.remove());
-  if(el.firstChild?.nodeType===Node.TEXT_NODE)el.firstChild.textContent=el.firstChild.textContent.replace(/^[\s↗✎⌫⧉✓↓↑＋+←◉➜≡⌕]+/,'');
-  const icon=document.createElement('span');icon.className='admin-btn-icon';icon.setAttribute('aria-hidden','true');
-  icon.innerHTML='<svg viewBox="0 0 24 24">'+actionIcons[kind]+'</svg>';
-  el.prepend(icon);el.classList.add('idema-action');el.dataset.actionStyle=kind;el.dataset.uiIcon='1';
- });
- document.querySelectorAll('main .badge').forEach(badge=>{
-  const label=badge.textContent.trim().toLocaleLowerCase('it');
-  const state=/^(attivo|attiva|pubblicato|pubblicata|approvato|approvata|completato|completata)$/.test(label)?'active':/^(inattivo|inattiva|disattivo|disattiva|disabilitato|disabilitata)$/.test(label)?'inactive':/^(bozza|nuova|nuovo)$/.test(label)?'draft':/^(in revisione|da approvare|in attesa|in lavorazione|pending)$/.test(label)?'review':/^(errore|rifiutato|rifiutata)$/.test(label)?'error':null;
-  if(state)badge.dataset.statusStyle=state;
- });
  document.querySelectorAll('main table:not(.modern-activity)').forEach(function(t){t.classList.add('admin-data-table')});
  document.querySelectorAll('main .toolbar').forEach(function(tb){const groups=[...tb.children].filter(function(c){return c.querySelectorAll&&c.querySelectorAll('.btn,.btnlink,button').length>1});groups.forEach(function(g){g.classList.add('toolbar-actions')})});
 }

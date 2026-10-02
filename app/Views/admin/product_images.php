@@ -11,7 +11,7 @@ require __DIR__.'/_layout_start.php';
 .image-summary{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:12px;margin:0 0 22px}.image-summary button{width:100%;text-align:left;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fff;color:inherit}.image-summary strong{display:block;font-size:24px}.image-tools{display:grid;grid-template-columns:minmax(240px,1fr) 240px auto;gap:12px;margin-bottom:18px}.image-table{min-width:1180px}.product-image{width:84px;height:84px;object-fit:contain;background:#f8fafc;border:1px solid var(--line);border-radius:8px}.image-cell small{display:block;max-width:190px;overflow-wrap:anywhere}.review-form{display:grid;gap:8px;min-width:270px}.review-form input,.review-form select,.review-form textarea{margin:0}.review-form textarea{min-height:68px}.review-actions{display:flex;gap:8px;flex-wrap:wrap}.review-actions form{margin:0}.review-actions .btn{padding:8px 10px;min-height:38px}.approve{background:#167647}.bulk-review-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-6px 0 18px}.bulk-review-actions .btn{width:auto}.bulk-review-actions small{color:var(--muted)}.protected{padding:9px;border-radius:8px;background:#eef2f7;color:var(--muted);font-weight:700}.quality-low{color:#a13b10;font-weight:700}.bulk-import{margin:0 0 20px;padding:18px}.bulk-import>form:not(.transparency-audit-form){display:grid;grid-template-columns:minmax(260px,1fr) minmax(220px,1fr) auto;gap:12px;align-items:end}.transparency-audit-form{display:flex;justify-content:flex-end;margin-top:10px}.transparency-audit-form .btn{width:auto;min-height:32px;padding:6px 10px;font-size:12px;box-shadow:none}.sort-button{border:0;background:transparent;padding:0;color:inherit;font:inherit;font-weight:800;cursor:pointer}.sort-button::after{content:' ↕';color:var(--muted)}.sort-button[data-direction='asc']::after{content:' ↑'}.sort-button[data-direction='desc']::after{content:' ↓'}.image-jumps{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}.image-jumps button{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--navy);font-weight:700;cursor:pointer}.image-jumps button:hover,.image-jumps button.is-active{border-color:var(--blue);color:var(--blue);background:#f3f7fa}.image-jumps .line-count{margin-left:5px;font-size:12px;opacity:.7}
 @media(max-width:760px){.image-summary{grid-template-columns:1fr 1fr}.image-tools,.bulk-import>form:not(.transparency-audit-form){grid-template-columns:1fr}.transparency-audit-form{justify-content:flex-start}.transparency-audit-form .btn{min-height:36px}}
 
-@media(max-width:760px){
+@media(max-width:1100px){
  .admin-modern main .table-wrap:has(>.image-table){overflow:visible;border:0;background:transparent}
  .admin-modern main .image-table{display:block;width:100%;min-width:0!important;table-layout:auto;background:transparent}
  .image-table thead{display:none}
@@ -39,6 +39,29 @@ require __DIR__.'/_layout_start.php';
  .image-summary button,.image-jumps button,.bulk-review-actions button,.bulk-import button{white-space:normal!important}
  .bulk-review-actions .btn,.bulk-import button{width:100%!important}
 }
+
+/* Review fields use a vertical label/control flow at every viewport width. */
+.admin-modern main .image-table{width:100%;min-width:0;table-layout:fixed}
+.admin-modern main .image-table th:nth-child(1){width:24%}
+.admin-modern main .image-table th:nth-child(2),.admin-modern main .image-table th:nth-child(3){width:16%}
+.admin-modern main .image-table th:nth-child(4){width:44%}
+.admin-modern main .image-table td:last-child{text-align:left;min-width:0!important}
+.admin-modern main .image-table .review-form{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch!important;justify-content:normal!important;min-width:0;width:100%;gap:12px}
+.admin-modern main .image-table .review-form label{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;min-width:0;text-align:left;white-space:normal}
+.admin-modern main .image-table .review-form :is(input,select,textarea){display:block;width:100%;min-width:0;max-width:100%;margin:0}
+.admin-modern main .image-table .review-form input[type=file]{overflow:hidden;padding:9px;font-size:13px}
+.admin-modern main .image-table .review-form .formgrid{display:grid;grid-template-columns:minmax(0,1fr) 90px;gap:12px;align-items:start}
+.admin-modern main .image-table .review-form textarea{min-height:100px;resize:vertical}
+.admin-modern main .image-table .review-form .media-picker-tools{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:8px;margin:0}
+.admin-modern main .image-table .review-form .media-picker-tools button{white-space:normal;text-align:left}
+.admin-modern main .image-table .review-form>.btn{justify-self:start}
+.admin-modern main .image-table .review-actions{justify-content:flex-start!important;align-items:stretch!important;margin-top:12px}
+.admin-modern main .image-table .review-actions form{display:grid;justify-items:start;min-width:0;gap:8px}
+.admin-modern main .image-table .review-actions .check{display:flex;align-items:center;gap:8px;text-align:left}
+.admin-modern main .image-table .review-actions .check input{width:auto;flex:0 0 auto}
+.admin-modern main .image-table td:last-child :is(button,a){white-space:normal!important;line-height:1.4!important}
+@media(max-width:1100px){.admin-modern main .image-table .review-form .formgrid{grid-template-columns:minmax(0,1fr) 90px!important}.admin-modern main .image-table .review-form>.btn{justify-self:stretch}.admin-modern main .image-table .review-actions form{width:100%;justify-items:stretch}}
+@media(max-width:480px){.admin-modern main .image-table .review-form .formgrid{grid-template-columns:minmax(0,1fr)!important}}
 </style>
 <div class="toolbar"><div><h1>Gestione immagini prodotti</h1><p class="muted">Confronta l’immagine attuale con quella recuperata dai cataloghi. Le nuove immagini trasparenti da 1000×1000 px vengono conservate nella loro risoluzione originale e associate al prodotto, in tutte le linee.</p></div></div>
 <section class="panel bulk-import"><h2>Importazione multipla immagini candidate</h2><p class="muted">Sono accettate esclusivamente immagini PNG o WebP con sfondo realmente trasparente. Il nome del file viene confrontato con il modello del prodotto. Le immagini restano candidate e non modificano il frontend.</p><form method="post" action="/idemaclima/admin/product-images/bulk-import" enctype="multipart/form-data"><input type="hidden" name="_csrf" value="<?=htmlspecialchars($csrf,ENT_QUOTES,'UTF-8')?>"><label>Immagini candidate<input type="file" name="candidate_files[]" accept="image/png,image/webp" multiple required></label><label>Catalogo o sorgente<input name="source_catalog" value="" maxlength="190"></label><button class="btn" type="submit">Importa candidate</button></form><form class="transparency-audit-form" method="post" action="/idemaclima/admin/product-images/save" data-confirm="Verificare tutte le candidature esistenti e rimuovere quelle senza sfondo trasparente?"><input type="hidden" name="_csrf" value="<?=htmlspecialchars($csrf,ENT_QUOTES,'UTF-8')?>"><input type="hidden" name="audit_transparency" value="1"><button class="btn danger" type="submit">Verifica trasparenza candidature esistenti</button></form></section>

@@ -32,6 +32,13 @@ jobs:
       - name: Run smoke tests
         run: bash tests/run_all.sh
 
+      - name: Check admin review layout on desktop tablet and mobile
+        run: |
+          npm install --prefix /tmp/idema-ui-check --no-audit --no-fund playwright@1.61.0
+          php tests/render_admin_review_fixture.php > /tmp/idema-admin-review.html
+          CHROME_BIN=/usr/bin/google-chrome NODE_PATH=/tmp/idema-ui-check/node_modules \
+            node tests/admin_review_responsive.cjs /tmp/idema-admin-review.html
+
       - name: Upload warranty certificate sample
         uses: actions/upload-artifact@v4
         with:

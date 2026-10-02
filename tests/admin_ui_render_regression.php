@@ -1,0 +1,20 @@
+<?php
+declare(strict_types=1);
+require dirname(__DIR__).'/app/Core/AdminUi.php';
+use App\Core\AdminUi;
+$oldSvg='<svg class="action-icon" viewBox="0 0 24 24"><path d="M3 6h18"/></svg>';
+$script='<script>const example=\'<button>Nuovo</button><span class="badge">Attivo</span>\';</script>';
+$input='<nav><a>Nuovo fuori dal contenuto</a></nav><main><a class="v2-primary"><i>＋</i> Nuova attività</a><a class="v2-action"><i>'.$oldSvg.'</i><span>Nuovo prodotto</span><b>›</b></a><button class="btn" type="submit" name="action" value="delete" aria-label="Elimina CAT">'.$oldSvg.$oldSvg.'Elimina</button><a href="/view?id=1">'.$oldSvg.'Apri</a><button>Approva <span>7</span></button><span class="badge">Pubblicato</span>'.$script.'</main>';
+$output=AdminUi::render($input);
+$assert=static function(bool $condition,string $message):void{if(!$condition)throw new RuntimeException($message);};
+preg_match('#<a class="v2-primary.*?</a>#s',$output,$new);
+$assert(substr_count($new[0],'<svg')===1&&!str_contains($new[0],'＋'),'New action contains exactly one icon');
+preg_match('#<button[^>]*name="action".*?</button>#s',$output,$delete);
+$assert(substr_count($delete[0],'<svg')===1&&str_contains($delete[0],'data-action-style="delete"'),'Existing duplicate icons are normalized');
+$assert(str_contains($delete[0],'value="delete"')&&str_contains($delete[0],'aria-label="Elimina CAT"'),'Form and accessibility attributes preserved');
+$assert(str_contains($output,'<a class="v2-action"><i>'.$oldSvg),'Quick accesses keep their original styles and icons');
+$assert(str_contains($output,$script),'JavaScript literal content remains intact');
+$assert(str_contains($output,'data-status-style="active"'),'Status style exists in initial HTML');
+$assert(AdminUi::render($output)===$output,'Rendering is idempotent');
+$assert(!str_contains(substr($output,0,strpos($output,'<main>')),'idema-action'),'Navigation is untouched');
+echo "Admin initial render regression OK\n";
