@@ -12,7 +12,7 @@ $contactOriginal="— Richiesta originale —\r\nDa: ".$contactName." — ".$con
     ."\r\nOggetto: ".$contactSubject
     .($contactDate!==''?"\r\nData: ".$contactDate:'')
     ."\r\n\r\n".str_replace(["\r\n","\r"],"\n",(string)($row['message']??''));
-$contactBody=$contactOriginal;
+$contactBody="\r\n\r\n".$contactOriginal;
 $contactReplyUrl=filter_var($contactEmail,FILTER_VALIDATE_EMAIL)
     ?'mailto:'.rawurlencode($contactEmail).'?subject='.rawurlencode('Re: '.$contactSubject).'&body='.rawurlencode($contactBody)
     :'';
