@@ -182,6 +182,7 @@ main button:not(.global-sort-button):not(.menu-button){min-height:36px;padding:7
 /* IDEMA admin — uniformazione progressiva componenti specifici */
 .admin-modern .admin-btn-icon{display:inline-grid;place-items:center;flex:0 0 18px;width:18px;height:18px;font-size:15px;line-height:1;font-weight:800}
 .admin-modern [data-ui-icon]:before{content:none!important}
+.admin-modern .contact-actions a:before,.admin-modern .contact-actions button:before{content:none!important}
 .admin-modern .toolbar-actions,.admin-modern .page-actions,.admin-modern .row-actions,.admin-modern .button-group,.admin-modern .action-group{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .admin-modern .filters,.admin-modern .filter-bar,.admin-modern .search-panel,.admin-modern .actions-bar,.admin-modern .tabs,.admin-modern .admin-section{background:#fff;border:1px solid #dfe7ef;border-radius:15px;box-shadow:0 8px 26px rgba(12,49,84,.045)}
 .admin-modern .filters,.admin-modern .filter-bar,.admin-modern .search-panel,.admin-modern .actions-bar{padding:16px;margin-bottom:18px}

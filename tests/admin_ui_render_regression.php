@@ -18,3 +18,7 @@ $assert(str_contains($output,'data-status-style="active"'),'Status style exists 
 $assert(AdminUi::render($output)===$output,'Rendering is idempotent');
 $assert(!str_contains(substr($output,0,strpos($output,'<main>')),'idema-action'),'Navigation is untouched');
 echo "Admin initial render regression OK\n";
+
+$large = "<main>".str_repeat('<div><a class="btn">'.App\Core\AdminUi::icon("open").'Apri</a></div>', 1200)."</main>";
+$largeRendered = App\Core\AdminUi::render($large);
+assert(substr_count($largeRendered, 'data-ui-icon="1"') === 1200, "Large contact archives must normalize every action");

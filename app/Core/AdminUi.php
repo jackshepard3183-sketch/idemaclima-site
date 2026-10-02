@@ -42,7 +42,14 @@ final class AdminUi
 
     public static function render(string $html): string
     {
-        return preg_replace_callback('#(<main\b[^>]*>)(.*?)(</main>)#is', static function (array $main): string {
+        // Large contact archives exceed PCRE's backtracking limit with a whole-main regex.
+        $start = stripos($html, '<main');
+        if ($start === false) return $html;
+        $bodyStart = strpos($html, '>', $start);
+        $end = strripos($html, '</main>');
+        if ($bodyStart === false || $end === false || $end <= $bodyStart) return $html;
+        $bodyStart++;
+        $main = ['', '', substr($html, $bodyStart, $end - $bodyStart)];
             $body = preg_replace_callback(
                 '#<(script|style)\b[^>]*>.*?</\1\s*>|<(a|button)\b([^>]*)>(.*?)</\2\s*>#is',
                 static function (array $m): string {
@@ -85,7 +92,6 @@ final class AdminUi
                 }
                 return $m[0];
             },$body) ?? $body;
-            return $main[1].$body.$main[3];
-        },$html) ?? $html;
+        return substr($html, 0, $bodyStart).$body.substr($html, $end);
     }
 }
