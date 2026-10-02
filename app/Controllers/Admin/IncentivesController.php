@@ -17,11 +17,19 @@ final class IncentivesController
     {
         AdminAuth::requireLogin();self::ensureTable();$status=(string)($_GET['status']??'');$allowed=['new','in_progress','closed','spam'];
         $trashed=($_GET['trash']??'')==='1';
+        $query=mb_substr(trim((string)($_GET['q']??'')),0,200);
         $where=$trashed?'deleted_at IS NOT NULL':'deleted_at IS NULL';$params=[];
         if(in_array($status,$allowed,true)){$where.=' AND status=?';$params[]=$status;}
+        if($query!==''){
+            $fields=['first_name','last_name','company','email','phone','city','province','region','postal_code','professional_role','admin_notes'];
+            $conditions=array_map(static fn(string $field):string=>$field.' LIKE ?', $fields);
+            $conditions[]="CONCAT(first_name,' ',last_name) LIKE ?";
+            $where.=' AND ('.implode(' OR ',$conditions).' OR id=?)';
+            $params=array_merge($params,array_fill(0,count($conditions),'%'.$query.'%'),[ctype_digit($query)?$query:0]);
+        }
         $stmt=Database::connection()->prepare('SELECT * FROM incentive_requests WHERE '.$where.' ORDER BY created_at DESC');
         $stmt->execute($params);$rows=$stmt->fetchAll(PDO::FETCH_ASSOC);
-        self::view('incentive_requests',['title'=>$trashed?'Richieste EasyTool — Cestino':'Richieste EasyTool','rows'=>$rows,'status'=>$status,'trashed'=>$trashed]);
+        self::view('incentive_requests',['title'=>$trashed?'Richieste EasyTool — Cestino':'Richieste EasyTool','rows'=>$rows,'status'=>$status,'trashed'=>$trashed,'query'=>$query]);
     }
     public static function request():void
     {
